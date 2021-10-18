@@ -1,4 +1,4 @@
-package com.core.utils.enums;
+package com.englishcenter.core.utils.enums;
 
 import java.util.Arrays;
 import java.util.List;

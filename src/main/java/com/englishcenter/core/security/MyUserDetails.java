@@ -1,10 +1,10 @@
-package com.core.security;
+package com.englishcenter.core.security;
 
 import com.englishcenter.auth.Auth;
 import com.englishcenter.auth.application.AuthApplication;
 import com.englishcenter.auth.application.IAuthApplication;
 import com.englishcenter.auth.command.CommandJwt;
-import com.core.utils.JsonUtils;
+import com.englishcenter.core.utils.JsonUtils;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;

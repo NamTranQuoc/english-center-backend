@@ -1,16 +1,14 @@
-package com.ec.member.application;
+package com.englishcenter.member.application;
 
-import com.ec.auth.application.IAuthApplication;
-import com.ec.member.Member;
-import com.ec.member.command.CommandAddMember;
-import com.ec.member.command.CommandSearchMember;
-import com.ec.member.command.CommandUpdateMember;
-import com.mail.IMailService;
-import com.mail.Mail;
-import com.utils.MongoDBConnection;
-import com.utils.Paging;
-import com.utils.enums.ExceptionEnum;
-import com.utils.enums.MongodbEnum;
+import com.englishcenter.auth.application.IAuthApplication;
+import com.englishcenter.member.Member;
+import com.englishcenter.member.command.CommandAddMember;
+import com.englishcenter.member.command.CommandSearchMember;
+import com.englishcenter.member.command.CommandUpdateMember;
+import com.englishcenter.core.utils.MongoDBConnection;
+import com.englishcenter.core.utils.Paging;
+import com.englishcenter.core.utils.enums.ExceptionEnum;
+import com.englishcenter.core.utils.enums.MongodbEnum;
 import org.apache.commons.lang3.StringUtils;
 import org.bson.Document;
 import org.bson.types.ObjectId;

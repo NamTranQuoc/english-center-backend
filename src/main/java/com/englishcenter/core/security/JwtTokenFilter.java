@@ -1,8 +1,8 @@
-package com.core.security;
+package com.englishcenter.core.security;
 
 import com.englishcenter.auth.Auth;
 import com.englishcenter.auth.application.IAuthApplication;
-import com.core.utils.JsonUtils;
+import com.englishcenter.core.utils.JsonUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;

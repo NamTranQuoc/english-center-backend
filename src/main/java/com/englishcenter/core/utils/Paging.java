@@ -1,4 +1,4 @@
-package com.core.utils;
+package com.englishcenter.core.utils;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

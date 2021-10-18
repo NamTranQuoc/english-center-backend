@@ -1,4 +1,4 @@
-package com.core.utils;
+package com.englishcenter.core.utils;
 
 import com.englishcenter.member.command.CommandSearchMember;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -7,7 +7,7 @@ import com.mongodb.BasicDBObject;
 import com.mongodb.ConnectionString;
 import com.mongodb.MongoClientSettings;
 import com.mongodb.client.*;
-import com.core.utils.enums.MongodbEnum;
+import com.englishcenter.core.utils.enums.MongodbEnum;
 import eu.dozd.mongo.MongoMapper;
 import org.bson.Document;
 import org.bson.codecs.configuration.CodecRegistries;

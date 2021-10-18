@@ -1,4 +1,4 @@
-package com.core.mail;
+package com.englishcenter.core.mail;
 
 public interface IMailService {
     void sendEmail(Mail mail);

@@ -1,4 +1,4 @@
-package com.core.utils.enums;
+package com.englishcenter.core.utils.enums;
 
 public class ExceptionEnum {
     public static final String param_not_null = "param_not_null";

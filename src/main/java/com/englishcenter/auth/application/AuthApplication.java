@@ -1,15 +1,15 @@
-package com.ec.auth.application;
+package com.englishcenter.auth.application;
 
+import com.englishcenter.auth.Auth;
+import com.englishcenter.auth.command.CommandJwt;
+import com.englishcenter.auth.command.CommandLogin;
+import com.englishcenter.member.Member;
+import com.englishcenter.member.application.IMemberApplication;
 import com.google.gson.Gson;
-import com.ec.auth.Auth;
-import com.ec.auth.command.CommandJwt;
-import com.ec.auth.command.CommandLogin;
-import com.ec.member.Member;
-import com.ec.member.application.IMemberApplication;
-import com.utils.HashUtils;
-import com.utils.MongoDBConnection;
-import com.utils.enums.ExceptionEnum;
-import com.utils.enums.MongodbEnum;
+import com.englishcenter.core.utils.HashUtils;
+import com.englishcenter.core.utils.MongoDBConnection;
+import com.englishcenter.core.utils.enums.ExceptionEnum;
+import com.englishcenter.core.utils.enums.MongodbEnum;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import org.apache.commons.lang3.StringUtils;

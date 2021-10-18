@@ -1,11 +1,14 @@
-package com.ec.auth;
+package com.englishcenter.auth;
 
-import com.ec.auth.application.IAuthApplication;
-import com.ec.auth.command.CommandLogin;
-import com.utils.ResponseUtils;
+import com.englishcenter.auth.application.IAuthApplication;
+import com.englishcenter.auth.command.CommandLogin;
+import com.englishcenter.core.utils.ResponseUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RestController;
 
 @Component
 @RestController(value = "/auth")

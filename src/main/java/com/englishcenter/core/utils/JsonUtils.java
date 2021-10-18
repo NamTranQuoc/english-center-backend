@@ -1,4 +1,4 @@
-package com.core.utils;
+package com.englishcenter.core.utils;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;

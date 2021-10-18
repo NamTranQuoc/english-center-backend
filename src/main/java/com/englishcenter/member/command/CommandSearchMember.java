@@ -1,4 +1,4 @@
-package com.ec.member.command;
+package com.englishcenter.member.command;
 
 import eu.dozd.mongo.annotation.Embedded;
 import lombok.AllArgsConstructor;

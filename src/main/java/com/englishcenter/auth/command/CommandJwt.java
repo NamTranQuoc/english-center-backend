@@ -1,4 +1,4 @@
-package com.ec.auth.command;
+package com.englishcenter.auth.command;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

@@ -1,10 +1,10 @@
-package com.ec.member.application;
+package com.englishcenter.member.application;
 
-import com.ec.member.Member;
-import com.ec.member.command.CommandAddMember;
-import com.ec.member.command.CommandSearchMember;
-import com.ec.member.command.CommandUpdateMember;
-import com.utils.Paging;
+import com.englishcenter.member.Member;
+import com.englishcenter.member.command.CommandAddMember;
+import com.englishcenter.member.command.CommandSearchMember;
+import com.englishcenter.member.command.CommandUpdateMember;
+import com.englishcenter.core.utils.Paging;
 
 import java.util.List;
 import java.util.Map;

@@ -1,4 +1,4 @@
-package com.ec.auth;
+package com.englishcenter.auth;
 
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.fasterxml.jackson.databind.ser.std.ToStringSerializer;

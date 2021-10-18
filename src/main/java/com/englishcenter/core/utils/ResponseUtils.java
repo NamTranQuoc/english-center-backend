@@ -1,4 +1,4 @@
-package com.core.utils;
+package com.englishcenter.core.utils;
 
 import com.englishcenter.auth.application.IAuthApplication;
 import com.englishcenter.auth.command.CommandJwt;

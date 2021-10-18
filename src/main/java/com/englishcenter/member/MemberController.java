@@ -1,34 +1,23 @@
-package com.ec.member;
+package com.englishcenter.member;
 
-import com.ec.member.application.IMemberApplication;
-import com.ec.member.command.CommandAddMember;
-import com.ec.member.command.CommandSearchMember;
-import com.ec.member.command.CommandUpdateMember;
-import com.mail.IMailService;
-import com.mail.Mail;
-import com.utils.ResponseUtils;
+import com.englishcenter.member.application.IMemberApplication;
+import com.englishcenter.member.command.CommandAddMember;
+import com.englishcenter.member.command.CommandSearchMember;
+import com.englishcenter.member.command.CommandUpdateMember;
+import com.englishcenter.core.utils.ResponseUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.HashMap;
 
 @Component
 @RestController(value = "/member")
 public class MemberController extends ResponseUtils {
     @Autowired
     private IMemberApplication userApplication;
-    @Autowired
-    private IMailService mailService;
 
     @RequestMapping(value = "/member/get_all", method = RequestMethod.GET)
     public String get() {
         try {
-            mailService.sendEmail(Mail.builder()
-                    .mail_to("namtranquoc322@gmail.com")
-                    .mail_subject("test")
-                    .mail_content("test send mail")
-                    .build());
             return "success";
         } catch (Throwable throwable) {
             return this.outJson(-9999, throwable.getMessage(), null);

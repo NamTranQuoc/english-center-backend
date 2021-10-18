@@ -1,9 +1,9 @@
-package com.ec.auth.application;
+package com.englishcenter.auth.application;
 
-import com.ec.auth.Auth;
-import com.ec.auth.command.CommandJwt;
-import com.ec.auth.command.CommandLogin;
-import com.ec.member.Member;
+import com.englishcenter.auth.Auth;
+import com.englishcenter.auth.command.CommandJwt;
+import com.englishcenter.auth.command.CommandLogin;
+import com.englishcenter.member.Member;
 
 import java.util.Optional;
 

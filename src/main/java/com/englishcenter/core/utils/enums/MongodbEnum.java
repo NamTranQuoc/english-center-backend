@@ -1,4 +1,4 @@
-package com.core.utils.enums;
+package com.englishcenter.core.utils.enums;
 
 public class MongodbEnum {
 //    public final static String connection = "mongodb+srv://quocnam:Q6cPW5zwZCN3-2t@cluster0.kb6mb.mongodb.net/Cluster0?retryWrites=true&w=majority";

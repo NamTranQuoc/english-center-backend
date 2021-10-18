@@ -1,4 +1,4 @@
-package com.core.security;
+package com.englishcenter.core.security;
 
 import com.englishcenter.auth.application.AuthApplication;
 import com.englishcenter.auth.application.IAuthApplication;

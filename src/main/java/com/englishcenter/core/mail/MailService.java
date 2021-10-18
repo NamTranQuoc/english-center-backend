@@ -1,4 +1,4 @@
-package com.core.mail;
+package com.englishcenter.core.mail;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.mail.javamail.JavaMailSender;
