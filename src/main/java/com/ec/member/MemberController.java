@@ -24,11 +24,6 @@ public class MemberController extends ResponseUtils {
     @RequestMapping(value = "/member/get_all", method = RequestMethod.GET)
     public String get() {
         try {
-            mailService.sendEmail(Mail.builder()
-                    .mail_to("namtranquoc322@gmail.com")
-                    .mail_subject("test")
-                    .mail_content("test send mail")
-                    .build());
             return "success";
         } catch (Throwable throwable) {
             return this.outJson(-9999, throwable.getMessage(), null);
