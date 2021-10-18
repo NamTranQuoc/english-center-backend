@@ -1,10 +1,10 @@
-package com.example.project_v1;
+package com.englishcenter;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 
 @SpringBootTest
-class EnglishCenterMainTests {
+class EnglishCenterApplicationTests {
 
     @Test
     void contextLoads() {

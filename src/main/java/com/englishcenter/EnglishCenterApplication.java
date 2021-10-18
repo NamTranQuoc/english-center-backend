@@ -1,11 +1,13 @@
-package com;
+package com.englishcenter;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
-public class EnglishCenterMain {
+public class EnglishCenterApplication {
+
     public static void main(String[] args) {
-        SpringApplication.run(EnglishCenterMain.class, args);
+        SpringApplication.run(EnglishCenterApplication.class, args);
     }
+
 }
