@@ -11,7 +11,6 @@ import org.springframework.web.cors.CorsConfigurationSource;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.Arrays;
-import java.util.Collections;
 
 @Configuration
 @EnableWebSecurity
@@ -34,7 +33,7 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
         public CorsConfiguration getCorsConfiguration(final HttpServletRequest request) {
             final CorsConfiguration configuration = new CorsConfiguration();
             configuration.setAllowCredentials(true);
-            configuration.setAllowedOrigins(Collections.singletonList("http://localhost:3000/"));
+            configuration.setAllowedOrigins(Arrays.asList("http://localhost:3000/", "https://englishcenter-spkt.herokuapp.com/"));
             configuration.setAllowedMethods(Arrays.asList(
                     "GET",
                     "POST",
