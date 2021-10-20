@@ -8,7 +8,7 @@ import com.englishcenter.member.Member;
 import java.util.Optional;
 
 public interface IAuthApplication {
-    Optional<Auth> add(Member member, String password) throws Exception;
+    Optional<Auth> add(Member member) throws Exception;
 
     Optional<Auth> checkJwt(String jwt) throws Exception;
 

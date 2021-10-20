@@ -3,19 +3,23 @@ package com.englishcenter.auth.application;
 import com.englishcenter.auth.Auth;
 import com.englishcenter.auth.command.CommandJwt;
 import com.englishcenter.auth.command.CommandLogin;
-import com.englishcenter.member.Member;
-import com.englishcenter.member.application.IMemberApplication;
-import com.google.gson.Gson;
+import com.englishcenter.core.mail.IMailService;
+import com.englishcenter.core.mail.Mail;
+import com.englishcenter.core.utils.Generate;
 import com.englishcenter.core.utils.HashUtils;
 import com.englishcenter.core.utils.MongoDBConnection;
 import com.englishcenter.core.utils.enums.ExceptionEnum;
 import com.englishcenter.core.utils.enums.MongodbEnum;
+import com.englishcenter.member.Member;
+import com.englishcenter.member.application.IMemberApplication;
+import com.google.gson.Gson;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -25,6 +29,8 @@ public class AuthApplication implements IAuthApplication {
     public final MongoDBConnection<Auth> mongoDBConnection;
     @Autowired
     private IMemberApplication memberApplication;
+    @Autowired
+    private IMailService mailService;
 
     private final String JWT_SECRET = "UUhuhdadyh9*&^777687";
     private final long JWT_EXPIRATION = 24 * 60 * 60 * 1000;
@@ -35,12 +41,18 @@ public class AuthApplication implements IAuthApplication {
     }
 
     @Override
-    public Optional<Auth> add(Member member, String password) throws Exception {
+    public Optional<Auth> add(Member member) throws Exception {
+        String password = Generate.generateCommonLangPassword();
         Auth auth = Auth.builder()
                 .member_id(member.get_id().toHexString())
                 .password(HashUtils.getPasswordMD5(password))
                 .username(member.getEmail())
                 .build();
+        mailService.sendEmail(Mail.builder()
+                .mail_to(member.getEmail())
+                .mail_subject("Password")
+                .mail_content(password)
+                .build());
         return mongoDBConnection.insert(auth);
     }
 

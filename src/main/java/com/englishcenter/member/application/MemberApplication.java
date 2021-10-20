@@ -62,7 +62,7 @@ public class MemberApplication implements IMemberApplication {
 
     @Override
     public Optional<Member> add(CommandAddMember command) throws Exception {
-        if (StringUtils.isAnyBlank(command.getName(), command.getEmail(), command.getPassword(), command.getGender(), command.getPhone_number()) || command.getDob() == null) {
+        if (StringUtils.isAnyBlank(command.getName(), command.getEmail(), command.getGender(), command.getPhone_number()) || command.getDob() == null) {
             throw new Exception(ExceptionEnum.param_not_null);
         }
         Map<String, Object> query = new HashMap<>();
@@ -86,7 +86,7 @@ public class MemberApplication implements IMemberApplication {
         if (optional.isPresent()) {
             optional.get().setAvatar("avatar-" + optional.get().get_id().toHexString() + ".png");
             mongoDBConnection.update(optional.get().get_id().toHexString(), optional.get());
-            authApplication.add(optional.get(), command.getPassword());
+            authApplication.add(optional.get());
             return optional;
         }
         return Optional.empty();

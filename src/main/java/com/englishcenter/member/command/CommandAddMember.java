@@ -12,7 +12,6 @@ import lombok.NoArgsConstructor;
 public class CommandAddMember {
     private String name;
     private String email;
-    private String password;
     private String type;
     private String avatar;
     private Long dob;

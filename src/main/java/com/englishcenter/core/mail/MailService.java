@@ -19,9 +19,9 @@ public class MailService implements IMailService {
             MimeMessage msg = javaMailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(msg, true);
 
-            helper.setTo("namtranquoc322@gmail.com");
-            helper.setSubject("Testing from Spring Boot");
-            helper.setText("<h1>Check attachment for image!</h1>", true);
+            helper.setTo(mail.getMail_to());
+            helper.setSubject(mail.getMail_subject());
+            helper.setText(mail.getMail_content(), false);
 //            helper.addAttachment("my_photo.png", new ClassPathResource("android.png"));
 
             javaMailSender.send(msg);

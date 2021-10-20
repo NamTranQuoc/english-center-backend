@@ -13,7 +13,7 @@ import java.util.Set;
 @AllArgsConstructor
 @NoArgsConstructor
 public class Mail {
-    private Set<String> mail_to;
+    private String mail_to;
     private String mail_cc;
     private String mail_bcc;
     private String mail_subject;
