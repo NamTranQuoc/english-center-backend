@@ -18,5 +18,6 @@ public class CommandAddMember {
     private String address;
     private String phone_number;
     private String gender;
+    private Long salary;
 }
 

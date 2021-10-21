@@ -82,6 +82,9 @@ public class MemberApplication implements IMemberApplication {
                 .address(command.getAddress())
                 .phone_number(command.getPhone_number())
                 .build();
+        if (command.getSalary() != null) {
+            member.setSalary(command.getSalary());
+        }
         Optional<Member> optional = mongoDBConnection.insert(member);
         if (optional.isPresent()) {
             optional.get().setAvatar("avatar-" + optional.get().get_id().toHexString() + ".png");
@@ -123,8 +126,20 @@ public class MemberApplication implements IMemberApplication {
         if (StringUtils.isNotBlank(command.getName())) {
             member.setName(command.getName());
         }
-        if (StringUtils.isNotBlank(command.getAvatar())) {
-            member.setAvatar(command.getAvatar());
+        if (StringUtils.isNotBlank(command.getGender())) {
+            member.setGender(command.getGender());
+        }
+        if (StringUtils.isNotBlank(command.getPhone_number())) {
+            member.setPhone_number(command.getPhone_number());
+        }
+        if (StringUtils.isNotBlank(command.getAddress())) {
+            member.setAddress(command.getAddress());
+        }
+        if (command.getDob() != null) {
+            member.setDob(command.getDob());
+        }
+        if (command.getSalary() != null) {
+            member.setSalary(command.getSalary());
         }
         return mongoDBConnection.update(member.get_id().toHexString(), member);
     }

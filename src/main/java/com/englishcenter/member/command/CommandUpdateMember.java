@@ -14,4 +14,9 @@ public class CommandUpdateMember {
     private String role;
     private String name;
     private String avatar;
+    private String gender;
+    private String phone_number;
+    private Long dob;
+    private String address;
+    private Long salary;
 }
