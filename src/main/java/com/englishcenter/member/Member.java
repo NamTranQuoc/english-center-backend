@@ -30,6 +30,7 @@ public class Member implements Serializable {
     private String address;
     private String phone_number;
     private String gender;
+    private Long salary;
     @Builder.Default
     private Boolean is_deleted = false;
 
