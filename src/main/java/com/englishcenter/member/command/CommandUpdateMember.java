@@ -1,5 +1,6 @@
 package com.englishcenter.member.command;
 
+import com.englishcenter.member.Member;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -19,4 +20,5 @@ public class CommandUpdateMember {
     private Long dob;
     private String address;
     private Long salary;
+    private Member.Certificate certificate;
 }
