@@ -2,6 +2,7 @@ package com.englishcenter.member;
 
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.fasterxml.jackson.databind.ser.std.ToStringSerializer;
+import eu.dozd.mongo.annotation.Embedded;
 import eu.dozd.mongo.annotation.Entity;
 import eu.dozd.mongo.annotation.Id;
 import lombok.AllArgsConstructor;
@@ -30,6 +31,8 @@ public class Member implements Serializable {
     private String address;
     private String phone_number;
     private String gender;
+    private Long salary;
+    private Certificate certificate;
     @Builder.Default
     private Boolean is_deleted = false;
 
@@ -38,5 +41,16 @@ public class Member implements Serializable {
         public final static String STUDENT = "student";
         public final static String TEACHER = "teacher";
         public final static String RECEPTIONIST = "receptionist";
+    }
+
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Embedded
+    @Builder
+    public static class Certificate {
+        private String type;
+        private Float score;
+        private String code;
     }
 }
