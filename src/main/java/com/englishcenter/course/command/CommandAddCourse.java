@@ -9,6 +9,12 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class CourseAddCommand {
-
+public class CommandAddCourse {
+    private String role;
+    private String id;
+    private String name;
+    private Long tuition;
+    private Integer number_of_shift;
+    private String description;
+    private String category_course_id;
 }
