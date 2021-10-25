@@ -7,6 +7,7 @@ public class APIOpenEnum {
     public final static List<String> apiOpen = Arrays.asList(
             "/member/add",
             "/auth/login",
-            "/member/get_all"
+            "/member/get_all",
+            "/category_course/get_all"
     );
 }

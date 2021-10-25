@@ -35,7 +35,7 @@ public class CourseApplication implements ICourseApplication {
 
     @Override
     public Optional<Course> add(CommandAddCourse command) throws Exception {
-        if (Arrays.asList(Member.MemberType.ADMIN, Member.MemberType.RECEPTIONIST).contains(command.getRole())) {
+        if (!Arrays.asList(Member.MemberType.ADMIN, Member.MemberType.RECEPTIONIST).contains(command.getRole())) {
             throw new Exception(ExceptionEnum.member_type_deny);
         }
         if (StringUtils.isAnyBlank(command.getName(), command.getCategory_course_id())) {
@@ -51,6 +51,7 @@ public class CourseApplication implements ICourseApplication {
                 .description(command.getDescription())
                 .category_course_id(command.getCategory_course_id())
                 .number_of_shift(command.getNumber_of_shift())
+                .create_date(System.currentTimeMillis())
                 .build();
         return mongoDBConnection.insert(course);
     }
@@ -78,10 +79,10 @@ public class CourseApplication implements ICourseApplication {
 
     @Override
     public Optional<Course> update(CommandAddCourse command) throws Exception {
-        if (Arrays.asList(Member.MemberType.ADMIN, Member.MemberType.RECEPTIONIST).contains(command.getRole())) {
+        if (!Arrays.asList(Member.MemberType.ADMIN, Member.MemberType.RECEPTIONIST).contains(command.getRole())) {
             throw new Exception(ExceptionEnum.member_type_deny);
         }
-        if (StringUtils.isNotBlank(command.getId())) {
+        if (StringUtils.isBlank(command.getId())) {
             throw new Exception(ExceptionEnum.param_not_null);
         }
         Optional<Course> courseOptional = mongoDBConnection.getById(command.getId());

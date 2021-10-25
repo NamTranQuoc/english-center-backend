@@ -13,10 +13,7 @@ import org.bson.Document;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.regex.Pattern;
 
 @Component
@@ -30,7 +27,7 @@ public class CategoryCourseApplication implements ICategoryCourseApplication {
 
     @Override
     public Optional<CategoryCourse> add(CommandAddCategoryCourse command) throws Exception {
-        if (Arrays.asList(Member.MemberType.ADMIN, Member.MemberType.RECEPTIONIST).contains(command.getRole())) {
+        if (!Arrays.asList(Member.MemberType.ADMIN, Member.MemberType.RECEPTIONIST).contains(command.getRole())) {
             throw new Exception(ExceptionEnum.member_type_deny);
         }
         if (StringUtils.isAnyBlank(command.getName(), command.getStatus())) {
@@ -40,6 +37,7 @@ public class CategoryCourseApplication implements ICategoryCourseApplication {
                 .name(command.getName())
                 .status(command.getStatus())
                 .description(command.getDescription())
+                .create_date(System.currentTimeMillis())
                 .build();
         return mongoDBConnection.insert(categoryCourse);
     }
@@ -64,10 +62,10 @@ public class CategoryCourseApplication implements ICategoryCourseApplication {
 
     @Override
     public Optional<CategoryCourse> update(CommandAddCategoryCourse command) throws Exception {
-        if (Arrays.asList(Member.MemberType.ADMIN, Member.MemberType.RECEPTIONIST).contains(command.getRole())) {
+        if (!Arrays.asList(Member.MemberType.ADMIN, Member.MemberType.RECEPTIONIST).contains(command.getRole())) {
             throw new Exception(ExceptionEnum.member_type_deny);
         }
-        if (StringUtils.isNotBlank(command.getId())) {
+        if (StringUtils.isBlank(command.getId())) {
             throw new Exception(ExceptionEnum.param_not_null);
         }
         Optional<CategoryCourse> optional = mongoDBConnection.getById(command.getId());
@@ -90,5 +88,10 @@ public class CategoryCourseApplication implements ICategoryCourseApplication {
     @Override
     public Optional<CategoryCourse> getById(String id) {
         return mongoDBConnection.getById(id);
+    }
+
+    @Override
+    public Optional<List<CategoryCourse>> getAll() {
+        return mongoDBConnection.find(new HashMap<>());
     }
 }

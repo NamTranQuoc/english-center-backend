@@ -26,4 +26,5 @@ public class Course implements Serializable {
     private Integer number_of_shift;
     private String description;
     private String category_course_id;
+    private Long create_date;
 }
