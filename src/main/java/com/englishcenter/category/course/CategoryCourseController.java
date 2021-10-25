@@ -14,7 +14,16 @@ public class CategoryCourseController extends ResponseUtils {
     @Autowired
     private ICategoryCourseApplication categoryCourseApplication;
 
-    @GetMapping("/category_course/get_list")
+    @GetMapping("/category_course/get_all")
+    public String getAll() {
+        try {
+            return this.outJson(9999, null, categoryCourseApplication.getAll().orElse(null));
+        } catch (Throwable throwable) {
+            return this.outJson(-9999, throwable.getMessage(), null);
+        }
+    }
+
+    @PostMapping("/category_course/get_list")
     public String getList(@RequestBody CommandSearchCategoryCourse command, @RequestParam Integer page, @RequestParam Integer size) {
         try {
             command.setPage(page);

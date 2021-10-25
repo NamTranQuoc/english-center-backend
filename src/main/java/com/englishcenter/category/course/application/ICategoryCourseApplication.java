@@ -5,6 +5,7 @@ import com.englishcenter.category.course.command.CommandAddCategoryCourse;
 import com.englishcenter.category.course.command.CommandSearchCategoryCourse;
 import com.englishcenter.core.utils.Paging;
 
+import java.util.List;
 import java.util.Optional;
 
 public interface ICategoryCourseApplication {
@@ -15,4 +16,6 @@ public interface ICategoryCourseApplication {
     Optional<CategoryCourse> update(CommandAddCategoryCourse command) throws Exception;
 
     Optional<CategoryCourse> getById(String id);
+
+    Optional<List<CategoryCourse>> getAll();
 }

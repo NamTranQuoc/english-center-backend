@@ -14,7 +14,7 @@ public class CourseController extends ResponseUtils {
     @Autowired
     private ICourseApplication courseApplication;
 
-    @GetMapping("/course/get_list")
+    @PostMapping("/course/get_list")
     public String getList(@RequestBody CommandSearchCourse command, @RequestParam Integer page, @RequestParam Integer size) {
         try {
             command.setPage(page);
