@@ -7,4 +7,6 @@ public class MongodbEnum {
 
     public final static String collection_member = "member";
     public final static String collection_auth = "auth";
+    public final static String collection_course = "course";
+    public final static String collection_category_course = "category_course";
 }
