@@ -1,8 +1,7 @@
 package com.englishcenter.core.security;
 
-import com.englishcenter.auth.Auth;
 import com.englishcenter.auth.application.IAuthApplication;
-import com.englishcenter.core.utils.JsonUtils;
+import com.englishcenter.core.utils.enums.APIOpenEnum;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -15,7 +14,6 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.util.Optional;
 
 public class JwtTokenFilter extends OncePerRequestFilter {
 
@@ -32,20 +30,20 @@ public class JwtTokenFilter extends OncePerRequestFilter {
         String token = this.resolveToken(httpServletRequest);
         try {
             if (StringUtils.isNotBlank(token)) {
-                Optional<Auth> auth = authApplication.checkJwt(token);
-                if (auth.isPresent()) {
-                    UserDetails userDetails = myUserDetails.loadUserByUsername(JsonUtils.objectToJson(auth.get()));
+                if (authApplication.checkJwt(token)) {
+                    UserDetails userDetails = myUserDetails.loadUserByUsername(token);
                     Authentication authentication = new UsernamePasswordAuthenticationToken(userDetails, "", userDetails.getAuthorities());
                     SecurityContextHolder.getContext().setAuthentication(authentication);
+                    filterChain.doFilter(httpServletRequest, httpServletResponse);
                 } else {
-                    throw new Exception();
+                    httpServletResponse.sendError(403, "Forbidden");
                 }
+            } else {
+                filterChain.doFilter(httpServletRequest, httpServletResponse);
             }
         } catch (Exception ex) {
-            SecurityContextHolder.clearContext();
             httpServletResponse.sendError(ex.hashCode(), ex.getMessage());
         }
-        filterChain.doFilter(httpServletRequest, httpServletResponse);
     }
 
     public String resolveToken(HttpServletRequest req) {
