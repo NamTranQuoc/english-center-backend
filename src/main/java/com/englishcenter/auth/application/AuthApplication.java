@@ -56,23 +56,11 @@ public class AuthApplication implements IAuthApplication {
     }
 
     @Override
-    public Optional<Auth> checkJwt(String jwt) throws Exception {
-        Map<String, Object> query = new HashMap<>();
-        query.put("jwt", jwt);
-        Optional<Auth> auth = mongoDBConnection.findOne(query);
-        if (auth.isPresent()) {
-            Optional<CommandJwt> commandJwt = this.decodeJwt(auth.get().getJwt());
-            if (commandJwt.isPresent()) {
-                long now = System.currentTimeMillis();
-                if (now < commandJwt.get().getExpiration_date()) {
-                    return auth;
-                }
-            }
-        }
-        return Optional.empty();
+    public Boolean checkJwt(String jwt) {
+        return this.decodeJwt(jwt).isPresent();
     }
 
-    private Optional<Auth> generateToken(Auth auth) throws Exception {
+    private Optional<String> generateToken(Auth auth) throws Exception {
         Optional<Member> optional = memberApplication.getById(auth.getMember_id());
         if (!optional.isPresent()) {
             throw new Exception(ExceptionEnum.member_not_exist);
@@ -88,15 +76,14 @@ public class AuthApplication implements IAuthApplication {
                 .expiration_date(now + JWT_EXPIRATION)
                 .user_id(member.get_id().toString())
                 .role(member.getType())
+                .pw(HashUtils.getPasswordMD5(auth.getPassword()))
+                .username(auth.getUsername())
                 .build();
-        String jwt = Jwts.builder()
+        return Optional.of(Jwts.builder()
                 .setHeader(header)
                 .setPayload(new Gson().toJson(commandJwt))
                 .signWith(SignatureAlgorithm.HS512, JWT_SECRET)
-                .compact();
-        auth.setJwt(jwt);
-        mongoDBConnection.update(auth.get_id().toHexString(), auth);
-        return Optional.of(auth);
+                .compact());
     }
 
     @Override
@@ -114,11 +101,7 @@ public class AuthApplication implements IAuthApplication {
         if (!hashPass.equals(auth.get().getPassword())) {
             throw new Exception(ExceptionEnum.password_incorrect);
         }
-        Optional<Auth> optional = this.generateToken(auth.get());
-        if (!optional.isPresent()) {
-            throw new Exception(ExceptionEnum.password_incorrect);
-        }
-        return Optional.of(optional.get().getJwt());
+        return this.generateToken(auth.get());
     }
 
     @Override
