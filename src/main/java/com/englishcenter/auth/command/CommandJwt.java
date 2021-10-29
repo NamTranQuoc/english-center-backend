@@ -11,6 +11,8 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class CommandJwt {
     private String user_id;
+    private String username;
+    private String pw;
     private String role;
     private Long create_date;
     private Long expiration_date;
