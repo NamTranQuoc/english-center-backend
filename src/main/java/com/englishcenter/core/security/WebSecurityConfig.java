@@ -33,7 +33,11 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
         public CorsConfiguration getCorsConfiguration(final HttpServletRequest request) {
             final CorsConfiguration configuration = new CorsConfiguration();
             configuration.setAllowCredentials(true);
-            configuration.setAllowedOrigins(Arrays.asList("http://localhost:3000/", "https://englishcenter-2021.web.app/"));
+            configuration.setAllowedOrigins(Arrays.asList(
+                    "http://localhost:3000/",
+                    "https://englishcenter-2021.web.app/",
+                    "https://englishcenter-bd4ab.web.app/"
+            ));
             configuration.setAllowedMethods(Arrays.asList(
                     "GET",
                     "POST",
