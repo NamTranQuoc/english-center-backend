@@ -21,6 +21,7 @@ public class CommandSearchMember {
     private Long from_date;
     private Long to_date;
     private Sort sort;
+    private List<String> genders;
 
     @Data
     @NoArgsConstructor
