@@ -57,6 +57,9 @@ public class MemberApplication implements IMemberApplication {
         if (command.getFrom_date() != null && command.getTo_date() != null) {
             query.put("create_date", new Document("$gte", command.getFrom_date()).append("$lte", command.getTo_date()));
         }
+        if (!CollectionUtils.isEmpty(command.getGenders())) {
+            query.put("gender", new Document("$in", command.getGenders()));
+        }
         return mongoDBConnection.find(query, command.getSort(), command.getPage(), command.getSize());
     }
 
