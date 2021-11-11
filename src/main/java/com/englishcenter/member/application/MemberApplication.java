@@ -153,4 +153,15 @@ public class MemberApplication implements IMemberApplication {
         }
         return mongoDBConnection.update(member.get_id().toHexString(), member);
     }
+
+    @Override
+    public Optional<Boolean> delete(String id, String role) throws Exception{
+        if (StringUtils.isAnyBlank(id, role)) {
+            throw new Exception(ExceptionEnum.param_not_null);
+        }
+        if (!Member.MemberType.ADMIN.equals(role)) {
+            throw new Exception(ExceptionEnum.member_type_deny);
+        }
+        return mongoDBConnection.delete(id);
+    }
 }

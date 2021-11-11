@@ -54,4 +54,14 @@ public class MemberController extends ResponseUtils {
             return this.outJson(-9999, throwable.getMessage(), null);
         }
     }
+
+    @DeleteMapping(value = "/member/delete/{id}")
+    public String delete(@RequestHeader String Authorization, @PathVariable String id) {
+        try {
+            String role = this.getMemberType(Authorization);
+            return this.outJson(9999, null, userApplication.delete(id, role).orElse(false));
+        } catch (Throwable throwable) {
+            return this.outJson(-9999, throwable.getMessage(), null);
+        }
+    }
 }
