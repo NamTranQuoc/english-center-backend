@@ -84,7 +84,7 @@ public class MongoDBConnection<T> {
             Map<String, Object> query = new HashMap<>();
             query.put("_id", new ObjectId(id));
             query.put("is_deleted", false);
-            return Optional.of(mongoCollection.updateMany(new Document(query), new Document("is_deleted", false)).getModifiedCount() > 0);
+            return Optional.of(mongoCollection.updateMany(new Document(query), new Document("$set", new Document("is_deleted", true))).getModifiedCount() > 0);
         } catch (Exception e) {
             return Optional.of(Boolean.FALSE);
         }
