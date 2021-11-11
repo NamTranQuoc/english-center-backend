@@ -36,7 +36,8 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
             configuration.setAllowedOrigins(Arrays.asList(
                     "http://localhost:3000/",
                     "https://englishcenter-2021.web.app/",
-                    "https://englishcenter-bd4ab.web.app/"
+                    "https://englishcenter-bd4ab.web.app/",
+                    "http://localhost:3001/"
             ));
             configuration.setAllowedMethods(Arrays.asList(
                     "GET",
