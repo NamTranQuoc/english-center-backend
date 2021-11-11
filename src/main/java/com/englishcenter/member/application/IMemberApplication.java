@@ -20,4 +20,6 @@ public interface IMemberApplication {
     Optional<Member> getById(String id);
 
     Optional<Member> update(CommandUpdateMember command) throws Exception;
+
+    Optional<Boolean> delete(String id, String role) throws Exception;
 }
