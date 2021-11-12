@@ -37,7 +37,8 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
                     "http://localhost:3000/",
                     "https://englishcenter-2021.web.app/",
                     "https://englishcenter-bd4ab.web.app/",
-                    "http://localhost:3001/"
+                    "http://localhost:3001/",
+                    "https://englishcenter-2021.firebaseapp.com/"
             ));
             configuration.setAllowedMethods(Arrays.asList(
                     "GET",
