@@ -7,5 +7,6 @@ public class ExceptionEnum {
     public static final String category_course_not_exist = "category_course_not_exist";
     public static final String course_not_exist = "course_not_exist";
     public static final String password_incorrect = "password_incorrect";
+    public static final String confirm_password_incorrect = "confirm_password_incorrect";
     public static final String member_type_deny = "member_type_deny";
 }

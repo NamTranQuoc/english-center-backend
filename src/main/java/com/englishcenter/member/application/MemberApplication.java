@@ -41,7 +41,10 @@ public class MemberApplication implements IMemberApplication {
 
     @Override
     public Optional<Paging<Member>> getList(CommandSearchMember command) throws Exception {
-        if (!Member.MemberType.ADMIN.equals(command.getMember_type())) {
+        if (!(Member.MemberType.ADMIN.equals(command.getMember_type())
+                || (Member.MemberType.RECEPTIONIST.equals(command.getMember_type())
+                && !CollectionUtils.isEmpty(command.getTypes() )
+                && command.getTypes().contains(Member.MemberType.STUDENT)))) {
             throw new Exception(ExceptionEnum.member_type_deny);
         }
         Map<String, Object> query = new HashMap<>();
