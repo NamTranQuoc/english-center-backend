@@ -1,6 +1,7 @@
 package com.englishcenter.auth.application;
 
 import com.englishcenter.auth.Auth;
+import com.englishcenter.auth.command.CommandChangePassword;
 import com.englishcenter.auth.command.CommandJwt;
 import com.englishcenter.auth.command.CommandLogin;
 import com.englishcenter.core.mail.IMailService;
@@ -16,6 +17,7 @@ import com.google.gson.Gson;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import org.apache.commons.lang3.StringUtils;
+import org.bson.Document;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -74,7 +76,7 @@ public class AuthApplication implements IAuthApplication {
         CommandJwt commandJwt = CommandJwt.builder()
                 .create_date(now)
                 .expiration_date(now + JWT_EXPIRATION)
-                .user_id(member.get_id().toString())
+                .member_id(member.get_id().toHexString())
                 .role(member.getType())
                 .pw(HashUtils.getPasswordMD5(auth.getPassword()))
                 .username(auth.getUsername())
@@ -114,9 +116,16 @@ public class AuthApplication implements IAuthApplication {
         }
     }
 
-    private void clearToken(String userId) {
-        Map<String, Object> query = new HashMap<>();
-        query.put("user_id", userId);
-        mongoDBConnection.drop(query);
+    @Override
+    public Optional<Boolean> resetPassword(CommandChangePassword command) throws Exception{
+        if (!Member.MemberType.ADMIN.equals(command.getRole())) {
+            throw new Exception(ExceptionEnum.member_type_deny);
+        }
+        if (StringUtils.isAnyBlank(command.getUsername(), command.getNew_password())) {
+            throw new Exception(ExceptionEnum.param_not_null);
+        }
+        return mongoDBConnection.update(
+                new Document("username", command.getUsername()),
+                new Document("$set", new Document("password", HashUtils.getPasswordMD5(command.getNew_password()))));
     }
 }

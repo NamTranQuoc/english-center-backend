@@ -31,4 +31,9 @@ public abstract class ResponseUtils {
         Optional<CommandJwt> commandJwt = authApplication.decodeJwt(token.substring(7));
         return commandJwt.map(CommandJwt::getRole).orElse(null);
     }
+
+    protected String getMemberId(String token) {
+        Optional<CommandJwt> commandJwt = authApplication.decodeJwt(token.substring(7));
+        return commandJwt.map(CommandJwt::getMember_id).orElse(null);
+    }
 }

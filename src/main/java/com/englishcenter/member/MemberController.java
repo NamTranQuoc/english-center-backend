@@ -64,4 +64,14 @@ public class MemberController extends ResponseUtils {
             return this.outJson(-9999, throwable.getMessage(), null);
         }
     }
+
+    @GetMapping(value = "/member/get_current")
+    public String getById(@RequestHeader String Authorization) {
+        try {
+            String currentId = this.getMemberId(Authorization);
+            return this.outJson(9999, null, userApplication.getById(currentId).orElse(null));
+        } catch (Throwable throwable) {
+            return this.outJson(-9999, throwable.getMessage(), null);
+        }
+    }
 }
