@@ -9,11 +9,12 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class CommandJwt {
-    private String member_id;
-    private String username;
-    private String pw;
+public class CommandChangePassword {
+    private String old_password;
+    private String new_password;
+    private String confirm_password;
     private String role;
-    private Long create_date;
-    private Long expiration_date;
+    private String current_id;
+    private String id;
+    private String username;
 }
