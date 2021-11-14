@@ -21,7 +21,7 @@ public class MailService implements IMailService {
 
             helper.setTo(mail.getMail_to());
             helper.setSubject(mail.getMail_subject());
-            helper.setText(mail.getMail_content(), false);
+            helper.setText(mail.getMail_content(), true);
 //            helper.addAttachment("my_photo.png", new ClassPathResource("android.png"));
 
             javaMailSender.send(msg);
