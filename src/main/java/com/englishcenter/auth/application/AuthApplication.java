@@ -6,6 +6,7 @@ import com.englishcenter.auth.command.CommandJwt;
 import com.englishcenter.auth.command.CommandLogin;
 import com.englishcenter.core.mail.IMailService;
 import com.englishcenter.core.mail.Mail;
+import com.englishcenter.core.thymeleaf.ThymeleafService;
 import com.englishcenter.core.utils.Generate;
 import com.englishcenter.core.utils.HashUtils;
 import com.englishcenter.core.utils.MongoDBConnection;
@@ -32,6 +33,8 @@ public class AuthApplication implements IAuthApplication {
     private IMemberApplication memberApplication;
     @Autowired
     private IMailService mailService;
+    @Autowired
+    ThymeleafService thymeleafService;
 
     private final String JWT_SECRET = "UUhuhdadyh9*&^777687";
     private final long JWT_EXPIRATION = 24 * 60 * 60 * 1000;
@@ -49,10 +52,14 @@ public class AuthApplication implements IAuthApplication {
                 .password(HashUtils.getPasswordMD5(password))
                 .username(member.getEmail())
                 .build();
+        Map<String, Object> data = new HashMap<>();
+        data.put("name", member.getName());
+        data.put("username", member.getEmail());
+        data.put("password", password);
         mailService.sendEmail(Mail.builder()
                 .mail_to(member.getEmail())
-                .mail_subject("Password")
-                .mail_content(password)
+                .mail_subject("Thư chào mừng!")
+                .mail_content(thymeleafService.getContent("mailNewMember", data))
                 .build());
         return mongoDBConnection.insert(auth);
     }
