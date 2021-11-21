@@ -17,6 +17,8 @@ public interface IMemberApplication {
 
     Optional<Member> add(CommandAddMember command) throws Exception;
 
+    Optional<Member> getByEmail(String email);
+
     Optional<Member> getById(String id);
 
     Optional<Member> update(CommandUpdateMember command) throws Exception;
