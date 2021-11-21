@@ -111,81 +111,24 @@ public class MongoDBConnection<T> {
         mongoCollection.deleteMany(new Document(query)).getDeletedCount();
     }
 
-    public Optional<Paging<T>> find(Map<String, Object> query, Map<String, Object> sort, int page, int size) {
-        try {
-            long count = mongoCollection.count(new Document(query));
-            if (count > 0) {
-                List<T> list = mongoCollection.find(new Document(query)).sort(new Document(sort)).skip((page - 1) * size).limit(size).into(new ArrayList<>());
-                return getPaging(page, size, count, (List<T>) list);
-            } else {
-                throw new Exception();
-            }
-        } catch (Exception e) {
-            return Optional.of(Paging.<T>builder()
-                    .items(new ArrayList<>())
-                    .next_page(1)
-                    .current_page(1)
-                    .has_next(false)
-                    .has_previous(false)
-                    .page_size(size)
-                    .previous_page(1)
-                    .total_items(0)
-                    .total_pages(0)
-                    .build());
-        }
-    }
-
     public Optional<Paging<T>> find(Map<String, Object> query, CommandSearchMember.Sort sort, int page, int size) {
         try {
             long count = mongoCollection.count(new Document(query));
             if (count > 0) {
                 List<T> list = mongoCollection.find(new Document(query)).sort(new Document(sort.getField(), sort.getIs_asc() ? 1 : -1)).skip((page - 1) * size).limit(size).into(new ArrayList<>());
-                return getPaging(page, size, count, (List<T>) list);
+                return Optional.of(Paging.<T>builder()
+                        .items(list)
+                        .total_items(count)
+                        .build());
             } else {
                 throw new Exception();
             }
         } catch (Exception e) {
             return Optional.of(Paging.<T>builder()
                     .items(new ArrayList<>())
-                    .next_page(1)
-                    .current_page(1)
-                    .has_next(false)
-                    .has_previous(false)
-                    .page_size(size)
-                    .previous_page(1)
-                    .total_items(0)
-                    .total_pages(0)
+                    .total_items(0L)
                     .build());
         }
-    }
-
-    private Optional<Paging<T>> getPaging(int page, int size, long count, List<T> list) {
-        Paging<T> result = Paging.<T>builder()
-                .items(list)
-                .current_page(page)
-                .page_size(size)
-                .total_items((int) count)
-                .build();
-        if (count % size > 0) {
-            result.setTotal_pages((int) (count / size) + 1);
-        } else {
-            result.setTotal_pages((int) (count / size));
-        }
-        if (result.getCurrent_page() < result.getTotal_pages()) {
-            result.setNext_page(result.getCurrent_page() + 1);
-            result.setHas_next(true);
-        } else {
-            result.setNext_page(result.getCurrent_page());
-            result.setHas_next(false);
-        }
-        if (result.getCurrent_page() > 1) {
-            result.setPrevious_page(result.getCurrent_page() - 1);
-            result.setHas_previous(true);
-        } else {
-            result.setPrevious_page(result.getCurrent_page());
-            result.setHas_previous(false);
-        }
-        return Optional.of(result);
     }
 
     private Document buildQuerySet(T t) {
