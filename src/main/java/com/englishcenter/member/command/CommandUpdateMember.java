@@ -21,4 +21,6 @@ public class CommandUpdateMember {
     private String address;
     private Long salary;
     private Member.Certificate certificate;
+    private String type;
+    private String current_member;
 }
