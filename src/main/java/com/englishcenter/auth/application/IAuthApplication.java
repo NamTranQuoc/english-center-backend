@@ -18,4 +18,8 @@ public interface IAuthApplication {
     Optional<CommandJwt> decodeJwt(String jwt);
 
     Optional<Boolean> resetPassword(CommandChangePassword command) throws Exception;
+
+    Optional<Boolean> requestForgetPassword(String email) throws Exception;
+
+    Optional<Boolean> forgetPassword(CommandChangePassword command) throws Exception;
 }
