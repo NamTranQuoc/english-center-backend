@@ -187,4 +187,24 @@ public class AuthApplication implements IAuthApplication {
         query.put("member_id", command.getCurrent_id());
         return mongoDBConnection.update(query, new Document("$set", new Document("password", HashUtils.getPasswordMD5(command.getNew_password()))));
     }
+
+    @Override
+    public Optional<Boolean> changePassword(CommandChangePassword command) throws Exception {
+        if (StringUtils.isAnyBlank(command.getCurrent_id(), command.getConfirm_password(), command.getNew_password(), command.getOld_password())) {
+            throw new Exception(ExceptionEnum.param_not_null);
+        }
+        Optional<Auth> optional = mongoDBConnection.findOne(new Document("member_id", command.getCurrent_id()));
+        if (!optional.isPresent()) {
+            throw new Exception(ExceptionEnum.member_not_exist);
+        }
+        Auth auth = optional.get();
+        if (!HashUtils.getPasswordMD5(command.getOld_password()).equals(auth.getPassword())) {
+            throw new Exception(ExceptionEnum.password_incorrect);
+        }
+        if (!command.getNew_password().equals(command.getConfirm_password())) {
+            throw new Exception(ExceptionEnum.confirm_password_incorrect);
+        }
+        auth.setPassword(HashUtils.getPasswordMD5(command.getNew_password()));
+        return Optional.of(mongoDBConnection.update(auth.get_id().toHexString(), auth).isPresent());
+    }
 }
