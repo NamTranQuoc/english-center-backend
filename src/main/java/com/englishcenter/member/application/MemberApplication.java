@@ -106,7 +106,8 @@ public class MemberApplication implements IMemberApplication {
         return Optional.empty();
     }
 
-    private Optional<Member> getByEmail(String email) {
+    @Override
+    public Optional<Member> getByEmail(String email) {
         Map<String, Object> query = new HashMap<>();
         query.put("is_deleted", false);
         query.put("email", email);
