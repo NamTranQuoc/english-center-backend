@@ -13,13 +13,6 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 public class Paging<T> implements Serializable {
-    private Boolean has_next;
-    private Boolean has_previous;
     private List<T> items;
-    private Integer next_page;
-    private Integer previous_page;
-    private Integer current_page;
-    private Integer page_size;
-    private Integer total_pages;
-    private Integer total_items;
+    private Long total_items;
 }

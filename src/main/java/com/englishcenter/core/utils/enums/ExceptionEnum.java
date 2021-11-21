@@ -9,4 +9,5 @@ public class ExceptionEnum {
     public static final String password_incorrect = "password_incorrect";
     public static final String confirm_password_incorrect = "confirm_password_incorrect";
     public static final String member_type_deny = "member_type_deny";
+    public static final String shift_not_exist = "shift_not_exist";
 }
