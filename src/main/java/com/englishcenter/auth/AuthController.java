@@ -51,4 +51,14 @@ public class AuthController extends ResponseUtils {
             return this.outJson(-9999, throwable.getMessage(), null);
         }
     }
+
+    @PostMapping(value = "/auth/change_password")
+    public String changePassword(@RequestHeader String Authorization, @RequestBody CommandChangePassword command) {
+        try {
+            command.setCurrent_id(this.getMemberId(Authorization));
+            return this.outJson(9999, null, authApplication.changePassword(command).orElse(false));
+        } catch (Throwable throwable) {
+            return this.outJson(-9999, throwable.getMessage(), null);
+        }
+    }
 }
