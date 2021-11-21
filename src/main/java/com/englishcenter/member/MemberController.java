@@ -49,6 +49,7 @@ public class MemberController extends ResponseUtils {
     public String update(@RequestBody CommandUpdateMember command, @RequestHeader String Authorization) {
         try {
             command.setRole(this.getMemberType(Authorization));
+            command.setCurrent_member(this.getMemberId(Authorization));
             return this.outJson(9999, null, userApplication.update(command).orElse(null));
         } catch (Throwable throwable) {
             return this.outJson(-9999, throwable.getMessage(), null);

@@ -16,10 +16,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.regex.Pattern;
 
 @Component
@@ -41,12 +38,7 @@ public class MemberApplication implements IMemberApplication {
 
     @Override
     public Optional<Paging<Member>> getList(CommandSearchMember command) throws Exception {
-        if (!(Member.MemberType.ADMIN.equals(command.getMember_type())
-                || (Member.MemberType.RECEPTIONIST.equals(command.getMember_type())
-                && !CollectionUtils.isEmpty(command.getTypes() )
-                && command.getTypes().contains(Member.MemberType.STUDENT)))) {
-            throw new Exception(ExceptionEnum.member_type_deny);
-        }
+        validateRoleAdminAndReceptionist(command.getMember_type(), command.getTypes());
         Map<String, Object> query = new HashMap<>();
         query.put("is_deleted", false);
         if (!CollectionUtils.isEmpty(command.getTypes())) {
@@ -64,6 +56,15 @@ public class MemberApplication implements IMemberApplication {
             query.put("gender", new Document("$in", command.getGenders()));
         }
         return mongoDBConnection.find(query, command.getSort(), command.getPage(), command.getSize());
+    }
+
+    private void validateRoleAdminAndReceptionist (String currentRole, List<String> types) throws Exception {
+        if (!(Member.MemberType.ADMIN.equals(currentRole)
+                || (Member.MemberType.RECEPTIONIST.equals(currentRole)
+                && !CollectionUtils.isEmpty(types)
+                && types.contains(Member.MemberType.STUDENT)))) {
+            throw new Exception(ExceptionEnum.member_type_deny);
+        }
     }
 
     @Override
@@ -122,11 +123,15 @@ public class MemberApplication implements IMemberApplication {
 
     @Override
     public Optional<Member> update(CommandUpdateMember command) throws Exception {
-        if (StringUtils.isAnyBlank(command.getRole(), command.getId())) {
+        if (StringUtils.isAnyBlank(command.getRole(), command.getId(), command.getType())) {
             throw new Exception(ExceptionEnum.param_not_null);
         }
-        if (!Member.MemberType.ADMIN.equals(command.getRole())) {
-            throw new Exception(ExceptionEnum.member_type_deny);
+        try {
+            validateRoleAdminAndReceptionist(command.getRole(), Collections.singletonList(command.getType()));
+        } catch (Exception e) {
+            if (!command.getId().equals(command.getCurrent_member())) {
+                throw new Exception(ExceptionEnum.member_type_deny);
+            }
         }
         Optional<Member> optional = this.getById(command.getId());
         if (!optional.isPresent()) {
@@ -148,7 +153,7 @@ public class MemberApplication implements IMemberApplication {
         if (command.getDob() != null) {
             member.setDob(command.getDob());
         }
-        if (command.getSalary() != null) {
+        if (command.getSalary() != null && Member.MemberType.ADMIN.equals(command.getRole())) {
             member.setSalary(command.getSalary());
         }
         if(command.getCertificate() != null) {
