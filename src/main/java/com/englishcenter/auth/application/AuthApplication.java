@@ -135,4 +135,56 @@ public class AuthApplication implements IAuthApplication {
                 new Document("username", command.getUsername()),
                 new Document("$set", new Document("password", HashUtils.getPasswordMD5(command.getNew_password()))));
     }
+
+    @Override
+    public Optional<Boolean> requestForgetPassword(String email) throws Exception {
+        if (StringUtils.isBlank(email)) {
+            throw new Exception(ExceptionEnum.param_not_null);
+        }
+        Optional<Member> optional = memberApplication.getByEmail(email);
+        if (!optional.isPresent()) {
+            throw new Exception(ExceptionEnum.member_not_exist);
+        }
+        Member member = optional.get();
+        long now = System.currentTimeMillis();
+        Map<String, Object> header = new HashMap<>();
+        header.put("alg", "HS256");
+        header.put("typ", "JWT");
+
+        CommandJwt commandJwt = CommandJwt.builder()
+                .create_date(now)
+                .expiration_date(now + 900000)
+                .member_id(member.get_id().toHexString())
+                .role(member.getType())
+                .pw(HashUtils.getPasswordMD5(Generate.generateCommonLangPassword()))
+                .username(email)
+                .build();
+        String token = Jwts.builder()
+                .setHeader(header)
+                .setPayload(new Gson().toJson(commandJwt))
+                .signWith(SignatureAlgorithm.HS512, JWT_SECRET)
+                .compact();
+        Map<String, Object> data = new HashMap<>();
+        data.put("name", member.getName());
+        data.put("url", String.format("%s%s", "https://englishcenter-2021.web.app/forget_password/", token));
+        mailService.sendEmail(Mail.builder()
+                .mail_to(email)
+                .mail_subject("Khôi phục mật khẩu!")
+                .mail_content(thymeleafService.getContent("mailForgetPassword", data))
+                .build());
+        return Optional.of(Boolean.TRUE);
+    }
+
+    @Override
+    public Optional<Boolean> forgetPassword(CommandChangePassword command) throws Exception {
+        if (StringUtils.isAnyBlank(command.getCurrent_id(), command.getConfirm_password(), command.getNew_password())) {
+            throw new Exception(ExceptionEnum.param_not_null);
+        }
+        if (!command.getNew_password().equals(command.getConfirm_password())) {
+            throw new Exception(ExceptionEnum.confirm_password_incorrect);
+        }
+        Map<String, Object> query = new HashMap<>();
+        query.put("member_id", command.getCurrent_id());
+        return mongoDBConnection.update(query, new Document("$set", new Document("password", HashUtils.getPasswordMD5(command.getNew_password()))));
+    }
 }
