@@ -8,6 +8,7 @@ import com.englishcenter.core.utils.enums.ExceptionEnum;
 import com.englishcenter.core.utils.enums.MongodbEnum;
 import com.englishcenter.course.Course;
 import com.englishcenter.course.command.CommandAddCourse;
+import com.englishcenter.course.command.CommandGetAllCourse;
 import com.englishcenter.course.command.CommandSearchCourse;
 import com.englishcenter.member.Member;
 import org.apache.commons.lang3.StringUtils;
@@ -16,11 +17,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
 
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 @Component
 public class CourseApplication implements ICourseApplication {
@@ -75,6 +74,15 @@ public class CourseApplication implements ICourseApplication {
             query.put("category_course_id", new Document("$in", command.getCategory_courses()));
         }
         return mongoDBConnection.find(query, command.getSort(), command.getPage(), command.getSize());
+    }
+
+    @Override
+    public Optional<List<CommandGetAllCourse>> getAll() {
+        List<Course> list = mongoDBConnection.find(new HashMap<>()).orElse(new ArrayList<>());
+        return Optional.of(list.stream().map(item -> CommandGetAllCourse.builder()
+                ._id(item.get_id().toHexString())
+                .name(item.getName())
+                .build()).collect(Collectors.toList()));
     }
 
     @Override

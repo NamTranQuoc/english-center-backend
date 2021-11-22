@@ -11,4 +11,6 @@ public class ExceptionEnum {
     public static final String member_type_deny = "member_type_deny";
     public static final String shift_not_exist = "shift_not_exist";
     public static final String room_not_exist = "room_not_exist";
+	public static final String document_not_exist = "document_not_exist";
+    public static final String document_extension_not_match = "document_extension_not_match";
 }
