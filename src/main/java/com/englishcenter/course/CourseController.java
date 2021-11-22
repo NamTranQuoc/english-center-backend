@@ -25,6 +25,15 @@ public class CourseController extends ResponseUtils {
         }
     }
 
+    @GetMapping("/course/get_all")
+    public String getAll() {
+        try {
+            return this.outJson(9999, null, courseApplication.getAll().orElse(null));
+        } catch (Throwable throwable) {
+            return this.outJson(-9999, throwable.getMessage(), null);
+        }
+    }
+
     @PostMapping("/course/add")
     public String add(@RequestBody CommandAddCourse command, @RequestHeader String Authorization) {
         try {
