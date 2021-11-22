@@ -1,7 +1,6 @@
 package com.englishcenter.core.security;
 
 import com.englishcenter.auth.application.IAuthApplication;
-import com.englishcenter.core.utils.enums.APIOpenEnum;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
