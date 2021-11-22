@@ -22,4 +22,6 @@ public interface IAuthApplication {
     Optional<Boolean> requestForgetPassword(String email) throws Exception;
 
     Optional<Boolean> forgetPassword(CommandChangePassword command) throws Exception;
+
+    Optional<Boolean> changePassword(CommandChangePassword command) throws Exception;
 }
