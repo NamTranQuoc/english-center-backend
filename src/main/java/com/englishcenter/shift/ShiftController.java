@@ -1,8 +1,5 @@
 package com.englishcenter.shift;
 
-import com.englishcenter.category.course.application.ICategoryCourseApplication;
-import com.englishcenter.category.course.command.CommandAddCategoryCourse;
-import com.englishcenter.category.course.command.CommandSearchCategoryCourse;
 import com.englishcenter.core.utils.ResponseUtils;
 import com.englishcenter.shift.application.ShiftApplication;
 import com.englishcenter.shift.command.CommandAddShift;
