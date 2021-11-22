@@ -10,5 +10,6 @@ public class MongodbEnum {
     public final static String collection_course = "course";
     public final static String collection_category_course = "category_course";
     public final static String collection_shift = "shift";
-    public final static String collection_document = "document";
+    public final static String collection_room = "room";
+	public final static String collection_document = "document";
 }
