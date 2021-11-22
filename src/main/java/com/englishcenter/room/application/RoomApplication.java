@@ -1,13 +1,13 @@
-package com.englishcenter.shift.application;
+package com.englishcenter.room.application;
 
 import com.englishcenter.core.utils.MongoDBConnection;
 import com.englishcenter.core.utils.Paging;
 import com.englishcenter.core.utils.enums.ExceptionEnum;
 import com.englishcenter.core.utils.enums.MongodbEnum;
 import com.englishcenter.member.Member;
-import com.englishcenter.shift.Shift;
-import com.englishcenter.shift.command.CommandAddShift;
-import com.englishcenter.shift.command.CommandSearchShift;
+import com.englishcenter.room.Room;
+import com.englishcenter.room.command.CommandAddRoom;
+import com.englishcenter.room.command.CommandSearchRoom;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -16,30 +16,30 @@ import java.util.*;
 import java.util.regex.Pattern;
 
 @Component
-public class ShiftApplication {
-    public final MongoDBConnection<Shift> mongoDBConnection;
+public class RoomApplication {
+    public final MongoDBConnection<Room> mongoDBConnection;
 
     @Autowired
-    public ShiftApplication() {
-        mongoDBConnection = new MongoDBConnection<>(MongodbEnum.collection_shift, Shift.class);
+    public RoomApplication() {
+        mongoDBConnection = new MongoDBConnection<>(MongodbEnum.collection_room, Room.class);
     }
 
-    public Optional<Shift> add(CommandAddShift command) throws Exception {
-        if(StringUtils.isAnyBlank(command.getName(), command.getFrom(), command.getTo())) {
+    public Optional<Room> add(CommandAddRoom command) throws Exception {
+        if(StringUtils.isAnyBlank(command.getName(), command.getStatus()) || command.getCapacity() == null) {
             throw new Exception(ExceptionEnum.param_not_null);
         }
         if (!Arrays.asList(Member.MemberType.ADMIN, Member.MemberType.RECEPTIONIST).contains(command.getRole())) {
             throw new Exception(ExceptionEnum.member_type_deny);
         }
-        Shift shift = Shift.builder()
+        Room room = Room.builder()
                 .name(command.getName())
-                .from(command.getFrom())
-                .to(command.getTo())
+                .capacity(command.getCapacity())
+                .status(command.getStatus())
                 .build();
-        return mongoDBConnection.insert(shift);
+        return mongoDBConnection.insert(room);
     }
 
-    public Optional<Paging<Shift>> getList(CommandSearchShift command) throws Exception {
+    public Optional<Paging<Room>> getList(CommandSearchRoom command) throws Exception {
         Map<String, Object> query = new HashMap<>();
         if (StringUtils.isNotBlank(command.getKeyword())) {
             Map<String, Object> $regex = new HashMap<>();
@@ -49,36 +49,32 @@ public class ShiftApplication {
         return mongoDBConnection.find(query, command.getSort(), command.getPage(), command.getSize());
     }
 
-    public Optional<Shift> update(CommandAddShift command) throws Exception {
+    public Optional<Room> update(CommandAddRoom command) throws Exception {
         if(StringUtils.isBlank(command.getId())) {
             throw new Exception(ExceptionEnum.param_not_null);
         }
         if (!Arrays.asList(Member.MemberType.ADMIN, Member.MemberType.RECEPTIONIST).contains(command.getRole())) {
             throw new Exception(ExceptionEnum.member_type_deny);
         }
-        Optional<Shift> optional = mongoDBConnection.getById(command.getId());
+        Optional<Room> optional = mongoDBConnection.getById(command.getId());
         if (!optional.isPresent()) {
-            throw new Exception(ExceptionEnum.shift_not_exist);
+            throw new Exception(ExceptionEnum.room_not_exist);
         }
 
-        Shift shift = optional.get();
+        Room room = optional.get();
         if (StringUtils.isNotBlank(command.getName())) {
-            shift.setName(command.getName());
+            room.setName(command.getName());
         }
-        if (StringUtils.isNotBlank(command.getFrom())) {
-            shift.setFrom(command.getFrom());
+        if (command.getCapacity() != null) {
+            room.setCapacity(command.getCapacity());
         }
-        if (StringUtils.isNotBlank(command.getTo())) {
-            shift.setTo(command.getTo());
+        if (StringUtils.isNotBlank(command.getStatus())) {
+            room.setStatus(command.getStatus());
         }
-        return mongoDBConnection.update(shift.get_id().toHexString(), shift);
+        return mongoDBConnection.update(room.get_id().toHexString(), room);
     }
 
-    public Optional<Shift> getById(String id) {
-        return mongoDBConnection.getById(id);
-    }
-
-    public Optional<List<Shift>> getAll() {
+    public Optional<List<Room>> getAll() {
         return mongoDBConnection.find(new HashMap<>());
     }
 }

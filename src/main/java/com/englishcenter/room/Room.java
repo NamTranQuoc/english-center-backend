@@ -1,4 +1,4 @@
-package com.englishcenter.shift;
+package com.englishcenter.room;
 
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.fasterxml.jackson.databind.ser.std.ToStringSerializer;
@@ -17,11 +17,11 @@ import java.io.Serializable;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class Shift implements Serializable {
+public class Room implements Serializable {
     @JsonSerialize(using = ToStringSerializer.class)
     @Id
     ObjectId _id;
     private String name;
-    private String from;
-    private String to;
+    private Integer capacity;
+    private String status;
 }
