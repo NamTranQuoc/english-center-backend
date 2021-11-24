@@ -1,4 +1,4 @@
-package com.englishcenter.shift;
+package com.englishcenter.schedule;
 
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.fasterxml.jackson.databind.ser.std.ToStringSerializer;
@@ -17,11 +17,13 @@ import java.io.Serializable;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class Shift implements Serializable {
+public class Schedule implements Serializable {
     @JsonSerialize(using = ToStringSerializer.class)
     @Id
     ObjectId _id;
-    private String name;
-    private String from;
-    private String to;
+    private String classroom_id;
+    private String teacher_id;
+    private String room_id;
+    private Integer session;
+    private String teaching_date;
 }

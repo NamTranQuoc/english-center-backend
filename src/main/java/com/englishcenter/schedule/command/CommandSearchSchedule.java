@@ -1,4 +1,4 @@
-package com.englishcenter.shift.command;
+package com.englishcenter.schedule.command;
 
 import com.englishcenter.member.command.CommandSearchMember;
 import lombok.AllArgsConstructor;
@@ -10,7 +10,7 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class CommandSearchShift {
+public class CommandSearchSchedule {
     private String keyword;
     private CommandSearchMember.Sort sort;
     private Integer page;

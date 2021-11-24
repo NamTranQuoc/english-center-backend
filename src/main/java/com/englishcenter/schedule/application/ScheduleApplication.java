@@ -1,13 +1,13 @@
-package com.englishcenter.shift.application;
+package com.englishcenter.schedule.application;
 
 import com.englishcenter.core.utils.MongoDBConnection;
 import com.englishcenter.core.utils.Paging;
 import com.englishcenter.core.utils.enums.ExceptionEnum;
 import com.englishcenter.core.utils.enums.MongodbEnum;
 import com.englishcenter.member.Member;
-import com.englishcenter.shift.Shift;
-import com.englishcenter.shift.command.CommandAddShift;
-import com.englishcenter.shift.command.CommandSearchShift;
+import com.englishcenter.schedule.Schedule;
+import com.englishcenter.schedule.command.CommandAddSchedule;
+import com.englishcenter.schedule.command.CommandSearchSchedule;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -16,30 +16,28 @@ import java.util.*;
 import java.util.regex.Pattern;
 
 @Component
-public class ShiftApplication {
-    public final MongoDBConnection<Shift> mongoDBConnection;
+public class ScheduleApplication {
+    public final MongoDBConnection<Schedule> mongoDBConnection;
 
     @Autowired
-    public ShiftApplication() {
-        mongoDBConnection = new MongoDBConnection<>(MongodbEnum.collection_shift, Shift.class);
+    public ScheduleApplication() {
+        mongoDBConnection = new MongoDBConnection<>(MongodbEnum.collection_schedule, Schedule.class);
     }
 
-    public Optional<Shift> add(CommandAddShift command) throws Exception {
-        if(StringUtils.isAnyBlank(command.getName(), command.getFrom(), command.getTo())) {
+    public Optional<Schedule> add(CommandAddSchedule command) throws Exception {
+        if(StringUtils.isAnyBlank(command.getClassroom_id())) {
             throw new Exception(ExceptionEnum.param_not_null);
         }
-        if (!Arrays.asList(Member.MemberType.ADMIN, Member.MemberType.RECEPTIONIST).contains(command.getRole())) {
-            throw new Exception(ExceptionEnum.member_type_deny);
-        }
-        Shift shift = Shift.builder()
+        Optional<Class> optional = mongoDBConnection.
+        Schedule schedule = Schedule.builder()
                 .name(command.getName())
                 .from(command.getFrom())
                 .to(command.getTo())
                 .build();
-        return mongoDBConnection.insert(shift);
+        return mongoDBConnection.insert(schedule);
     }
 
-    public Optional<Paging<Shift>> getList(CommandSearchShift command) throws Exception {
+    public Optional<Paging<Schedule>> getList(CommandSearchSchedule command) throws Exception {
         Map<String, Object> query = new HashMap<>();
         if (StringUtils.isNotBlank(command.getKeyword())) {
             Map<String, Object> $regex = new HashMap<>();
@@ -49,36 +47,36 @@ public class ShiftApplication {
         return mongoDBConnection.find(query, command.getSort(), command.getPage(), command.getSize());
     }
 
-    public Optional<Shift> update(CommandAddShift command) throws Exception {
+    public Optional<Schedule> update(CommandAddSchedule command) throws Exception {
         if(StringUtils.isBlank(command.getId())) {
             throw new Exception(ExceptionEnum.param_not_null);
         }
         if (!Arrays.asList(Member.MemberType.ADMIN, Member.MemberType.RECEPTIONIST).contains(command.getRole())) {
             throw new Exception(ExceptionEnum.member_type_deny);
         }
-        Optional<Shift> optional = mongoDBConnection.getById(command.getId());
+        Optional<Schedule> optional = mongoDBConnection.getById(command.getId());
         if (!optional.isPresent()) {
             throw new Exception(ExceptionEnum.shift_not_exist);
         }
 
-        Shift shift = optional.get();
+        Schedule schedule = optional.get();
         if (StringUtils.isNotBlank(command.getName())) {
-            shift.setName(command.getName());
+            schedule.setName(command.getName());
         }
         if (StringUtils.isNotBlank(command.getFrom())) {
-            shift.setFrom(command.getFrom());
+            schedule.setFrom(command.getFrom());
         }
         if (StringUtils.isNotBlank(command.getTo())) {
-            shift.setTo(command.getTo());
+            schedule.setTo(command.getTo());
         }
-        return mongoDBConnection.update(shift.get_id().toHexString(), shift);
+        return mongoDBConnection.update(schedule.get_id().toHexString(), schedule);
     }
 
-    public Optional<Shift> getById(String id) {
+    public Optional<Schedule> getById(String id) {
         return mongoDBConnection.getById(id);
     }
 
-    public Optional<List<Shift>> getAll() {
+    public Optional<List<Schedule>> getAll() {
         return mongoDBConnection.find(new HashMap<>());
     }
 }

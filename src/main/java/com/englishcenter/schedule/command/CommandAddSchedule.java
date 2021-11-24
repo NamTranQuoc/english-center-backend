@@ -1,4 +1,4 @@
-package com.englishcenter.shift.command;
+package com.englishcenter.schedule.command;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -9,10 +9,9 @@ import lombok.NoArgsConstructor;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class CommandAddShift {
+public class CommandAddSchedule {
     private String id;
-    private String name;
-    private String from;
-    private String to;
-    private String role;
+    private String teacher_id;
+    private String classroom_id;
+    private String room_id;
 }
