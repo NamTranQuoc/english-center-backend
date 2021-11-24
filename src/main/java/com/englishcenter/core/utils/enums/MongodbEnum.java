@@ -13,4 +13,5 @@ public class MongodbEnum {
     public final static String collection_schedule = "schedule";
     public final static String collection_room = "room";
 	public final static String collection_document = "document";
+    public final static String collection_class_room = "class_room";
 }
