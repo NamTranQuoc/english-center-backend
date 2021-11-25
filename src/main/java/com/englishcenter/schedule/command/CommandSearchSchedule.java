@@ -12,7 +12,6 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class CommandSearchSchedule {
     private String keyword;
-    private CommandSearchMember.Sort sort;
-    private Integer page;
-    private Integer size;
+    private Long from_date;
+    private Long to_date;
 }

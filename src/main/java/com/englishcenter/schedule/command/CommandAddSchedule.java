@@ -10,7 +10,6 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class CommandAddSchedule {
-    private String id;
     private String teacher_id;
     private String classroom_id;
     private String room_id;
