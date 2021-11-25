@@ -24,4 +24,9 @@ public class Room implements Serializable {
     private String name;
     private Integer capacity;
     private String status;
+
+    public static class RoomStatus {
+        public final static String INACTIVE = "INACTIVE";
+        public final static String ACTIVE = "ACTIVE";
+    }
 }

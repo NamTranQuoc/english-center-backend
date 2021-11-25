@@ -120,4 +120,9 @@ public class CourseApplication implements ICourseApplication {
         }
         return mongoDBConnection.update(course.get_id().toHexString(), course);
     }
+
+    @Override
+    public Optional<Course> getById(String id) {
+        return mongoDBConnection.getById(id);
+    }
 }

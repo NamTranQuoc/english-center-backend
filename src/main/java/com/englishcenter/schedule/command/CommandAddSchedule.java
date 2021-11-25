@@ -14,4 +14,5 @@ public class CommandAddSchedule {
     private String teacher_id;
     private String classroom_id;
     private String room_id;
+    private String role;
 }

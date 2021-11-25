@@ -103,6 +103,15 @@ public class MongoDBConnection<T> {
         return Optional.of(t);
     }
 
+    public Optional<Boolean> insertMany(List<T> t) {
+        try {
+            mongoCollection.insertMany(t);
+            return Optional.of(Boolean.TRUE);
+        } catch (Exception e) {
+            return Optional.of(Boolean.FALSE);
+        }
+    }
+
     public AggregateIterable<Document> aggregate(List<BasicDBObject> basicDBObjects) {
         return mongoCollection.aggregate(new ArrayList<>(basicDBObjects), Document.class).allowDiskUse(true);
     }

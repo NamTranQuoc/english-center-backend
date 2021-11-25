@@ -25,5 +25,6 @@ public class Schedule implements Serializable {
     private String teacher_id;
     private String room_id;
     private Integer session;
-    private String teaching_date;
+    private Long start_date;
+    private Long end_date;
 }

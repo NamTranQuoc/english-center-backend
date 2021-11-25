@@ -74,6 +74,10 @@ public class RoomApplication {
         return mongoDBConnection.update(room.get_id().toHexString(), room);
     }
 
+    public Optional<List<Room>> find(Map<String, Object> query) {
+        return mongoDBConnection.find(query);
+    }
+
     public Optional<List<Room>> getAll() {
         return mongoDBConnection.find(new HashMap<>());
     }
