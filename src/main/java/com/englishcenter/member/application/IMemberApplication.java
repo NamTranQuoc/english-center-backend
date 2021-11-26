@@ -3,6 +3,7 @@ package com.englishcenter.member.application;
 import com.englishcenter.core.utils.Paging;
 import com.englishcenter.member.Member;
 import com.englishcenter.member.command.CommandAddMember;
+import com.englishcenter.member.command.CommandGetAllTeacher;
 import com.englishcenter.member.command.CommandSearchMember;
 import com.englishcenter.member.command.CommandUpdateMember;
 
@@ -14,6 +15,8 @@ public interface IMemberApplication {
     Optional<List<Member>> find(Map<String, Object> query);
 
     Optional<Paging<Member>> getList(CommandSearchMember command) throws Exception;
+
+    Optional<List<CommandGetAllTeacher>> getAll(CommandSearchMember command) throws Exception;
 
     Optional<Member> add(CommandAddMember command) throws Exception;
 

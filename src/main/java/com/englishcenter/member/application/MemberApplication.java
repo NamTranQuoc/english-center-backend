@@ -7,6 +7,7 @@ import com.englishcenter.core.utils.enums.ExceptionEnum;
 import com.englishcenter.core.utils.enums.MongodbEnum;
 import com.englishcenter.member.Member;
 import com.englishcenter.member.command.CommandAddMember;
+import com.englishcenter.member.command.CommandGetAllTeacher;
 import com.englishcenter.member.command.CommandSearchMember;
 import com.englishcenter.member.command.CommandUpdateMember;
 import org.apache.commons.lang3.StringUtils;
@@ -18,6 +19,7 @@ import org.springframework.util.CollectionUtils;
 
 import java.util.*;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 @Component
 public class MemberApplication implements IMemberApplication {
@@ -56,6 +58,22 @@ public class MemberApplication implements IMemberApplication {
             query.put("gender", new Document("$in", command.getGenders()));
         }
         return mongoDBConnection.find(query, command.getSort(), command.getPage(), command.getSize());
+    }
+
+    @Override
+    public Optional<List<CommandGetAllTeacher>> getAll(CommandSearchMember command) throws Exception {
+        Map<String, Object> query = new HashMap<>();
+        query.put("is_deleted", false);
+        if (!CollectionUtils.isEmpty(command.getTypes())) {
+            query.put("type", new Document("$in", command.getTypes()));
+        }
+        Map<String, Object> sort = new HashMap<>();
+        sort.put("_id", 1);
+        List<Member> list = mongoDBConnection.find(query, sort).orElse(new ArrayList<>());
+        return Optional.of(list.stream().map(item -> CommandGetAllTeacher.builder()
+                ._id(item.get_id().toHexString())
+                .name(item.getName())
+                .build()).collect(Collectors.toList()));
     }
 
     private void validateRoleAdminAndReceptionist (String currentRole, List<String> types) throws Exception {

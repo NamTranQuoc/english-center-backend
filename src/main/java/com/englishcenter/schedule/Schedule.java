@@ -1,4 +1,4 @@
-package com.englishcenter.room;
+package com.englishcenter.schedule;
 
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.fasterxml.jackson.databind.ser.std.ToStringSerializer;
@@ -17,16 +17,14 @@ import java.io.Serializable;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class Room implements Serializable {
+public class Schedule implements Serializable {
     @JsonSerialize(using = ToStringSerializer.class)
     @Id
     ObjectId _id;
-    private String name;
-    private Integer capacity;
-    private String status;
-
-    public static class RoomStatus {
-        public final static String INACTIVE = "INACTIVE";
-        public final static String ACTIVE = "ACTIVE";
-    }
+    private String classroom_id;
+    private String teacher_id;
+    private String room_id;
+    private Integer session;
+    private Long start_date;
+    private Long end_date;
 }
