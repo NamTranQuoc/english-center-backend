@@ -9,6 +9,8 @@ public class APIOpenEnum {
             "/auth/login",
             "/category_course/get_all",
             "/auth/request_forget_password/*",
-            "/course/get_all"
+            "/course/get_all",
+            "/room/get_all",
+            "/member/get_all"
     );
 }
