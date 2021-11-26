@@ -103,4 +103,8 @@ public class ClassRoomApplication {
     public Optional<List<ClassRoom>> getAll() {
         return mongoDBConnection.find(new HashMap<>());
     }
+
+    public Optional<List<ClassRoom>> find(Map<String, Object> query) {
+        return mongoDBConnection.find(query);
+    }
 }
