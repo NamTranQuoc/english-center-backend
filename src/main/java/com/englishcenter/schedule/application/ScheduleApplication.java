@@ -3,7 +3,6 @@ package com.englishcenter.schedule.application;
 import com.englishcenter.classroom.ClassRoom;
 import com.englishcenter.classroom.application.ClassRoomApplication;
 import com.englishcenter.core.utils.MongoDBConnection;
-import com.englishcenter.core.utils.Paging;
 import com.englishcenter.core.utils.enums.ExceptionEnum;
 import com.englishcenter.core.utils.enums.MongodbEnum;
 import com.englishcenter.course.Course;
@@ -30,10 +29,8 @@ import org.springframework.util.CollectionUtils;
 
 import java.sql.Timestamp;
 import java.text.DateFormat;
-import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 @Component
@@ -219,11 +216,6 @@ public class ScheduleApplication {
             throw new Exception(ExceptionEnum.param_not_null);
         }
         Map<String, Object> query = new HashMap<>();
-//        if (StringUtils.isNotBlank(command.getKeyword())) {
-//            Map<String, Object> $regex = new HashMap<>();
-//            $regex.put("$regex", Pattern.compile(command.getKeyword(), Pattern.CASE_INSENSITIVE));
-//            query.put("name", $regex);
-//        }
         query.put("start_date", new Document("$gte", command.getFrom_date()));
         query.put("end_date", new Document("$lte", command.getTo_date()));
         List<Schedule> list = mongoDBConnection.find(query).orElse(new ArrayList<>());
@@ -237,6 +229,9 @@ public class ScheduleApplication {
         }
         return Optional.of(list.stream().map(item -> CommandGetSchedule.builder()
                 .title(classRoomName.get(item.getClassroom_id()))
+                .id(item.get_id().toHexString())
+                .teacher_id(item.getTeacher_id())
+                .room_id(item.getRoom_id())
                 .start(item.getStart_date())
                 .end(item.getEnd_date())
                 .build()).collect(Collectors.toList()));
@@ -267,7 +262,7 @@ public class ScheduleApplication {
                         new Document("end_date", new Document("$gte", schedule.getEnd_date()))
                 ))
         ));
-        if (StringUtils.isNotBlank(command.getRoom_id())) {
+        if (StringUtils.isNotBlank(command.getRoom_id()) && !command.getRoom_id().equals(schedule.getRoom_id())) {
             Optional<Room> room = roomApplication.getById(command.getRoom_id());
             if (!room.isPresent()) {
                 throw new Exception(ExceptionEnum.room_not_exist);
@@ -283,7 +278,7 @@ public class ScheduleApplication {
                 throw new Exception(ExceptionEnum.room_not_empty);
             }
         }
-        if (StringUtils.isNotBlank(command.getRoom_id())) {
+        if (StringUtils.isNotBlank(command.getTeacher_id()) && !command.getTeacher_id().equals(schedule.getTeacher_id())) {
             query.remove("room_id");
             Optional<Member> teacher = memberApplication.getById(schedule.getTeacher_id());
             if (!teacher.isPresent()) {

@@ -15,10 +15,10 @@ public class MemberController extends ResponseUtils {
     @Autowired
     private IMemberApplication userApplication;
 
-    @RequestMapping(value = "/member/get_all", method = RequestMethod.GET)
-    public String get() {
+    @PostMapping(value = "/member/get_all")
+    public String get(@RequestBody CommandSearchMember command) {
         try {
-            return "success";
+            return this.outJson(9999, null, userApplication.getAll(command).orElse(null));
         } catch (Throwable throwable) {
             return this.outJson(-9999, throwable.getMessage(), null);
         }

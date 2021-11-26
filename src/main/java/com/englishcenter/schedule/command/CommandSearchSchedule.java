@@ -1,6 +1,5 @@
 package com.englishcenter.schedule.command;
 
-import com.englishcenter.member.command.CommandSearchMember;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;

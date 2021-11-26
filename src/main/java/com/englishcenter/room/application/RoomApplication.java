@@ -5,7 +5,6 @@ import com.englishcenter.core.utils.Paging;
 import com.englishcenter.core.utils.enums.ExceptionEnum;
 import com.englishcenter.core.utils.enums.MongodbEnum;
 import com.englishcenter.member.Member;
-import com.englishcenter.member.command.CommandSearchMember;
 import com.englishcenter.room.Room;
 import com.englishcenter.room.command.CommandAddRoom;
 import com.englishcenter.room.command.CommandSearchRoom;
