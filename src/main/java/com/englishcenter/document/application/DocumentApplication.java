@@ -33,7 +33,7 @@ public class DocumentApplication {
             throw new Exception(ExceptionEnum.member_type_deny);
         }
         String extent = command.getPath().split("\\.")[1];
-        if (!Arrays.asList("png", "jgp").contains(extent)) {
+        if (!Arrays.asList("png", "jgp").contains(extent) && Document.DocumentType.IMAGE.equals(command.getType())) {
             throw new Exception(ExceptionEnum.document_extension_not_match);
         }
         Document document = Document.builder()
