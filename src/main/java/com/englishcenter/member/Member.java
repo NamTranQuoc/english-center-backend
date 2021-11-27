@@ -35,6 +35,11 @@ public class Member implements Serializable {
     private Certificate certificate;
     @Builder.Default
     private Boolean is_deleted = false;
+    @Builder.Default
+    private Score input_score = Score.builder().build();
+    @Builder.Default
+    private Score current_score = Score.builder().build();
+
 
     public static class MemberType {
         public final static String ADMIN = "admin";
@@ -52,5 +57,19 @@ public class Member implements Serializable {
         private String type;
         private Float score;
         private String code;
+    }
+
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Embedded
+    @Builder
+    public static class Score {
+        @Builder.Default
+        private Float read = 0f;
+        @Builder.Default
+        private Float listen = 0f;
+        @Builder.Default
+        private Float total = 0f;
     }
 }

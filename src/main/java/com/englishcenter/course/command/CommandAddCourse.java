@@ -17,4 +17,6 @@ public class CommandAddCourse {
     private Integer number_of_shift;
     private String description;
     private String category_course_id;
+    private Float input_score;
+    private Float output_score;
 }
