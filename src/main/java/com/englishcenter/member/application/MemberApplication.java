@@ -6,16 +6,17 @@ import com.englishcenter.core.utils.Paging;
 import com.englishcenter.core.utils.enums.ExceptionEnum;
 import com.englishcenter.core.utils.enums.MongodbEnum;
 import com.englishcenter.member.Member;
-import com.englishcenter.member.command.CommandAddMember;
-import com.englishcenter.member.command.CommandGetAllTeacher;
-import com.englishcenter.member.command.CommandSearchMember;
-import com.englishcenter.member.command.CommandUpdateMember;
+import com.englishcenter.member.command.*;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.poi.ss.usermodel.*;
 import org.bson.Document;
 import org.bson.types.ObjectId;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
+
+import java.io.*;
+import java.net.URL;
 
 import java.util.*;
 import java.util.regex.Pattern;
@@ -61,6 +62,59 @@ public class MemberApplication implements IMemberApplication {
     }
 
     @Override
+    public Optional<Boolean> updateScoreByExel(CommandUpdateScoreByExcel command) throws Exception {
+        if (!Arrays.asList(Member.MemberType.ADMIN, Member.MemberType.RECEPTIONIST).contains(command.getRole())) {
+            throw new Exception(ExceptionEnum.member_type_deny);
+        }
+        FileInputStream fis;
+        Workbook workbook = null;
+        try {
+            fis = (FileInputStream) new URL(command.getUrl()).openStream();
+            workbook = WorkbookFactory.create(fis);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        if (workbook != null) {
+            Sheet sheet = workbook.getSheetAt(0);
+            for (int i = 0; i <= sheet.getLastRowNum(); i++) {
+                Row row = sheet.getRow(i);
+                Cell cellEmail = row.getCell(0);
+                Cell cellRead = row.getCell(1);
+                Cell cellListen = row.getCell(2);
+                Cell cellType = row.getCell(3);
+                try {
+                    String email = cellEmail.getStringCellValue();
+                    float read = (float) cellRead.getNumericCellValue();
+                    float listen = (float) cellListen.getNumericCellValue();
+                    String type = cellType.getStringCellValue();
+                    Optional<Member> member = getByEmail(email);
+                    if (!member.isPresent() || !Member.MemberType.STUDENT.equals(member.get().getType())) {
+                        throw new Exception();
+                    }
+                    Member student = member.get();
+                    if ("in".equals(type)) {
+                        student.setInput_score(Member.Score.builder()
+                                .listen(listen)
+                                .read(read)
+                                .total(listen + read)
+                                .build());
+                    } else {
+                        student.setCurrent_score(Member.Score.builder()
+                                .listen(listen)
+                                .read(read)
+                                .total(listen + read)
+                                .build());
+                    }
+                    mongoDBConnection.update(student.get_id().toHexString(), student);
+                } catch (Exception e) {
+                    //e.printStackTrace();
+                }
+            }
+        }
+        return Optional.of(Boolean.TRUE);
+    }
+
+    @Override
     public Optional<List<CommandGetAllTeacher>> getAll(CommandSearchMember command) throws Exception {
         Map<String, Object> query = new HashMap<>();
         query.put("is_deleted", false);
@@ -76,7 +130,7 @@ public class MemberApplication implements IMemberApplication {
                 .build()).collect(Collectors.toList()));
     }
 
-    private void validateRoleAdminAndReceptionist (String currentRole, List<String> types) throws Exception {
+    private void validateRoleAdminAndReceptionist(String currentRole, List<String> types) throws Exception {
         if (!(Member.MemberType.ADMIN.equals(currentRole)
                 || (Member.MemberType.RECEPTIONIST.equals(currentRole)
                 && !CollectionUtils.isEmpty(types)
@@ -111,7 +165,7 @@ public class MemberApplication implements IMemberApplication {
         if (command.getSalary() != null) {
             member.setSalary(command.getSalary());
         }
-        if(command.getCertificate() != null) {
+        if (command.getCertificate() != null) {
             member.setCertificate(command.getCertificate());
         }
         Optional<Member> optional = mongoDBConnection.insert(member);
@@ -175,14 +229,14 @@ public class MemberApplication implements IMemberApplication {
         if (command.getSalary() != null && Member.MemberType.ADMIN.equals(command.getRole())) {
             member.setSalary(command.getSalary());
         }
-        if(command.getCertificate() != null) {
+        if (command.getCertificate() != null) {
             member.setCertificate(command.getCertificate());
         }
         return mongoDBConnection.update(member.get_id().toHexString(), member);
     }
 
     @Override
-    public Optional<Boolean> delete(String id, String role) throws Exception{
+    public Optional<Boolean> delete(String id, String role) throws Exception {
         if (StringUtils.isAnyBlank(id, role)) {
             throw new Exception(ExceptionEnum.param_not_null);
         }
