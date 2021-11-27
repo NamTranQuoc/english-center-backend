@@ -27,4 +27,6 @@ public class Course implements Serializable {
     private String description;
     private String category_course_id;
     private Long create_date;
+    private Float input_score;
+    private Float output_score;
 }

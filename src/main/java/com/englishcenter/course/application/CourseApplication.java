@@ -37,7 +37,7 @@ public class CourseApplication implements ICourseApplication {
         if (!Arrays.asList(Member.MemberType.ADMIN, Member.MemberType.RECEPTIONIST).contains(command.getRole())) {
             throw new Exception(ExceptionEnum.member_type_deny);
         }
-        if (StringUtils.isAnyBlank(command.getName(), command.getCategory_course_id())) {
+        if (StringUtils.isAnyBlank(command.getName(), command.getCategory_course_id()) || command.getInput_score() == null || command.getOutput_score() == null) {
             throw new Exception(ExceptionEnum.param_not_null);
         }
         Optional<CategoryCourse> categoryCourseOptional = categoryCourseApplication.getById(command.getCategory_course_id());
@@ -51,6 +51,8 @@ public class CourseApplication implements ICourseApplication {
                 .category_course_id(command.getCategory_course_id())
                 .number_of_shift(command.getNumber_of_shift())
                 .create_date(System.currentTimeMillis())
+                .input_score(command.getInput_score())
+                .output_score(command.getOutput_score())
                 .build();
         return mongoDBConnection.insert(course);
     }
@@ -117,6 +119,12 @@ public class CourseApplication implements ICourseApplication {
         }
         if (command.getTuition() != null) {
             course.setTuition(command.getTuition());
+        }
+        if (command.getInput_score() != null) {
+            course.setInput_score(command.getInput_score());
+        }
+        if (command.getOutput_score() != null) {
+            course.setOutput_score(command.getOutput_score());
         }
         return mongoDBConnection.update(course.get_id().toHexString(), course);
     }
