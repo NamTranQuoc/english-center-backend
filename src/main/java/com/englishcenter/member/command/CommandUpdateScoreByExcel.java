@@ -11,5 +11,5 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class CommandUpdateScoreByExcel {
     private String role;
-    private String url;
+    private String path;
 }

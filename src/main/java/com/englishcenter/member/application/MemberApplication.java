@@ -1,6 +1,7 @@
 package com.englishcenter.member.application;
 
 import com.englishcenter.auth.application.IAuthApplication;
+import com.englishcenter.core.firebase.IFirebaseFileService;
 import com.englishcenter.core.utils.MongoDBConnection;
 import com.englishcenter.core.utils.Paging;
 import com.englishcenter.core.utils.enums.ExceptionEnum;
@@ -15,9 +16,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
 
-import java.io.*;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.net.URL;
-
+import java.nio.channels.Channels;
+import java.nio.channels.ReadableByteChannel;
 import java.util.*;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -27,6 +32,8 @@ public class MemberApplication implements IMemberApplication {
     public final MongoDBConnection<Member> mongoDBConnection;
     @Autowired
     private IAuthApplication authApplication;
+    @Autowired
+    private IFirebaseFileService firebaseFileService;
 
     @Autowired
     public MemberApplication() {
@@ -66,10 +73,18 @@ public class MemberApplication implements IMemberApplication {
         if (!Arrays.asList(Member.MemberType.ADMIN, Member.MemberType.RECEPTIONIST).contains(command.getRole())) {
             throw new Exception(ExceptionEnum.member_type_deny);
         }
-        FileInputStream fis;
+        URL website = new URL(firebaseFileService.getDownloadUrl(command.getPath(), "imports"));
+        ReadableByteChannel rbc = Channels.newChannel(website.openStream());
+        FileOutputStream fos = new FileOutputStream(command.getPath());
+        fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
+        fos.close();
+        rbc.close();
+
+        File _file = new File(command.getPath());
+        FileInputStream fis = null;
         Workbook workbook = null;
         try {
-            fis = (FileInputStream) new URL(command.getUrl()).openStream();
+            fis = new FileInputStream(_file);
             workbook = WorkbookFactory.create(fis);
         } catch (IOException e) {
             e.printStackTrace();
@@ -111,6 +126,10 @@ public class MemberApplication implements IMemberApplication {
                 }
             }
         }
+        workbook.close();
+        fis.close();
+        _file.delete();
+        firebaseFileService.delete("imports/" + command.getPath());
         return Optional.of(Boolean.TRUE);
     }
 
