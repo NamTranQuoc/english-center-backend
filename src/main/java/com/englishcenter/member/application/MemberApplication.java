@@ -1,6 +1,7 @@
 package com.englishcenter.member.application;
 
 import com.englishcenter.auth.application.IAuthApplication;
+import com.englishcenter.code.CodeApplication;
 import com.englishcenter.core.firebase.IFirebaseFileService;
 import com.englishcenter.core.utils.MongoDBConnection;
 import com.englishcenter.core.utils.Paging;
@@ -34,6 +35,8 @@ public class MemberApplication implements IMemberApplication {
     private IAuthApplication authApplication;
     @Autowired
     private IFirebaseFileService firebaseFileService;
+    @Autowired
+    private CodeApplication codeApplication;
 
     @Autowired
     public MemberApplication() {
@@ -160,7 +163,7 @@ public class MemberApplication implements IMemberApplication {
 
     @Override
     public Optional<Member> add(CommandAddMember command) throws Exception {
-        if (StringUtils.isAnyBlank(command.getName(), command.getEmail(), command.getGender(), command.getPhone_number())
+        if (StringUtils.isAnyBlank(command.getName(), command.getEmail(), command.getGender())
                 || command.getDob() == null) {
             throw new Exception(ExceptionEnum.param_not_null);
         }
@@ -171,6 +174,15 @@ public class MemberApplication implements IMemberApplication {
         if (count > 0) {
             throw new Exception(ExceptionEnum.member_exist);
         }
+        if (StringUtils.isNotBlank(command.getPhone_number())) {
+            Map<String, Object> query1 = new HashMap<>();
+            query1.put("is_deleted", false);
+            query1.put("phone_number", command.getPhone_number());
+            long count1 = mongoDBConnection.count(query1).orElse(0L);
+            if (count1 > 0) {
+                throw new Exception(ExceptionEnum.phone_number_used);
+            }
+        }
         Member member = Member.builder()
                 .create_date(System.currentTimeMillis())
                 .name(command.getName())
@@ -180,13 +192,14 @@ public class MemberApplication implements IMemberApplication {
                 .gender(command.getGender())
                 .address(command.getAddress())
                 .phone_number(command.getPhone_number())
+                .nick_name(command.getNick_name())
+                .note(command.getNote())
+                .guardian(command.getGuardian())
+                .course_ids(command.getCourse_ids())
                 .build();
-        if (command.getSalary() != null) {
-            member.setSalary(command.getSalary());
-        }
-        if (command.getCertificate() != null) {
-            member.setCertificate(command.getCertificate());
-        }
+
+        String code = codeApplication.generateCodeByType(member.getType());
+        member.setCode(code);
         Optional<Member> optional = mongoDBConnection.insert(member);
         if (optional.isPresent()) {
             optional.get().setAvatar("avatar-" + optional.get().get_id().toHexString() + ".png");
@@ -237,6 +250,13 @@ public class MemberApplication implements IMemberApplication {
             member.setGender(command.getGender());
         }
         if (StringUtils.isNotBlank(command.getPhone_number())) {
+            Map<String, Object> query1 = new HashMap<>();
+            query1.put("is_deleted", false);
+            query1.put("phone_number", command.getPhone_number());
+            long count1 = mongoDBConnection.count(query1).orElse(0L);
+            if (count1 > 0) {
+                throw new Exception(ExceptionEnum.phone_number_used);
+            }
             member.setPhone_number(command.getPhone_number());
         }
         if (StringUtils.isNotBlank(command.getAddress())) {
@@ -245,11 +265,17 @@ public class MemberApplication implements IMemberApplication {
         if (command.getDob() != null) {
             member.setDob(command.getDob());
         }
-        if (command.getSalary() != null && Member.MemberType.ADMIN.equals(command.getRole())) {
-            member.setSalary(command.getSalary());
+        if (StringUtils.isNotBlank(command.getNick_name())) {
+            member.setNick_name(command.getNick_name());
         }
-        if (command.getCertificate() != null) {
-            member.setCertificate(command.getCertificate());
+        if (StringUtils.isNotBlank(command.getNote())) {
+            member.setNote(command.getNote());
+        }
+        if (!CollectionUtils.isEmpty(command.getCourse_ids())) {
+            member.setCourse_ids(command.getCourse_ids());
+        }
+        if (StringUtils.isNotBlank(command.getStatus())) {
+            member.setStatus(command.getStatus());
         }
         return mongoDBConnection.update(member.get_id().toHexString(), member);
     }

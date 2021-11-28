@@ -1,6 +1,7 @@
 package com.englishcenter.core.utils.enums;
 
 public class ExceptionEnum {
+    public static final String phone_number_used = "phone_number_used";
     public static final String room_not_empty = "room_not_empty";
     public static final String teacher_not_available = "teacher_not_available";
     public static final String schedule_not_exist = "schedule_not_exist";
