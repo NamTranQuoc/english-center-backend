@@ -13,7 +13,9 @@ public interface IMemberApplication {
 
     Optional<Paging<Member>> getList(CommandSearchMember command) throws Exception;
 
-    Optional<Boolean> updateScoreByExel(CommandUpdateScoreByExcel command) throws Exception;
+    Optional<String> export(CommandSearchMember commandSearchMember) throws Exception;
+
+    Optional<Boolean> updateScoreByExcel(CommandUpdateScoreByExcel command) throws Exception;
 
     Optional<List<CommandGetAllTeacher>> getAll(CommandSearchMember command) throws Exception;
 

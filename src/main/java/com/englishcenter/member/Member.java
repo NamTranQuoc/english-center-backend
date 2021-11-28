@@ -12,6 +12,7 @@ import lombok.NoArgsConstructor;
 import org.bson.types.ObjectId;
 
 import java.io.Serializable;
+import java.util.List;
 
 @Data
 @Entity
@@ -23,6 +24,9 @@ public class Member implements Serializable {
     @Id
     ObjectId _id;
     private String name;
+    private String nick_name;
+    private String note;
+    private String code;
     private Long create_date;
     private String type;
     private String email;
@@ -31,14 +35,17 @@ public class Member implements Serializable {
     private String address;
     private String phone_number;
     private String gender;
-    private Long salary;
-    private Certificate certificate;
+    @Builder.Default
+    private String status = MemberStatus.ACTIVE;
+    private Long last_login_date;
     @Builder.Default
     private Boolean is_deleted = false;
     @Builder.Default
     private Score input_score = Score.builder().build();
     @Builder.Default
     private Score current_score = Score.builder().build();
+    private Guardian guardian;
+    private List<String> course_ids;
 
 
     public static class MemberType {
@@ -48,15 +55,20 @@ public class Member implements Serializable {
         public final static String RECEPTIONIST = "receptionist";
     }
 
+    public static class MemberStatus {
+        public final static String ACTIVE = "active";
+        public final static String BLOCK = "block";
+    }
+
     @Data
     @NoArgsConstructor
     @AllArgsConstructor
     @Embedded
     @Builder
-    public static class Certificate {
-        private String type;
-        private Float score;
-        private String code;
+    public static class Guardian {
+        private String name;
+        private String phone_number;
+        private String relationship;
     }
 
     @Data

@@ -6,6 +6,7 @@ import org.springframework.web.multipart.MultipartFile;
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.IOException;
 import java.util.UUID;
 
@@ -18,6 +19,8 @@ public interface IFirebaseFileService {
     String save(MultipartFile file) throws IOException;
 
     String save(BufferedImage bufferedImage, String originalFileName) throws IOException;
+
+    String save(File file, String originalFileName) throws IOException;
 
     void delete(String name) throws IOException;
 
