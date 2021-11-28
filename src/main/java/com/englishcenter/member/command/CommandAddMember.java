@@ -24,5 +24,6 @@ public class CommandAddMember {
     private String note;
     private Member.Guardian guardian;
     private List<String> course_ids;
+    private String status;
 }
 
