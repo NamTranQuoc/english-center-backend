@@ -41,7 +41,17 @@ public class MemberController extends ResponseUtils {
     public String updateScoreByExel(@RequestHeader String Authorization, @RequestBody CommandUpdateScoreByExcel command) {
         try {
             command.setRole(this.getMemberType(Authorization));
-            return this.outJson(9999, null, userApplication.updateScoreByExel(command).orElse(false));
+            return this.outJson(9999, null, userApplication.updateScoreByExcel(command).orElse(false));
+        } catch (Throwable throwable) {
+            return this.outJson(-9999, throwable.getMessage(), null);
+        }
+    }
+
+    @PostMapping(value = "/member/export")
+    public String updateScoreByExel(@RequestHeader String Authorization, @RequestBody CommandSearchMember command) {
+        try {
+            command.setMember_type(this.getMemberType(Authorization));
+            return this.outJson(9999, null, userApplication.export(command).orElse(null));
         } catch (Throwable throwable) {
             return this.outJson(-9999, throwable.getMessage(), null);
         }
