@@ -5,6 +5,7 @@ public class MongodbEnum {
 //    public final static String connection = "mongodb://localhost:27017";
     public final static String database_name = "english_center_db";
 
+    public final static String collection_code = "code";
     public final static String collection_member = "member";
     public final static String collection_auth = "auth";
     public final static String collection_course = "course";
