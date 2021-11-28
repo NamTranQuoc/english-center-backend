@@ -18,7 +18,10 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 
 @Service
 public class FirebaseFileService implements IFirebaseFileService {
@@ -81,6 +84,20 @@ public class FirebaseFileService implements IFirebaseFileService {
         String name = generateFileName(originalFileName);
 
         bucket.create(name, bytes);
+
+        return name;
+    }
+
+    @Override
+    public String save(File file, String originalFileName) throws IOException {
+
+        InputStream inputStream = new FileInputStream(file);
+
+        Bucket bucket = StorageClient.getInstance().bucket();
+
+        String name = "exports/" + originalFileName;
+
+        bucket.create(name, inputStream);
 
         return name;
     }
