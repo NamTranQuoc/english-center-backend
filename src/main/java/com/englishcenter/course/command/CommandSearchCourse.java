@@ -20,4 +20,5 @@ public class CommandSearchCourse {
     private List<String> category_courses;
     private Integer page;
     private Integer size;
+    private List<String> status;
 }

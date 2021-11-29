@@ -29,4 +29,10 @@ public class Course implements Serializable {
     private Long create_date;
     private Float input_score;
     private Float output_score;
+    private String status;
+
+    public static class CourseStatus {
+        public final static String ACTIVE = "active";
+        public final static String SHUTDOWN = "shutdown";
+    }
 }

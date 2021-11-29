@@ -19,4 +19,5 @@ public class CommandAddCourse {
     private String category_course_id;
     private Float input_score;
     private Float output_score;
+    private String status;
 }

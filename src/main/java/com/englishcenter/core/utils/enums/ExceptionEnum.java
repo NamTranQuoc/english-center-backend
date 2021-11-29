@@ -21,4 +21,5 @@ public class ExceptionEnum {
     public static final String start_date_not_allow = "start_date_not_allow";
     public static final String classroom_not_exist = "classroom_not_exist";
     public static final String exam_schedule_not_exist = "exam_schedule_not_exist";
+    public static final String room_not_available = "room_not_available";
 }

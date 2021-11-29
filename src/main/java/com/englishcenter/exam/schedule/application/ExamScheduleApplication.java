@@ -13,7 +13,9 @@ import com.englishcenter.member.Member;
 import com.englishcenter.room.Room;
 import com.englishcenter.room.command.CommandAddRoom;
 import com.englishcenter.room.command.CommandSearchRoom;
+import com.englishcenter.schedule.application.ScheduleApplication;
 import org.apache.commons.lang3.StringUtils;
+import org.bson.Document;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
@@ -28,6 +30,10 @@ public class ExamScheduleApplication {
     public ExamScheduleApplication() {
         mongoDBConnection = new MongoDBConnection<>(MongodbEnum.collection_exam_schedule, ExamSchedule.class);
     }
+
+    @Autowired
+    private ScheduleApplication scheduleApplication;
+
     public Optional<ExamSchedule> add(CommandAddExamSchedule command) throws Exception {
         if(StringUtils.isAnyBlank(command.getRoom_id())
                 || command.getStart_time() == null
@@ -39,6 +45,22 @@ public class ExamScheduleApplication {
         }
         if (!Arrays.asList(Member.MemberType.ADMIN, Member.MemberType.RECEPTIONIST).contains(command.getRole())) {
             throw new Exception(ExceptionEnum.member_type_deny);
+        }
+        Map<String, Object> query = new HashMap<>();
+        query.put("$or", Arrays.asList(
+                new Document("$and", Arrays.asList(
+                        new Document("start_time", new Document("$lte", command.getStart_time())),
+                        new Document("end_time", new Document("$gte", command.getStart_time()))
+                )),
+                new Document("$and", Arrays.asList(
+                        new Document("start_time", new Document("$lte", command.getEnd_time())),
+                        new Document("end_time", new Document("$gte", command.getEnd_time()))
+                ))
+        ));
+        query.put("room_id", command.getRoom_id());
+        long count = mongoDBConnection.count(query).orElse(0L) + scheduleApplication.mongoDBConnection.count(query).orElse(0L);
+        if (count != 0) {
+            throw new Exception(ExceptionEnum.room_not_available);
         }
         ExamSchedule examSchedule = ExamSchedule.builder()
                 .start_time(command.getStart_time())

@@ -2,11 +2,14 @@ package com.englishcenter.category.course.application;
 
 import com.englishcenter.category.course.CategoryCourse;
 import com.englishcenter.category.course.command.CommandAddCategoryCourse;
+import com.englishcenter.category.course.command.CommandGetCourseCategory;
 import com.englishcenter.category.course.command.CommandSearchCategoryCourse;
 import com.englishcenter.core.utils.MongoDBConnection;
 import com.englishcenter.core.utils.Paging;
 import com.englishcenter.core.utils.enums.ExceptionEnum;
 import com.englishcenter.core.utils.enums.MongodbEnum;
+import com.englishcenter.course.Course;
+import com.englishcenter.course.command.CommandGetAllCourse;
 import com.englishcenter.member.Member;
 import org.apache.commons.lang3.StringUtils;
 import org.bson.Document;
@@ -15,6 +18,7 @@ import org.springframework.stereotype.Component;
 
 import java.util.*;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 @Component
 public class CategoryCourseApplication implements ICategoryCourseApplication {
@@ -83,6 +87,15 @@ public class CategoryCourseApplication implements ICategoryCourseApplication {
             categoryCourse.setStatus(command.getStatus());
         }
         return mongoDBConnection.update(categoryCourse.get_id().toHexString(), categoryCourse);
+    }
+
+    @Override
+    public Optional<List<CommandGetCourseCategory>> getCourseCategoryByStatus(String status) {
+        List<CategoryCourse> list = mongoDBConnection.find(new Document("status", status)).orElse(new ArrayList<>());
+        return Optional.of(list.stream().map(item -> CommandGetCourseCategory.builder()
+                ._id(item.get_id().toHexString())
+                .name(item.getName())
+                .build()).collect(Collectors.toList()));
     }
 
     @Override
