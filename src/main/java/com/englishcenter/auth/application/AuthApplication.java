@@ -14,6 +14,7 @@ import com.englishcenter.core.utils.enums.ExceptionEnum;
 import com.englishcenter.core.utils.enums.MongodbEnum;
 import com.englishcenter.member.Member;
 import com.englishcenter.member.application.IMemberApplication;
+import com.englishcenter.member.application.MemberApplication;
 import com.google.gson.Gson;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
@@ -22,6 +23,7 @@ import org.bson.Document;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -30,7 +32,7 @@ import java.util.Optional;
 public class AuthApplication implements IAuthApplication {
     public final MongoDBConnection<Auth> mongoDBConnection;
     @Autowired
-    private IMemberApplication memberApplication;
+    private MemberApplication memberApplication;
     @Autowired
     private IMailService mailService;
     @Autowired
@@ -101,8 +103,18 @@ public class AuthApplication implements IAuthApplication {
             throw new Exception(ExceptionEnum.param_not_null);
         }
         Map<String, Object> query = new HashMap<>();
-        query.put("username", command.getUsername());
-        Optional<Auth> auth = mongoDBConnection.findOne(query);
+        query.put("$or", Arrays.asList(
+                new Document("email", command.getUsername()),
+                new Document("code", command.getUsername()),
+                new Document("phone_number", command.getUsername())
+        ));
+        Optional<Member> member = memberApplication.mongoDBConnection.findOne(query);
+        if (!member.isPresent()) {
+            throw new Exception(ExceptionEnum.member_not_exist);
+        }
+        Map<String, Object> queryAuth = new HashMap<>();
+        queryAuth.put("username", member.get().getEmail());
+        Optional<Auth> auth = mongoDBConnection.findOne(queryAuth);
         if (!auth.isPresent()) {
             throw new Exception(ExceptionEnum.member_not_exist);
         }
