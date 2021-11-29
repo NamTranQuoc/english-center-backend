@@ -5,6 +5,7 @@ import com.englishcenter.member.application.IMemberApplication;
 import com.englishcenter.member.command.CommandAddMember;
 import com.englishcenter.member.command.CommandSearchMember;
 import com.englishcenter.member.command.CommandUpdateMember;
+import com.englishcenter.member.command.CommandUpdateScoreByExcel;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.web.bind.annotation.*;
@@ -31,6 +32,26 @@ public class MemberController extends ResponseUtils {
             command.setSize(size);
             command.setMember_type(this.getMemberType(Authorization));
             return this.outJson(9999, null, userApplication.getList(command).orElse(null));
+        } catch (Throwable throwable) {
+            return this.outJson(-9999, throwable.getMessage(), null);
+        }
+    }
+
+    @PostMapping(value = "/member/update_score_by_excel")
+    public String updateScoreByExel(@RequestHeader String Authorization, @RequestBody CommandUpdateScoreByExcel command) {
+        try {
+            command.setRole(this.getMemberType(Authorization));
+            return this.outJson(9999, null, userApplication.updateScoreByExcel(command).orElse(false));
+        } catch (Throwable throwable) {
+            return this.outJson(-9999, throwable.getMessage(), null);
+        }
+    }
+
+    @PostMapping(value = "/member/export")
+    public String updateScoreByExel(@RequestHeader String Authorization, @RequestBody CommandSearchMember command) {
+        try {
+            command.setMember_type(this.getMemberType(Authorization));
+            return this.outJson(9999, null, userApplication.export(command).orElse(null));
         } catch (Throwable throwable) {
             return this.outJson(-9999, throwable.getMessage(), null);
         }
