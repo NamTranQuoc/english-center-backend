@@ -7,6 +7,9 @@ import com.englishcenter.core.utils.MongoDBConnection;
 import com.englishcenter.core.utils.Paging;
 import com.englishcenter.core.utils.enums.ExceptionEnum;
 import com.englishcenter.core.utils.enums.MongodbEnum;
+import com.englishcenter.course.Course;
+import com.englishcenter.course.application.CourseApplication;
+import com.englishcenter.course.command.CommandGetAllCourse;
 import com.englishcenter.member.Member;
 import com.englishcenter.member.command.*;
 import org.apache.commons.lang3.StringUtils;
@@ -43,6 +46,8 @@ public class MemberApplication implements IMemberApplication {
     private IFirebaseFileService firebaseFileService;
     @Autowired
     private CodeApplication codeApplication;
+    @Autowired
+    private CourseApplication courseApplication;
 
     @Autowired
     public MemberApplication() {
@@ -60,6 +65,23 @@ public class MemberApplication implements IMemberApplication {
         validateRoleAdminAndReceptionist(command.getMember_type(), command.getTypes());
         Map<String, Object> query = getQueryMember(command);
         return mongoDBConnection.find(query, command.getSort(), command.getPage(), command.getSize());
+    }
+
+    @Override
+    public Optional<List<CommandGetAllTeacher>> getAllByStatusAndType(CommandGetAllByStatusAndType command) throws Exception {
+        if (StringUtils.isAnyBlank(command.getStatus(), command.getType())) {
+            throw new Exception(ExceptionEnum.param_not_null);
+        }
+        Map<String, Object> query = new HashMap<>();
+        query.put("status", command.getStatus());
+        query.put("type", command.getType());
+        Map<String, Object> sort = new HashMap<>();
+        sort.put("_id", 1);
+        List<Member> list = mongoDBConnection.find(query, sort).orElse(new ArrayList<>());
+        return Optional.of(list.stream().map(item -> CommandGetAllTeacher.builder()
+                ._id(item.get_id().toHexString())
+                .name(item.getName())
+                .build()).collect(Collectors.toList()));
     }
 
     private Map<String, Object> getQueryMember(CommandSearchMember command) {
@@ -90,28 +112,43 @@ public class MemberApplication implements IMemberApplication {
         List<Member> students = mongoDBConnection.find(query).orElse(new ArrayList<>());
         if (command.getTypes().contains(Member.MemberType.STUDENT)) {
             createTemplateExportStudent(filePath, workbook, students);
-            FileOutputStream fileOutputStream = null;
-            try {
-                fileOutputStream = new FileOutputStream(filePath);
-                workbook.write(fileOutputStream);
-                fileOutputStream.close();
-                workbook.close();
-                File file = new File(filePath);
-                firebaseFileService.save(file, filePath);
-                file.delete();
+            if (exportFile(workbook, filePath))
                 return Optional.of(firebaseFileService.getDownloadUrl(filePath, "exports"));
-            } catch (Exception e) {
-                if (fileOutputStream != null) {
-                    try {
-                        fileOutputStream.close();
-                    } catch (IOException ex) {
-                        ex.printStackTrace();
-                    }
-                }
-            }
+        } else if (command.getTypes().contains(Member.MemberType.TEACHER)) {
+            createTemplateExportTeacher(filePath, workbook, students);
+            if (exportFile(workbook, filePath))
+                return Optional.of(firebaseFileService.getDownloadUrl(filePath, "exports"));
+        } else if (command.getTypes().contains(Member.MemberType.RECEPTIONIST)) {
+            createTemplateExportReceptionist(filePath, workbook, students);
+            if (exportFile(workbook, filePath))
+                return Optional.of(firebaseFileService.getDownloadUrl(filePath, "exports"));
         }
         return Optional.empty();
     }
+
+    private boolean exportFile(SXSSFWorkbook workbook, String filePath) {
+        FileOutputStream fileOutputStream = null;
+        try {
+            fileOutputStream = new FileOutputStream(filePath);
+            workbook.write(fileOutputStream);
+            fileOutputStream.close();
+            workbook.close();
+            File file = new File(filePath);
+            firebaseFileService.save(file, filePath);
+            file.delete();
+            return true;
+        } catch (Exception e) {
+            if (fileOutputStream != null) {
+                try {
+                    fileOutputStream.close();
+                } catch (IOException ex) {
+                    ex.printStackTrace();
+                }
+            }
+        }
+        return false;
+    }
+
     private void setCellHeader(SXSSFRow row, CellStyle headerCellStyle, String title, int col_index) {
         SXSSFCell cell = row.createCell(col_index);
         cell.setCellStyle(headerCellStyle);
@@ -134,6 +171,157 @@ public class MemberApplication implements IMemberApplication {
         }
     }
 
+    private void createTemplateExportReceptionist(String pathName, SXSSFWorkbook workbook, List<Member> students) {
+        try {
+            if (org.apache.commons.collections4.CollectionUtils.isEmpty(students)) return;
+            SXSSFSheet sheet = workbook.createSheet(pathName);
+            int col_index = 0;
+            int row_index = 0;
+
+            SXSSFRow row = sheet.createRow(row_index);
+
+            this.setCellHeader(row, this.createCellStyle(workbook), "STT", col_index);
+            this.setCellHeader(row, this.createCellStyle(workbook), "Mã Nhân viên", ++col_index);
+            this.setCellHeader(row, this.createCellStyle(workbook), "Họ và tên", ++col_index);
+            this.setCellHeader(row, this.createCellStyle(workbook), "SĐT", ++col_index);
+            this.setCellHeader(row, this.createCellStyle(workbook), "Email", ++col_index);
+            this.setCellHeader(row, this.createCellStyle(workbook), "Ngày sinh", ++col_index);
+            this.setCellHeader(row, this.createCellStyle(workbook), "Giới tính", ++col_index);
+            this.setCellHeader(row, this.createCellStyle(workbook), "Trạng thái", ++col_index);
+            this.setCellHeader(row, this.createCellStyle(workbook), "Địa chỉ", ++col_index);
+
+            this.setColumnWidth(sheet, 2, 5, 7, 4, 7, 4, 4, 4, 10, 10);
+            SXSSFCell cell = null;
+            for (Member member : students) {
+                col_index = 0;
+                row = sheet.createRow(++row_index);
+
+                //STT
+                cell = row.createCell(col_index);
+                cell.setCellValue(row_index - 1);
+
+                //Mã
+                cell = row.createCell(++col_index);
+                cell.setCellValue(StringUtils.isNotBlank(member.getCode()) ? member.getCode() : "");
+
+                //Họ và tên
+                cell = row.createCell(++col_index);
+                cell.setCellValue(StringUtils.isNotBlank(member.getName()) ? member.getName() : "");
+
+                //SĐT
+                cell = row.createCell(++col_index);
+                cell.setCellValue(StringUtils.isNotBlank(member.getPhone_number()) ? member.getPhone_number() : "");
+
+                //Email
+                cell = row.createCell(++col_index);
+                cell.setCellValue(StringUtils.isNotBlank(member.getEmail()) ? member.getEmail() : "");
+
+                //Ngày sinh
+                cell = row.createCell(++col_index);
+                cell.setCellValue(member.getDob() != null ? new SimpleDateFormat("dd/MM/yyyy").format(new Date(member.getDob())) : "_");
+
+                //Giới tính
+                cell = row.createCell(++col_index);
+                cell.setCellValue("female".equals(member.getGender()) ? "Nữ" : "male".equals(member.getGender()) ? "Nam" : "Khác");
+
+                //Trạng thái
+                cell = row.createCell(++col_index);
+                cell.setCellValue(Member.MemberStatus.ACTIVE.equals(member.getStatus()) ? "Hoạt động" : "Khóa");
+
+                //địa chỉ
+                cell = row.createCell(++col_index);
+                cell.setCellValue(StringUtils.isNotBlank(member.getAddress()) ? member.getAddress() : "");
+            }
+        } catch (Throwable throwable) {
+            throwable.printStackTrace();
+        }
+    }
+
+    private void createTemplateExportTeacher(String pathName, SXSSFWorkbook workbook, List<Member> students) {
+        try {
+            if (org.apache.commons.collections4.CollectionUtils.isEmpty(students)) return;
+            SXSSFSheet sheet = workbook.createSheet(pathName);
+            int col_index = 0;
+            int row_index = 0;
+
+            SXSSFRow row = sheet.createRow(row_index);
+
+            this.setCellHeader(row, this.createCellStyle(workbook), "STT", col_index);
+            this.setCellHeader(row, this.createCellStyle(workbook), "Mã Giảng viên", ++col_index);
+            this.setCellHeader(row, this.createCellStyle(workbook), "Họ và tên", ++col_index);
+            this.setCellHeader(row, this.createCellStyle(workbook), "SĐT", ++col_index);
+            this.setCellHeader(row, this.createCellStyle(workbook), "Email", ++col_index);
+            this.setCellHeader(row, this.createCellStyle(workbook), "Ngày sinh", ++col_index);
+            this.setCellHeader(row, this.createCellStyle(workbook), "Giới tính", ++col_index);
+            this.setCellHeader(row, this.createCellStyle(workbook), "Trạng thái", ++col_index);
+            this.setCellHeader(row, this.createCellStyle(workbook), "Các khóa học có thể dạy", ++col_index);
+            this.setCellHeader(row, this.createCellStyle(workbook), "Địa chỉ", ++col_index);
+
+            List<CommandGetAllCourse> courses = courseApplication.getAll().orElse(new ArrayList<>());
+            Map<String, String> mapCourse = new HashMap<>();
+            for (CommandGetAllCourse item: courses) {
+                mapCourse.put(item.get_id(), item.getName());
+            }
+
+            this.setColumnWidth(sheet, 2, 5, 7, 4, 7, 4, 4, 4, 10, 10);
+            SXSSFCell cell = null;
+            for (Member member : students) {
+                col_index = 0;
+                row = sheet.createRow(++row_index);
+
+                //STT
+                cell = row.createCell(col_index);
+                cell.setCellValue(row_index - 1);
+
+                //Mã
+                cell = row.createCell(++col_index);
+                cell.setCellValue(StringUtils.isNotBlank(member.getCode()) ? member.getCode() : "");
+
+                //Họ và tên
+                cell = row.createCell(++col_index);
+                cell.setCellValue(StringUtils.isNotBlank(member.getName()) ? member.getName() : "");
+
+                //SĐT
+                cell = row.createCell(++col_index);
+                cell.setCellValue(StringUtils.isNotBlank(member.getPhone_number()) ? member.getPhone_number() : "");
+
+                //Email
+                cell = row.createCell(++col_index);
+                cell.setCellValue(StringUtils.isNotBlank(member.getEmail()) ? member.getEmail() : "");
+
+                //Ngày sinh
+                cell = row.createCell(++col_index);
+                cell.setCellValue(member.getDob() != null ? new SimpleDateFormat("dd/MM/yyyy").format(new Date(member.getDob())) : "_");
+
+                //Giới tính
+                cell = row.createCell(++col_index);
+                cell.setCellValue("female".equals(member.getGender()) ? "Nữ" : "male".equals(member.getGender()) ? "Nam" : "Khác");
+
+                //Trạng thái
+                cell = row.createCell(++col_index);
+                cell.setCellValue(Member.MemberStatus.ACTIVE.equals(member.getStatus()) ? "Hoạt động" : "Khóa");
+
+                //Các khóa học có thể dạy
+                String value = "";
+                if (!CollectionUtils.isEmpty(member.getCourse_ids())) {
+                    for (String item: member.getCourse_ids()) {
+                        value += mapCourse.get(item) + ", ";
+                    }
+                    value = value.substring(0, value.length() - 3);
+                }
+                if (!CollectionUtils.isEmpty(member.getCourse_ids()))
+                cell = row.createCell(++col_index);
+                cell.setCellValue(value);
+
+                //địa chỉ
+                cell = row.createCell(++col_index);
+                cell.setCellValue(StringUtils.isNotBlank(member.getAddress()) ? member.getAddress() : "");
+            }
+        } catch (Throwable throwable) {
+            throwable.printStackTrace();
+        }
+    }
+
     private void createTemplateExportStudent(String pathName, SXSSFWorkbook workbook, List<Member> students) {
         try {
             if (org.apache.commons.collections4.CollectionUtils.isEmpty(students)) return;
@@ -151,6 +339,7 @@ public class MemberApplication implements IMemberApplication {
             sheet.addMergedRegion(new CellRangeAddress(0, 0, 14, 16));
             sheet.addMergedRegion(new CellRangeAddress(0, 1, 17, 17));
             sheet.addMergedRegion(new CellRangeAddress(0, 1, 18, 18));
+            sheet.addMergedRegion(new CellRangeAddress(0, 1, 19, 19));
             int col_index = 0;
             int row_index = 0;
 
@@ -183,8 +372,9 @@ public class MemberApplication implements IMemberApplication {
             this.setCellHeader(row, this.createCellStyle(workbook), "Tên", ++col_index);
             this.setCellHeader(row, this.createCellStyle(workbook), "SĐT", ++col_index);
             this.setCellHeader(row, this.createCellStyle(workbook), "Quan hệ", ++col_index);
+            this.setCellHeader(row, this.createCellStyle(workbook), "SĐT", ++col_index);
 
-            this.setColumnWidth(sheet, 2, 5, 7, 4, 7, 4, 3, 3, 3, 3, 3, 3, 3, 3, 7, 4, 4, 7, 7);
+            this.setColumnWidth(sheet, 2, 5, 7, 4, 7, 4, 3, 3, 3, 3, 3, 3, 3, 3, 7, 4, 4, 7, 7, 4);
             SXSSFCell cell = null;
             for (Member member : students) {
                 col_index = 0;
@@ -268,6 +458,10 @@ public class MemberApplication implements IMemberApplication {
                 //Ghi chú
                 cell = row.createCell(++col_index);
                 cell.setCellValue(StringUtils.isNotBlank(member.getNote()) ? member.getNote() : "");
+
+                //SĐT
+                cell = row.createCell(++col_index);
+                cell.setCellValue(StringUtils.isNotBlank(member.getPhone_number()) ? member.getPhone_number() : "");
             }
         } catch (Throwable throwable) {
             throwable.printStackTrace();
@@ -452,7 +646,7 @@ public class MemberApplication implements IMemberApplication {
         if (StringUtils.isNotBlank(command.getGender())) {
             member.setGender(command.getGender());
         }
-        if (StringUtils.isNotBlank(command.getPhone_number())) {
+        if (StringUtils.isNotBlank(command.getPhone_number()) && !command.getPhone_number().equals(member.getPhone_number())) {
             Map<String, Object> query1 = new HashMap<>();
             query1.put("is_deleted", false);
             query1.put("phone_number", command.getPhone_number());
