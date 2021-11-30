@@ -28,4 +28,5 @@ public class ClassRoom implements Serializable {
     private String course_id;
     private String shift_id;
     private Long start_date;
+    private String status;
 }

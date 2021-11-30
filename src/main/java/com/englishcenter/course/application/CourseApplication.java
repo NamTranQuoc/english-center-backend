@@ -53,6 +53,7 @@ public class CourseApplication implements ICourseApplication {
                 .create_date(System.currentTimeMillis())
                 .input_score(command.getInput_score())
                 .output_score(command.getOutput_score())
+                .status(command.getStatus())
                 .build();
         return mongoDBConnection.insert(course);
     }
@@ -75,12 +76,24 @@ public class CourseApplication implements ICourseApplication {
         if (!CollectionUtils.isEmpty(command.getCategory_courses())) {
             query.put("category_course_id", new Document("$in", command.getCategory_courses()));
         }
+        if (!CollectionUtils.isEmpty(command.getStatus())) {
+            query.put("status", new Document("$in", command.getStatus()));
+        }
         return mongoDBConnection.find(query, command.getSort(), command.getPage(), command.getSize());
     }
 
     @Override
     public Optional<List<CommandGetAllCourse>> getAll() {
         List<Course> list = mongoDBConnection.find(new HashMap<>()).orElse(new ArrayList<>());
+        return Optional.of(list.stream().map(item -> CommandGetAllCourse.builder()
+                ._id(item.get_id().toHexString())
+                .name(item.getName())
+                .build()).collect(Collectors.toList()));
+    }
+
+    @Override
+    public Optional<List<CommandGetAllCourse>> getCourseByStatus(String status) {
+        List<Course> list = mongoDBConnection.find(new Document("status", status)).orElse(new ArrayList<>());
         return Optional.of(list.stream().map(item -> CommandGetAllCourse.builder()
                 ._id(item.get_id().toHexString())
                 .name(item.getName())
@@ -125,6 +138,9 @@ public class CourseApplication implements ICourseApplication {
         }
         if (command.getOutput_score() != null) {
             course.setOutput_score(command.getOutput_score());
+        }
+        if (command.getStatus() != null) {
+            course.setStatus(command.getStatus());
         }
         return mongoDBConnection.update(course.get_id().toHexString(), course);
     }
