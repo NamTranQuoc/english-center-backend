@@ -53,4 +53,13 @@ public class CategoryCourseController extends ResponseUtils {
             return this.outJson(-9999, throwable.getMessage(), null);
         }
     }
+
+    @GetMapping("/category_course/get_by_status/{status}")
+    public String getByStatus(@PathVariable String status) {
+        try {
+            return this.outJson(9999, null, categoryCourseApplication.getCourseCategoryByStatus(status).orElse(null));
+        } catch (Throwable throwable) {
+            return this.outJson(-9999, throwable.getMessage(), null);
+        }
+    }
 }

@@ -16,6 +16,8 @@ public interface ICourseApplication {
 
     Optional<List<CommandGetAllCourse>> getAll();
 
+    Optional<List<CommandGetAllCourse>> getCourseByStatus(String status);
+
     Optional<Course> update(CommandAddCourse command) throws Exception;
 
     Optional<Course> getById(String id);
