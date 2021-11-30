@@ -8,6 +8,7 @@ import com.englishcenter.core.utils.Paging;
 import com.englishcenter.core.utils.enums.ExceptionEnum;
 import com.englishcenter.core.utils.enums.MongodbEnum;
 import com.englishcenter.member.Member;
+import com.englishcenter.schedule.application.ScheduleApplication;
 import org.apache.commons.lang3.StringUtils;
 import org.bson.Document;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,6 +26,8 @@ public class ClassRoomApplication {
     public ClassRoomApplication() {
         mongoDBConnection = new MongoDBConnection<>(MongodbEnum.collection_class_room, ClassRoom.class);
     }
+    @Autowired
+    private ScheduleApplication scheduleApplication;
 
     public Optional<ClassRoom> add(CommandAddClassRoom command) throws Exception {
         if (StringUtils.isAnyBlank(command.getName(), command.getCourse_id(), command.getShift_id())
@@ -92,13 +95,20 @@ public class ClassRoomApplication {
         if (command.getMax_student() != null) {
             classRoom.setMax_student(command.getMax_student());
         }
-        if (command.getStatus() != null) {
+        if (command.getStatus() != null && !command.getStatus().equals(classRoom.getStatus())) {
+            if (!ClassRoom.Status.create.equals(classRoom.getStatus())) {
+                throw new Exception(ExceptionEnum.cannot_when_status_not_is_create);
+            }
             classRoom.setStatus(command.getStatus());
         }
-        if (command.getStart_date() != null) {
+        if (command.getStart_date() != null && !command.getStart_date().equals(classRoom.getStart_date())) {
             if (classRoom.getStart_date() < System.currentTimeMillis() || command.getStart_date() < System.currentTimeMillis()) {
                 throw new Exception(ExceptionEnum.start_date_not_allow);
             }
+            if (!ClassRoom.Status.register.equals(classRoom.getStatus())) {
+                throw new Exception(ExceptionEnum.cannot_when_status_not_is_register);
+            }
+            scheduleApplication.validateScheduleExits(classRoom.get_id().toHexString());
             classRoom.setStart_date(command.getStart_date());
         }
         return mongoDBConnection.update(classRoom.get_id().toHexString(), classRoom);

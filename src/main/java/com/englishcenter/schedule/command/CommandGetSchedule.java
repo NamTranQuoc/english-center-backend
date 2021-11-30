@@ -16,4 +16,8 @@ public class CommandGetSchedule {
     private String room_id;
     private Long start;
     private Long end;
+    private Integer session;
+    private String course_id;
+    private Integer max_student;
+    private Boolean took_place;
 }

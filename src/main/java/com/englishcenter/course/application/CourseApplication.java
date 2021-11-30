@@ -37,7 +37,7 @@ public class CourseApplication implements ICourseApplication {
         if (!Arrays.asList(Member.MemberType.ADMIN, Member.MemberType.RECEPTIONIST).contains(command.getRole())) {
             throw new Exception(ExceptionEnum.member_type_deny);
         }
-        if (StringUtils.isAnyBlank(command.getName(), command.getCategory_course_id()) || command.getInput_score() == null || command.getOutput_score() == null) {
+        if (StringUtils.isAnyBlank(command.getName(), command.getCategory_course_id()) || command.getInput_score() == null) {
             throw new Exception(ExceptionEnum.param_not_null);
         }
         Optional<CategoryCourse> categoryCourseOptional = categoryCourseApplication.getById(command.getCategory_course_id());
