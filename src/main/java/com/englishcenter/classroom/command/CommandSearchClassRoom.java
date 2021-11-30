@@ -22,4 +22,5 @@ public class CommandSearchClassRoom {
     private List<String> course_ids;
     private List<String> shift_ids;
     private List<Integer> dow;
+    private List<String> status;
 }

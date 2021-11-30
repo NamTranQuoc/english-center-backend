@@ -8,7 +8,9 @@ import com.englishcenter.core.utils.Paging;
 import com.englishcenter.core.utils.enums.ExceptionEnum;
 import com.englishcenter.core.utils.enums.MongodbEnum;
 import com.englishcenter.member.Member;
+import com.englishcenter.schedule.application.ScheduleApplication;
 import org.apache.commons.lang3.StringUtils;
+import org.bson.Document;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
@@ -24,6 +26,8 @@ public class ClassRoomApplication {
     public ClassRoomApplication() {
         mongoDBConnection = new MongoDBConnection<>(MongodbEnum.collection_class_room, ClassRoom.class);
     }
+    @Autowired
+    private ScheduleApplication scheduleApplication;
 
     public Optional<ClassRoom> add(CommandAddClassRoom command) throws Exception {
         if (StringUtils.isAnyBlank(command.getName(), command.getCourse_id(), command.getShift_id())
@@ -43,6 +47,7 @@ public class ClassRoomApplication {
                 .max_student(command.getMax_student())
                 .start_date(command.getStart_date())
                 .dow(command.getDow())
+                .status(command.getStatus())
                 .build();
         return mongoDBConnection.insert(classRoom);
     }
@@ -66,6 +71,9 @@ public class ClassRoomApplication {
         if (command.getStart_from_date() != null && command.getStart_to_date() != null) {
             query.put("start_date", new org.bson.Document("$gte", command.getStart_from_date()).append("$lte", command.getStart_to_date()));
         }
+        if (!CollectionUtils.isEmpty(command.getStatus())) {
+            query.put("status", new Document("$in", command.getStatus()));
+        }
         return mongoDBConnection.find(query, command.getSort(), command.getPage(), command.getSize());
     }
 
@@ -87,10 +95,20 @@ public class ClassRoomApplication {
         if (command.getMax_student() != null) {
             classRoom.setMax_student(command.getMax_student());
         }
-        if (command.getStart_date() != null) {
+        if (command.getStatus() != null && !command.getStatus().equals(classRoom.getStatus())) {
+            if (!ClassRoom.Status.create.equals(classRoom.getStatus())) {
+                throw new Exception(ExceptionEnum.cannot_when_status_not_is_create);
+            }
+            classRoom.setStatus(command.getStatus());
+        }
+        if (command.getStart_date() != null && !command.getStart_date().equals(classRoom.getStart_date())) {
             if (classRoom.getStart_date() < System.currentTimeMillis() || command.getStart_date() < System.currentTimeMillis()) {
                 throw new Exception(ExceptionEnum.start_date_not_allow);
             }
+            if (!ClassRoom.Status.register.equals(classRoom.getStatus())) {
+                throw new Exception(ExceptionEnum.cannot_when_status_not_is_register);
+            }
+            scheduleApplication.validateScheduleExits(classRoom.get_id().toHexString());
             classRoom.setStart_date(command.getStart_date());
         }
         return mongoDBConnection.update(classRoom.get_id().toHexString(), classRoom);

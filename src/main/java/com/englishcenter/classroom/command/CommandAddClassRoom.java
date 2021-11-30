@@ -20,4 +20,5 @@ public class CommandAddClassRoom {
     private String shift_id;
     private Long start_date;
     private String role;
+    private String status;
 }

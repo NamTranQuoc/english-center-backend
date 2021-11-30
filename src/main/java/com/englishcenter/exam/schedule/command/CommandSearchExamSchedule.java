@@ -1,4 +1,4 @@
-package com.englishcenter.course.command;
+package com.englishcenter.exam.schedule.command;
 
 import com.englishcenter.member.command.CommandSearchMember;
 import lombok.AllArgsConstructor;
@@ -12,13 +12,13 @@ import java.util.List;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class CommandSearchCourse {
+public class CommandSearchExamSchedule {
     private String keyword;
     private CommandSearchMember.Sort sort;
-    private Long to_date;
-    private Long from_date;
-    private List<String> category_courses;
     private Integer page;
     private Integer size;
-    private List<String> status;
+    private Long start_time;
+    private Long end_time;
+    private String room_id;
+    private List<String> member_ids;
 }
