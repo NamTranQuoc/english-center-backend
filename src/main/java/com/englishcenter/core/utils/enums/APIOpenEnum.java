@@ -13,6 +13,8 @@ public class APIOpenEnum {
             "/room/get_all",
             "/member/get_all",
             "/category_course/get_by_status/*",
-            "/course/get_by_status/*"
+            "/course/get_by_status/*",
+            "/member/get_all_by_status",
+            "/room/get_all_by_status"
     );
 }

@@ -29,4 +29,9 @@ public class ClassRoom implements Serializable {
     private String shift_id;
     private Long start_date;
     private String status;
+
+    public static class Status {
+        public final static String create = "create";
+        public final static String register = "register";
+    }
 }

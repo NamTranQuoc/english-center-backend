@@ -87,6 +87,14 @@ public class MongoDBConnection<T> {
         }
     }
 
+    public Optional<Long> updateMany(Map<String, Object> query, Map<String, Object> data) {
+        try {
+            return Optional.of(mongoCollection.updateMany(new Document(query), new Document(data)).getModifiedCount());
+        } catch (Exception e) {
+            return Optional.of(0L);
+        }
+    }
+
     public Optional<Boolean> delete(String id) {
         try {
             Map<String, Object> query = new HashMap<>();

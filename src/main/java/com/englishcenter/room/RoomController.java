@@ -3,6 +3,7 @@ package com.englishcenter.room;
 import com.englishcenter.core.utils.ResponseUtils;
 import com.englishcenter.room.application.RoomApplication;
 import com.englishcenter.room.command.CommandAddRoom;
+import com.englishcenter.room.command.CommandGetAllByStatusAndCapacity;
 import com.englishcenter.room.command.CommandSearchRoom;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -18,6 +19,15 @@ public class RoomController extends ResponseUtils {
     public String getAll() {
         try {
             return this.outJson(9999, null, roomApplication.getAll().orElse(null));
+        } catch (Throwable throwable) {
+            return this.outJson(-9999, throwable.getMessage(), null);
+        }
+    }
+
+    @PostMapping("/room/get_all_by_status")
+    public String getAllByStatus(@RequestBody CommandGetAllByStatusAndCapacity command) {
+        try {
+            return this.outJson(9999, null, roomApplication.getAllByStatus(command).orElse(null));
         } catch (Throwable throwable) {
             return this.outJson(-9999, throwable.getMessage(), null);
         }

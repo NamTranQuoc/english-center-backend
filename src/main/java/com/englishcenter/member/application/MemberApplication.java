@@ -75,6 +75,9 @@ public class MemberApplication implements IMemberApplication {
         Map<String, Object> query = new HashMap<>();
         query.put("status", command.getStatus());
         query.put("type", command.getType());
+        if (StringUtils.isNotBlank(command.getCourse_id())) {
+            query.put("course_ids", command.getCourse_id());
+        }
         Map<String, Object> sort = new HashMap<>();
         sort.put("_id", 1);
         List<Member> list = mongoDBConnection.find(query, sort).orElse(new ArrayList<>());
