@@ -9,6 +9,8 @@ import com.englishcenter.course.Course;
 import com.englishcenter.course.application.CourseApplication;
 import com.englishcenter.member.Member;
 import com.englishcenter.member.application.MemberApplication;
+import com.englishcenter.member.command.CommandGetAllByStatusAndType;
+import com.englishcenter.member.command.CommandGetAllTeacher;
 import com.englishcenter.room.Room;
 import com.englishcenter.room.application.RoomApplication;
 import com.englishcenter.schedule.Schedule;
@@ -69,6 +71,9 @@ public class ScheduleApplication {
             throw new Exception(ExceptionEnum.classroom_not_exist);
         }
         ClassRoom classRoom = classRoomOptional.get();
+        if (!ClassRoom.Status.create.equals(classRoom.getStatus())) {
+            throw new Exception(ExceptionEnum.can_only_generate_with_status_is_create);
+        }
         Optional<Course> optionalCourse = courseApplication.getById(classRoom.getCourse_id());
         if (!optionalCourse.isPresent()) {
             throw new Exception(ExceptionEnum.course_not_exist);
@@ -80,7 +85,7 @@ public class ScheduleApplication {
         Shift shift = optionalShift.get();
         Course course = optionalCourse.get();
         validateScheduleExits(classRoom.get_id().toHexString());
-        List<String> listTeacher = getTeacherIds(command.getTeacher_id());
+        List<String> listTeacher = getTeacherIds(command.getTeacher_id(), course.get_id().toHexString());
         List<String> listRoom = getRoomIds(command.getRoom_id(), classRoom.getMax_student());
         List<Schedule> schedule = new ArrayList<>();
         if (CollectionUtils.isEmpty(listRoom)) {
@@ -151,10 +156,12 @@ public class ScheduleApplication {
             cStart.add(Calendar.DATE, 1);
             cEnd.add(Calendar.DATE, 1);
         }
+        classRoom.setStatus("register");
+        classRoomApplication.mongoDBConnection.update(classRoom.get_id().toHexString(), classRoom);
         return mongoDBConnection.insertMany(schedule);
     }
 
-    private void validateScheduleExits(String classroomId) throws Exception {
+    public void validateScheduleExits(String classroomId) throws Exception {
         Map<String, Object> query = new HashMap<>();
         query.put("classroom_id", classroomId);
         long count = mongoDBConnection.count(query).orElse(0L);
@@ -163,9 +170,20 @@ public class ScheduleApplication {
         }
     }
 
-    private List<String> getTeacherIds(String id) {
+    private List<String> getTeacherIds(String id, String course_id) {
+        List<String> full = new ArrayList<>();
+        try {
+            full = memberApplication.getAllByStatusAndType(CommandGetAllByStatusAndType.builder()
+                            .course_id(course_id)
+                            .status(Member.MemberStatus.ACTIVE)
+                            .type(Member.MemberType.TEACHER)
+                    .build()).orElse(new ArrayList<>()).stream().map(CommandGetAllTeacher::get_id).collect(Collectors.toList());
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        String listFull = String.join("\", \"", full);
         List<BasicDBObject> aggregate = Arrays.asList(
-                BasicDBObject.parse("{\"$match\": {\"start_date\": {\"$gte\": " + System.currentTimeMillis() + "}, \"teacher_id\": {\"$ne\": \"" + id + "\"}}}"),
+                BasicDBObject.parse("{\"$match\": {\"start_date\": {\"$gte\": 1638262498990}, \"$and\": [{\"teacher_id\": {\"$ne\": \"" + id + "\"}},{\"teacher_id\": {\"$in\": [\"" + listFull + "\"]}}]}}"),
                 BasicDBObject.parse("{\"$group\": {\"_id\": \"$teacher_id\", \"total\": {\"$sum\": 1}}}"),
                 BasicDBObject.parse("{\"$sort\": {\"total\": 1}}")
         );
@@ -175,16 +193,22 @@ public class ScheduleApplication {
             result.add(id);
         }
         List<String> result1 = new ArrayList<>();
-        if (documents != null) {
-            for (Document item : documents) {
-                if (item.containsKey("_id") && item.get("_id") != null && StringUtils.isNotBlank(item.get("_id").toString())) {
-                    result1.add(item.getString("_id"));
+        try {
+            if (documents != null) {
+                for (Document item : documents) {
+                    if (item.containsKey("_id") && item.get("_id") != null && StringUtils.isNotBlank(item.get("_id").toString())) {
+                        result1.add(item.getString("_id"));
+                    }
                 }
             }
+        } catch (Exception e) {
+
         }
         List<ObjectId> objectIds = result1.stream().map(ObjectId::new).collect(Collectors.toList());
         Map<String, Object> query = new HashMap<>();
         query.put("type", Member.MemberType.TEACHER);
+        query.put("course_ids", course_id);
+        query.put("status", Member.MemberStatus.ACTIVE);
         query.put("_id", new Document("$nin", objectIds));
         result.addAll(memberApplication.find(query).orElse(new ArrayList<>())
                 .stream()
@@ -224,9 +248,14 @@ public class ScheduleApplication {
         queryClassRoom.put("_id", new Document("$in", listClassroomId.stream().map(ObjectId::new).collect(Collectors.toList())));
         List<ClassRoom> classRooms = classRoomApplication.find(queryClassRoom).orElse(new ArrayList<>());
         Map<String, String> classRoomName = new HashMap<>();
+        Map<String, String> classRoomCourseId = new HashMap<>();
+        Map<String, Integer> classRoomMaxStudent = new HashMap<>();
         for (ClassRoom classRoom: classRooms) {
             classRoomName.put(classRoom.get_id().toHexString(), classRoom.getName());
+            classRoomCourseId.put(classRoom.get_id().toHexString(), classRoom.getCourse_id());
+            classRoomMaxStudent.put(classRoom.get_id().toHexString(), classRoom.getMax_student());
         }
+        long now = System.currentTimeMillis();
         return Optional.of(list.stream().map(item -> CommandGetSchedule.builder()
                 .title(classRoomName.get(item.getClassroom_id()))
                 .id(item.get_id().toHexString())
@@ -234,6 +263,10 @@ public class ScheduleApplication {
                 .room_id(item.getRoom_id())
                 .start(item.getStart_date())
                 .end(item.getEnd_date())
+                .session(item.getSession())
+                .max_student(classRoomMaxStudent.get(item.getClassroom_id()))
+                .course_id(classRoomCourseId.get(item.getClassroom_id()))
+                .took_place(now > item.getStart_date())
                 .build()).collect(Collectors.toList()));
     }
 
@@ -249,7 +282,14 @@ public class ScheduleApplication {
             throw new Exception(ExceptionEnum.schedule_not_exist);
         }
         Schedule schedule = optional.get();
+        if (System.currentTimeMillis() + 86400000L > schedule.getStart_date()) {
+            throw new Exception(ExceptionEnum.can_not_update);
+        }
         ClassRoom classRoom = classRoomApplication.getById(schedule.getClassroom_id()).get();
+        if (command.getStart_time() != null && command.getEnd_time() != null) {
+            schedule.setStart_date(command.getStart_time());
+            schedule.setEnd_date(command.getEnd_time());
+        }
 
         Map<String, Object> query = new HashMap<>();
         query.put("$or", Arrays.asList(
@@ -262,6 +302,14 @@ public class ScheduleApplication {
                         new Document("end_date", new Document("$gte", schedule.getEnd_date()))
                 ))
         ));
+        query.put("classroom_id", schedule.getClassroom_id());
+        query.put("_id", new Document("$ne", schedule.get_id()));
+        long countV = mongoDBConnection.count(query).orElse(0L);
+        if (countV > 0) {
+            throw new Exception(ExceptionEnum.schedule_exist);
+        }
+        query.remove("classroom_id");
+        query.remove("_id");
         if (StringUtils.isNotBlank(command.getRoom_id()) && !command.getRoom_id().equals(schedule.getRoom_id())) {
             Optional<Room> room = roomApplication.getById(command.getRoom_id());
             if (!room.isPresent()) {
@@ -292,14 +340,14 @@ public class ScheduleApplication {
                 throw new Exception(ExceptionEnum.teacher_not_available);
             }
         }
+        Map<String, Object> queryUpdate = new HashMap<>();
+        queryUpdate.put("classroom_id", schedule.getClassroom_id());
+        queryUpdate.put("session", new Document("$gt", schedule.getSession()));
+        queryUpdate.put("start_date", new Document("$lt", schedule.getStart_date()));
+        Map<String, Object> data = new HashMap<>();
+        data.put("$inc", new Document("session", -1));
+        long countAdd = mongoDBConnection.updateMany(queryUpdate, data).orElse(0L);
+        schedule.setSession(schedule.getSession() + (int) countAdd);
         return mongoDBConnection.update(schedule.get_id().toHexString(), schedule);
     }
-
-//    public Optional<Schedule> getById(String id) {
-//        return mongoDBConnection.getById(id);
-//    }
-//
-//    public Optional<List<Schedule>> getAll() {
-//        return mongoDBConnection.find(new HashMap<>());
-//    }
 }

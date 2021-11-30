@@ -14,4 +14,6 @@ public class CommandUpdateSchedule {
     private String teacher_id;
     private String room_id;
     private String role;
+    private Long start_time;
+    private Long end_time;
 }

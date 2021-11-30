@@ -1,4 +1,4 @@
-package com.englishcenter.member.command;
+package com.englishcenter.room.command;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -9,8 +9,7 @@ import lombok.NoArgsConstructor;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class CommandGetAllByStatusAndType {
-    private String type;
+public class CommandGetAllByStatusAndCapacity {
     private String status;
-    private String course_id;
+    private Integer capacity;
 }

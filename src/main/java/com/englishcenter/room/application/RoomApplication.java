@@ -7,8 +7,10 @@ import com.englishcenter.core.utils.enums.MongodbEnum;
 import com.englishcenter.member.Member;
 import com.englishcenter.room.Room;
 import com.englishcenter.room.command.CommandAddRoom;
+import com.englishcenter.room.command.CommandGetAllByStatusAndCapacity;
 import com.englishcenter.room.command.CommandSearchRoom;
 import org.apache.commons.lang3.StringUtils;
+import org.bson.Document;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -80,6 +82,14 @@ public class RoomApplication {
 
     public Optional<List<Room>> getAll() {
         return mongoDBConnection.find(new HashMap<>());
+    }
+
+    public Optional<List<Room>> getAllByStatus(CommandGetAllByStatusAndCapacity command) throws Exception{
+        if (StringUtils.isBlank(command.getStatus()) || command.getCapacity() == null) {
+            throw new Exception(ExceptionEnum.param_not_null);
+        }
+        return mongoDBConnection.find(new Document("status", command.getStatus())
+                .append("capacity", new Document("$gte", command.getCapacity())));
     }
 
     public Optional<Room> getById(String id) {
