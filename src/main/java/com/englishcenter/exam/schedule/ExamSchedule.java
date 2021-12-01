@@ -11,6 +11,7 @@ import lombok.NoArgsConstructor;
 import org.bson.types.ObjectId;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.List;
 
 @Data
@@ -28,4 +29,6 @@ public class ExamSchedule implements Serializable {
     private List<String> member_ids;
     private Integer max_quantity;
     private Integer min_quantity;
+    @Builder.Default
+    private List<String> student_ids = new ArrayList<>();
 }

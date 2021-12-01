@@ -1,11 +1,9 @@
 package com.englishcenter.exam.schedule;
 
-import com.englishcenter.classroom.application.ClassRoomApplication;
-import com.englishcenter.classroom.command.CommandAddClassRoom;
-import com.englishcenter.classroom.command.CommandSearchClassRoom;
 import com.englishcenter.core.utils.ResponseUtils;
 import com.englishcenter.exam.schedule.application.ExamScheduleApplication;
 import com.englishcenter.exam.schedule.command.CommandAddExamSchedule;
+import com.englishcenter.exam.schedule.command.CommandRegisterExam;
 import com.englishcenter.exam.schedule.command.CommandSearchExamSchedule;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -32,6 +30,24 @@ public class ExamScheduleController extends ResponseUtils  {
             command.setPage(page);
             command.setSize(size);
             return this.outJson(9999, null, examScheduleApplication.getList(command).orElse(null));
+        } catch (Throwable throwable) {
+            return this.outJson(-9999, throwable.getMessage(), null);
+        }
+    }
+
+    @PostMapping("/exam_schedule/register")
+    public String getList(@RequestBody CommandRegisterExam command) {
+        try {
+            return this.outJson(9999, null, examScheduleApplication.register(command).orElse(null));
+        } catch (Throwable throwable) {
+            return this.outJson(-9999, throwable.getMessage(), null);
+        }
+    }
+
+    @PostMapping("/exam_schedule/export_excel/{id}")
+    public String getList(@PathVariable String id) {
+        try {
+            return this.outJson(9999, null, examScheduleApplication.exportExcel(id).orElse(null));
         } catch (Throwable throwable) {
             return this.outJson(-9999, throwable.getMessage(), null);
         }

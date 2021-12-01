@@ -20,5 +20,6 @@ public class CommandSearchExamSchedule {
     private Long start_time;
     private Long end_time;
     private String room_id;
+    private List<String> room_ids;
     private List<String> member_ids;
 }
