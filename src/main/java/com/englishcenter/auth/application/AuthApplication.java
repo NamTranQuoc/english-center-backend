@@ -13,7 +13,6 @@ import com.englishcenter.core.utils.MongoDBConnection;
 import com.englishcenter.core.utils.enums.ExceptionEnum;
 import com.englishcenter.core.utils.enums.MongodbEnum;
 import com.englishcenter.member.Member;
-import com.englishcenter.member.application.IMemberApplication;
 import com.englishcenter.member.application.MemberApplication;
 import com.google.gson.Gson;
 import io.jsonwebtoken.Jwts;
@@ -108,6 +107,7 @@ public class AuthApplication implements IAuthApplication {
                 new Document("code", command.getUsername()),
                 new Document("phone_number", command.getUsername())
         ));
+        query.put("status", Member.MemberStatus.ACTIVE);
         Optional<Member> member = memberApplication.mongoDBConnection.findOne(query);
         if (!member.isPresent()) {
             throw new Exception(ExceptionEnum.member_not_exist);
