@@ -1,6 +1,9 @@
 package com.englishcenter.core.utils.enums;
 
 public class ExceptionEnum {
+    public static final String exam_schedule_exist = "exam_schedule_exist";
+    public static final String receptionist_not_available = "receptionist_not_available";
+    public static final String room_capacity_is_not_enough = "room_capacity_is_not_enough";
     public static final String can_not_update = "can_not_update";
     public static final String cannot_when_status_not_is_create = "cannot_when_status_not_is_create";
     public static final String can_only_generate_with_status_is_create = "can_only_generate_with_status_is_create";
