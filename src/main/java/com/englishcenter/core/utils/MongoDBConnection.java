@@ -156,6 +156,14 @@ public class MongoDBConnection<T> {
         }
     }
 
+    public Optional<List<T>> findList(Map<String, Object> query, CommandSearchMember.Sort sort, int page, int size) {
+        try {
+            return Optional.of(mongoCollection.find(new Document(query)).sort(new Document(sort.getField(), sort.getIs_asc() ? 1 : -1)).skip((page - 1) * size).limit(size).into(new ArrayList<>()));
+        } catch (Exception e) {
+            return Optional.empty();
+        }
+    }
+
     private Document buildQuerySet(T t) {
         TypeReference<HashMap<String, Object>> typeRef = new TypeReference<HashMap<String, Object>>() {
         };

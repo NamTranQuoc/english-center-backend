@@ -38,6 +38,7 @@ public class CategoryCourseController extends ResponseUtils {
     public String add(@RequestBody CommandAddCategoryCourse command, @RequestHeader String Authorization) {
         try {
             command.setRole(this.getMemberType(Authorization));
+            command.setCurrent_member_id(this.getMemberId(Authorization));
             return this.outJson(9999, null, categoryCourseApplication.add(command).orElse(null));
         } catch (Throwable throwable) {
             return this.outJson(-9999, throwable.getMessage(), null);
@@ -48,6 +49,7 @@ public class CategoryCourseController extends ResponseUtils {
     public String update(@RequestBody CommandAddCategoryCourse command, @RequestHeader String Authorization) {
         try {
             command.setRole(this.getMemberType(Authorization));
+            command.setCurrent_member_id(this.getMemberId(Authorization));
             return this.outJson(9999, null, categoryCourseApplication.update(command).orElse(null));
         } catch (Throwable throwable) {
             return this.outJson(-9999, throwable.getMessage(), null);

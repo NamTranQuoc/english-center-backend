@@ -8,6 +8,8 @@ import com.englishcenter.core.utils.MongoDBConnection;
 import com.englishcenter.core.utils.Paging;
 import com.englishcenter.core.utils.enums.ExceptionEnum;
 import com.englishcenter.core.utils.enums.MongodbEnum;
+import com.englishcenter.log.Log;
+import com.englishcenter.log.LogApplication;
 import com.englishcenter.member.Member;
 import org.apache.commons.lang3.StringUtils;
 import org.bson.Document;
@@ -27,6 +29,9 @@ public class CategoryCourseApplication implements ICategoryCourseApplication {
         mongoDBConnection = new MongoDBConnection<>(MongodbEnum.collection_category_course, CategoryCourse.class);
     }
 
+    @Autowired
+    private LogApplication logApplication;
+
     @Override
     public Optional<CategoryCourse> add(CommandAddCategoryCourse command) throws Exception {
         if (!Arrays.asList(Member.MemberType.ADMIN, Member.MemberType.RECEPTIONIST).contains(command.getRole())) {
@@ -41,6 +46,12 @@ public class CategoryCourseApplication implements ICategoryCourseApplication {
                 .description(command.getDescription())
                 .create_date(System.currentTimeMillis())
                 .build();
+        logApplication.mongoDBConnection.insert(Log.builder()
+                .class_name(MongodbEnum.collection_category_course)
+                .action(Log.ACTION.add)
+                .perform_by(command.getCurrent_member_id())
+                .name(command.getName())
+                .build());
         return mongoDBConnection.insert(categoryCourse);
     }
 
@@ -75,15 +86,35 @@ public class CategoryCourseApplication implements ICategoryCourseApplication {
             throw new Exception(ExceptionEnum.category_course_not_exist);
         }
         CategoryCourse categoryCourse = optional.get();
-        if (StringUtils.isNotBlank(command.getName())) {
+        Map<String, Log.ChangeDetail> changeDetailMap = new HashMap<>();
+        if (StringUtils.isNotBlank(command.getName()) && !command.getName().equals(categoryCourse.getName())) {
+            changeDetailMap.put("name", Log.ChangeDetail.builder()
+                    .old_value(categoryCourse.getName())
+                    .new_value(command.getName())
+                    .build());
             categoryCourse.setName(command.getName());
         }
-        if (StringUtils.isNotBlank(command.getDescription())) {
+        if (StringUtils.isNotBlank(command.getDescription()) && !command.getDescription().equals(categoryCourse.getDescription())) {
+            changeDetailMap.put("description", Log.ChangeDetail.builder()
+                    .old_value(categoryCourse.getDescription())
+                    .new_value(command.getDescription())
+                    .build());
             categoryCourse.setDescription(command.getDescription());
         }
-        if (StringUtils.isNotBlank(command.getStatus())) {
+        if (StringUtils.isNotBlank(command.getStatus()) && !command.getStatus().equals(categoryCourse.getStatus())) {
+            changeDetailMap.put("status", Log.ChangeDetail.builder()
+                    .old_value(categoryCourse.getStatus())
+                    .new_value(command.getStatus())
+                    .build());
             categoryCourse.setStatus(command.getStatus());
         }
+        logApplication.mongoDBConnection.insert(Log.builder()
+                .class_name(MongodbEnum.collection_category_course)
+                .action(Log.ACTION.update)
+                .perform_by(command.getCurrent_member_id())
+                .name(command.getName())
+                .detail(changeDetailMap)
+                .build());
         return mongoDBConnection.update(categoryCourse.get_id().toHexString(), categoryCourse);
     }
 

@@ -29,6 +29,8 @@ public class ClassRoom implements Serializable {
     private String shift_id;
     private Long start_date;
     private String status;
+    @Builder.Default
+    private Long created_date = System.currentTimeMillis();
 
     public static class Status {
         public final static String create = "create";
