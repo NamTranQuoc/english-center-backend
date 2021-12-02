@@ -16,4 +16,5 @@ public class CommandUpdateSchedule {
     private String role;
     private Long start_time;
     private Long end_time;
+    private String current_member_id;
 }

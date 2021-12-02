@@ -7,6 +7,8 @@ import com.englishcenter.core.utils.enums.ExceptionEnum;
 import com.englishcenter.core.utils.enums.MongodbEnum;
 import com.englishcenter.course.Course;
 import com.englishcenter.course.application.CourseApplication;
+import com.englishcenter.log.Log;
+import com.englishcenter.log.LogApplication;
 import com.englishcenter.member.Member;
 import com.englishcenter.member.application.MemberApplication;
 import com.englishcenter.member.command.CommandGetAllByStatusAndType;
@@ -53,6 +55,8 @@ public class ScheduleApplication {
     private CourseApplication courseApplication;
     @Autowired
     private ShiftApplication shiftApplication;
+    @Autowired
+    private LogApplication logApplication;
 
     public Optional<Schedule> add(CommandAddSchedule command) throws Exception {
 
@@ -158,6 +162,12 @@ public class ScheduleApplication {
         }
         classRoom.setStatus("register");
         classRoomApplication.mongoDBConnection.update(classRoom.get_id().toHexString(), classRoom);
+        logApplication.mongoDBConnection.insert(Log.builder()
+                .class_name(MongodbEnum.collection_schedule)
+                .action(Log.ACTION.generate)
+                .perform_by(command.getCurrent_member_id())
+                .name(classRoom.getName())
+                .build());
         return mongoDBConnection.insertMany(schedule);
     }
 
@@ -286,7 +296,16 @@ public class ScheduleApplication {
             throw new Exception(ExceptionEnum.can_not_update);
         }
         ClassRoom classRoom = classRoomApplication.getById(schedule.getClassroom_id()).get();
-        if (command.getStart_time() != null && command.getEnd_time() != null) {
+        Map<String, Log.ChangeDetail> changeDetailMap = new HashMap<>();
+        if (command.getStart_time() != null && command.getEnd_time() != null && !command.getStart_time().equals(schedule.getStart_date())) {
+            changeDetailMap.put("start_date", Log.ChangeDetail.builder()
+                    .old_value(schedule.getStart_date().toString())
+                    .new_value(command.getStart_time().toString())
+                    .build());
+            changeDetailMap.put("end_date", Log.ChangeDetail.builder()
+                    .old_value(schedule.getEnd_date().toString())
+                    .new_value(command.getEnd_time().toString())
+                    .build());
             schedule.setStart_date(command.getStart_time());
             schedule.setEnd_date(command.getEnd_time());
         }
@@ -321,6 +340,10 @@ public class ScheduleApplication {
             query.put("room_id", command.getRoom_id());
             long count = mongoDBConnection.count(query).orElse(0L);
             if (count == 0) {
+                changeDetailMap.put("room_id", Log.ChangeDetail.builder()
+                        .old_value(schedule.getRoom_id())
+                        .new_value(command.getRoom_id())
+                        .build());
                 schedule.setRoom_id(command.getRoom_id());
             } else {
                 throw new Exception(ExceptionEnum.room_not_empty);
@@ -335,6 +358,10 @@ public class ScheduleApplication {
             query.put("teacher_id", command.getTeacher_id());
             long count = mongoDBConnection.count(query).orElse(0L);
             if (count == 0) {
+                changeDetailMap.put("teacher_id", Log.ChangeDetail.builder()
+                        .old_value(schedule.getTeacher_id())
+                        .new_value(command.getTeacher_id())
+                        .build());
                 schedule.setTeacher_id(command.getTeacher_id());
             } else {
                 throw new Exception(ExceptionEnum.teacher_not_available);
@@ -348,6 +375,13 @@ public class ScheduleApplication {
         data.put("$inc", new Document("session", -1));
         long countAdd = mongoDBConnection.updateMany(queryUpdate, data).orElse(0L);
         schedule.setSession(schedule.getSession() + (int) countAdd);
+        logApplication.mongoDBConnection.insert(Log.builder()
+                .class_name(MongodbEnum.collection_schedule)
+                .action(Log.ACTION.update)
+                .perform_by(command.getCurrent_member_id())
+                .name(classRoom.getName())
+                .detail(changeDetailMap)
+                .build());
         return mongoDBConnection.update(schedule.get_id().toHexString(), schedule);
     }
 }

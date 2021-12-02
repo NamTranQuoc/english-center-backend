@@ -21,4 +21,5 @@ public class CommandAddClassRoom {
     private Long start_date;
     private String role;
     private String status;
+    private String current_member_id;
 }

@@ -15,4 +15,5 @@ public class CommandAddCategoryCourse {
     private String name;
     private String status;
     private String description;
+    private String current_member_id;
 }
