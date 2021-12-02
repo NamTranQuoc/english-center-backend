@@ -53,4 +53,13 @@ public class ClassRoomController extends ResponseUtils {
             return this.outJson(-9999, throwable.getMessage(), null);
         }
     }
+
+    @GetMapping("/class/get_by_course_id/{id}")
+    public String getByCourseId(@PathVariable String id) {
+        try {
+            return this.outJson(9999, null, classRoomApplication.getClassByCourseId(id).orElse(null));
+        } catch (Throwable throwable) {
+            return this.outJson(-9999, throwable.getMessage(), null);
+        }
+    }
 }

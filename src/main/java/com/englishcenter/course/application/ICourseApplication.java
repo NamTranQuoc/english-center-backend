@@ -18,6 +18,8 @@ public interface ICourseApplication {
 
     Optional<List<CommandGetAllCourse>> getCourseByStatus(String status);
 
+    Optional<List<CommandGetAllCourse>> getCourseByCategoryId(String Id);
+
     Optional<Course> update(CommandAddCourse command) throws Exception;
 
     Optional<Course> getById(String id);

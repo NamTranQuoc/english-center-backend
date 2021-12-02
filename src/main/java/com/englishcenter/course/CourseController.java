@@ -62,4 +62,13 @@ public class CourseController extends ResponseUtils {
             return this.outJson(-9999, throwable.getMessage(), null);
         }
     }
+
+    @GetMapping("/course/get_by_category_id/{id}")
+    public String getByCategoryId(@PathVariable String id) {
+        try {
+            return this.outJson(9999, null, courseApplication.getCourseByCategoryId(id).orElse(null));
+        } catch (Throwable throwable) {
+            return this.outJson(-9999, throwable.getMessage(), null);
+        }
+    }
 }
