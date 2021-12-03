@@ -2,11 +2,14 @@ package com.englishcenter.classroom.application;
 
 import com.englishcenter.classroom.ClassRoom;
 import com.englishcenter.classroom.command.CommandAddClassRoom;
+import com.englishcenter.classroom.command.CommandGetClass;
 import com.englishcenter.classroom.command.CommandSearchClassRoom;
 import com.englishcenter.core.utils.MongoDBConnection;
 import com.englishcenter.core.utils.Paging;
 import com.englishcenter.core.utils.enums.ExceptionEnum;
 import com.englishcenter.core.utils.enums.MongodbEnum;
+import com.englishcenter.log.Log;
+import com.englishcenter.log.LogApplication;
 import com.englishcenter.member.Member;
 import com.englishcenter.schedule.application.ScheduleApplication;
 import org.apache.commons.lang3.StringUtils;
@@ -17,6 +20,7 @@ import org.springframework.util.CollectionUtils;
 
 import java.util.*;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 @Component
 public class ClassRoomApplication {
@@ -28,6 +32,8 @@ public class ClassRoomApplication {
     }
     @Autowired
     private ScheduleApplication scheduleApplication;
+    @Autowired
+    private LogApplication logApplication;
 
     public Optional<ClassRoom> add(CommandAddClassRoom command) throws Exception {
         if (StringUtils.isAnyBlank(command.getName(), command.getCourse_id(), command.getShift_id())
@@ -49,6 +55,12 @@ public class ClassRoomApplication {
                 .dow(command.getDow())
                 .status(command.getStatus())
                 .build();
+        logApplication.mongoDBConnection.insert(Log.builder()
+                .class_name(MongodbEnum.collection_class_room)
+                .action(Log.ACTION.add)
+                .perform_by(command.getCurrent_member_id())
+                .name(command.getName())
+                .build());
         return mongoDBConnection.insert(classRoom);
     }
 
@@ -89,16 +101,29 @@ public class ClassRoomApplication {
             throw new Exception(ExceptionEnum.classroom_not_exist);
         }
         ClassRoom classRoom = optional.get();
-        if (StringUtils.isNotBlank(command.getName())) {
+        Map<String, Log.ChangeDetail> changeDetailMap = new HashMap<>();
+        if (StringUtils.isNotBlank(command.getName()) && !command.getName().equals(classRoom.getName())) {
+            changeDetailMap.put("name", Log.ChangeDetail.builder()
+                    .old_value(classRoom.getName())
+                    .new_value(command.getName())
+                    .build());
             classRoom.setName(command.getName());
         }
-        if (command.getMax_student() != null) {
+        if (command.getMax_student() != null && !command.getMax_student().equals(classRoom.getMax_student())) {
+            changeDetailMap.put("max_student", Log.ChangeDetail.builder()
+                    .old_value(classRoom.getMax_student().toString())
+                    .new_value(command.getMax_student().toString())
+                    .build());
             classRoom.setMax_student(command.getMax_student());
         }
         if (command.getStatus() != null && !command.getStatus().equals(classRoom.getStatus())) {
             if (!ClassRoom.Status.create.equals(classRoom.getStatus())) {
                 throw new Exception(ExceptionEnum.cannot_when_status_not_is_create);
             }
+            changeDetailMap.put("status", Log.ChangeDetail.builder()
+                    .old_value(classRoom.getStatus())
+                    .new_value(command.getStatus())
+                    .build());
             classRoom.setStatus(command.getStatus());
         }
         if (command.getStart_date() != null && !command.getStart_date().equals(classRoom.getStart_date())) {
@@ -109,8 +134,19 @@ public class ClassRoomApplication {
                 throw new Exception(ExceptionEnum.cannot_when_status_not_is_register);
             }
             scheduleApplication.validateScheduleExits(classRoom.get_id().toHexString());
+            changeDetailMap.put("start_date", Log.ChangeDetail.builder()
+                    .old_value(classRoom.getStart_date().toString())
+                    .new_value(command.getStart_date().toString())
+                    .build());
             classRoom.setStart_date(command.getStart_date());
         }
+        logApplication.mongoDBConnection.insert(Log.builder()
+                .class_name(MongodbEnum.collection_class_room)
+                .action(Log.ACTION.update)
+                .perform_by(command.getCurrent_member_id())
+                .name(command.getName())
+                .detail(changeDetailMap)
+                .build());
         return mongoDBConnection.update(classRoom.get_id().toHexString(), classRoom);
     }
 
@@ -124,5 +160,13 @@ public class ClassRoomApplication {
 
     public Optional<List<ClassRoom>> find(Map<String, Object> query) {
         return mongoDBConnection.find(query);
+    }
+
+    public Optional<List<CommandGetClass>> getClassByCourseId(String id) {
+        List<ClassRoom> list = mongoDBConnection.find(new Document("course_id", id)).orElse(new ArrayList<>());
+        return Optional.of(list.stream().map(item -> CommandGetClass.builder()
+                ._id(item.get_id().toHexString())
+                .name(item.getName())
+                .build()).collect(Collectors.toList()));
     }
 }

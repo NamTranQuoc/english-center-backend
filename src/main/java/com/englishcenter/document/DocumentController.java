@@ -23,6 +23,15 @@ public class DocumentController extends ResponseUtils {
         }
     }
 
+    @GetMapping("/document/get_advertisement")
+    public String getImageAdvertisement() {
+        try {
+            return this.outJson(9999, null, documentApplication.getImageAdvertisement().orElse(null));
+        } catch (Throwable throwable) {
+            return this.outJson(-9999, throwable.getMessage(), null);
+        }
+    }
+
     @PostMapping("/document/get_list")
     public String getList(@RequestBody CommandSearchDocument command, @RequestParam Integer page, @RequestParam Integer size) {
         try {

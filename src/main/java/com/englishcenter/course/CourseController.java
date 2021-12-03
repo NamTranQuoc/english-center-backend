@@ -38,6 +38,7 @@ public class CourseController extends ResponseUtils {
     public String add(@RequestBody CommandAddCourse command, @RequestHeader String Authorization) {
         try {
             command.setRole(this.getMemberType(Authorization));
+            command.setCurrent_member_id(this.getMemberId(Authorization));
             return this.outJson(9999, null, courseApplication.add(command).orElse(null));
         } catch (Throwable throwable) {
             return this.outJson(-9999, throwable.getMessage(), null);
@@ -48,6 +49,7 @@ public class CourseController extends ResponseUtils {
     public String update(@RequestBody CommandAddCourse command, @RequestHeader String Authorization) {
         try {
             command.setRole(this.getMemberType(Authorization));
+            command.setCurrent_member_id(this.getMemberId(Authorization));
             return this.outJson(9999, null, courseApplication.update(command).orElse(null));
         } catch (Throwable throwable) {
             return this.outJson(-9999, throwable.getMessage(), null);
@@ -58,6 +60,15 @@ public class CourseController extends ResponseUtils {
     public String getByStatus(@PathVariable String status) {
         try {
             return this.outJson(9999, null, courseApplication.getCourseByStatus(status).orElse(null));
+        } catch (Throwable throwable) {
+            return this.outJson(-9999, throwable.getMessage(), null);
+        }
+    }
+
+    @GetMapping("/course/get_by_category_id/{id}")
+    public String getByCategoryId(@PathVariable String id) {
+        try {
+            return this.outJson(9999, null, courseApplication.getCourseByCategoryId(id).orElse(null));
         } catch (Throwable throwable) {
             return this.outJson(-9999, throwable.getMessage(), null);
         }
