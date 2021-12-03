@@ -23,6 +23,15 @@ public class CategoryCourseController extends ResponseUtils {
         }
     }
 
+    @GetMapping("/category_course/view")
+    public String view() {
+        try {
+            return this.outJson(9999, null, categoryCourseApplication.view().orElse(null));
+        } catch (Throwable throwable) {
+            return this.outJson(-9999, throwable.getMessage(), null);
+        }
+    }
+
     @PostMapping("/category_course/get_list")
     public String getList(@RequestBody CommandSearchCategoryCourse command, @RequestParam Integer page, @RequestParam Integer size) {
         try {

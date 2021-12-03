@@ -1,5 +1,6 @@
 package com.englishcenter.document.application;
 
+import com.englishcenter.core.firebase.FirebaseFileService;
 import com.englishcenter.core.utils.MongoDBConnection;
 import com.englishcenter.core.utils.Paging;
 import com.englishcenter.core.utils.enums.ExceptionEnum;
@@ -15,6 +16,7 @@ import org.springframework.util.CollectionUtils;
 
 import java.util.*;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 @Component
 public class DocumentApplication {
@@ -25,6 +27,9 @@ public class DocumentApplication {
         mongoDBConnection = new MongoDBConnection<>(MongodbEnum.collection_document, Document.class);
     }
 
+    @Autowired
+    private FirebaseFileService firebaseFileService;
+
     public Optional<Document> add(CommandAddDocument command) throws Exception {
         if(StringUtils.isAnyBlank(command.getName(), command.getType(), command.getPath())) {
             throw new Exception(ExceptionEnum.param_not_null);
@@ -33,7 +38,9 @@ public class DocumentApplication {
             throw new Exception(ExceptionEnum.member_type_deny);
         }
         String extent = command.getPath().split("\\.")[1];
-        if (!Arrays.asList("png", "jgp").contains(extent) && Document.DocumentType.IMAGE.equals(command.getType())) {
+        if (!Arrays.asList("png", "jgp").contains(extent) && Arrays.asList(
+                Document.DocumentType.IMAGE,
+                Document.DocumentType.ADVERTISEMENT).contains(command.getType())) {
             throw new Exception(ExceptionEnum.document_extension_not_match);
         }
         Document document = Document.builder()
@@ -64,6 +71,15 @@ public class DocumentApplication {
             query.put("course_ids", new org.bson.Document("$in", command.getCourse_ids()));
         }
         return mongoDBConnection.find(query, command.getSort(), command.getPage(), command.getSize());
+    }
+
+    public Optional<List<String>> getImageAdvertisement() {
+        Map<String, Object> query = new HashMap<>();
+        query.put("type", Document.DocumentType.ADVERTISEMENT);
+        return Optional.of(mongoDBConnection.find(query).orElse(new ArrayList<>())
+                .stream()
+                .map(item -> firebaseFileService.getDownloadUrl(item.getPath(), "documents"))
+                .collect(Collectors.toList()));
     }
 
     public Optional<Document> update(CommandAddDocument command) throws Exception {
