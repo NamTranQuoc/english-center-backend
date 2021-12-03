@@ -20,4 +20,5 @@ public class CommandAddCourse {
     private Float input_score;
     private Float output_score;
     private String status;
+    private String current_member_id;
 }

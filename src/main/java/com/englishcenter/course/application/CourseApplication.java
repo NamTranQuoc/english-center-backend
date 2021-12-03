@@ -10,6 +10,8 @@ import com.englishcenter.course.Course;
 import com.englishcenter.course.command.CommandAddCourse;
 import com.englishcenter.course.command.CommandGetAllCourse;
 import com.englishcenter.course.command.CommandSearchCourse;
+import com.englishcenter.log.Log;
+import com.englishcenter.log.LogApplication;
 import com.englishcenter.member.Member;
 import org.apache.commons.lang3.StringUtils;
 import org.bson.Document;
@@ -32,6 +34,8 @@ public class CourseApplication implements ICourseApplication {
     }
     @Autowired
     private ICategoryCourseApplication categoryCourseApplication;
+    @Autowired
+    private LogApplication logApplication;
 
     @Override
     public Optional<Course> add(CommandAddCourse command) throws Exception {
@@ -56,6 +60,12 @@ public class CourseApplication implements ICourseApplication {
                 .output_score(command.getOutput_score())
                 .status(command.getStatus())
                 .build();
+        logApplication.mongoDBConnection.insert(Log.builder()
+                .class_name(MongodbEnum.collection_course)
+                .action(Log.ACTION.add)
+                .perform_by(command.getCurrent_member_id())
+                .name(command.getName())
+                .build());
         return mongoDBConnection.insert(course);
     }
 
@@ -123,35 +133,75 @@ public class CourseApplication implements ICourseApplication {
             throw new Exception(ExceptionEnum.course_not_exist);
         }
         Course course = courseOptional.get();
-        if (StringUtils.isNotBlank(command.getName())) {
+        Map<String, Log.ChangeDetail> changeDetailMap = new HashMap<>();
+        if (StringUtils.isNotBlank(command.getName()) && !command.getName().equals(course.getName())) {
+            changeDetailMap.put("name", Log.ChangeDetail.builder()
+                    .old_value(course.getName())
+                    .new_value(command.getName())
+                    .build());
             course.setName(command.getName());
         }
-        if (StringUtils.isNotBlank(command.getCategory_course_id())) {
+        if (StringUtils.isNotBlank(command.getCategory_course_id()) && !command.getCategory_course_id().equals(course.getCategory_course_id())) {
             Optional<CategoryCourse> categoryCourse = categoryCourseApplication.getById(command.getCategory_course_id());
             if (categoryCourse.isPresent()) {
+                changeDetailMap.put("category_course_id", Log.ChangeDetail.builder()
+                        .old_value(course.getCategory_course_id())
+                        .new_value(command.getCategory_course_id())
+                        .build());
                 course.setCategory_course_id(command.getCategory_course_id());
             } else {
                 throw new Exception(ExceptionEnum.category_course_not_exist);
             }
         }
-        if (StringUtils.isNotBlank(command.getDescription())) {
+        if (StringUtils.isNotBlank(command.getDescription()) && !command.getDescription().equals(course.getDescription())) {
+            changeDetailMap.put("description", Log.ChangeDetail.builder()
+                    .old_value(course.getDescription())
+                    .new_value(command.getDescription())
+                    .build());
             course.setDescription(command.getDescription());
         }
-        if (command.getNumber_of_shift() != null) {
+        if (command.getNumber_of_shift() != null && !command.getNumber_of_shift().equals(course.getNumber_of_shift())) {
+            changeDetailMap.put("number_of_shift", Log.ChangeDetail.builder()
+                    .old_value(course.getNumber_of_shift().toString())
+                    .new_value(command.getNumber_of_shift().toString())
+                    .build());
             course.setNumber_of_shift(command.getNumber_of_shift());
         }
-        if (command.getTuition() != null) {
+        if (command.getTuition() != null && !command.getTuition().equals(course.getTuition())) {
+            changeDetailMap.put("tuition", Log.ChangeDetail.builder()
+                    .old_value(course.getTuition().toString())
+                    .new_value(command.getTuition().toString())
+                    .build());
             course.setTuition(command.getTuition());
         }
-        if (command.getInput_score() != null) {
+        if (command.getInput_score() != null && !command.getInput_score().equals(course.getInput_score())) {
+            changeDetailMap.put("input_score", Log.ChangeDetail.builder()
+                    .old_value(course.getInput_score().toString())
+                    .new_value(command.getInput_score().toString())
+                    .build());
             course.setInput_score(command.getInput_score());
         }
-        if (command.getOutput_score() != null) {
+        if (command.getOutput_score() != null && !command.getOutput_score().equals(course.getOutput_score())) {
+            changeDetailMap.put("output_score", Log.ChangeDetail.builder()
+                    .old_value(course.getOutput_score().toString())
+                    .new_value(command.getOutput_score().toString())
+                    .build());
             course.setOutput_score(command.getOutput_score());
         }
-        if (command.getStatus() != null) {
+        if (StringUtils.isNotBlank(command.getStatus()) && !command.getStatus().equals(course.getStatus())) {
+            changeDetailMap.put("status", Log.ChangeDetail.builder()
+                    .old_value(course.getStatus())
+                    .new_value(command.getStatus())
+                    .build());
             course.setStatus(command.getStatus());
         }
+        logApplication.mongoDBConnection.insert(Log.builder()
+                .class_name(MongodbEnum.collection_class_room)
+                .action(Log.ACTION.update)
+                .perform_by(command.getCurrent_member_id())
+                .name(command.getName())
+                .detail(changeDetailMap)
+                .build());
         return mongoDBConnection.update(course.get_id().toHexString(), course);
     }
 
