@@ -48,4 +48,14 @@ public class RegisterController extends ResponseUtils {
             return this.outJson(-9999, throwable.getMessage(), null);
         }
     }
+
+    @PutMapping("/register/delete")
+    public String delete(@RequestBody CommandAddRegister command, @RequestHeader String Authorization) {
+        try {
+            command.setRole(this.getMemberType(Authorization));
+            return this.outJson(9999, null, registerApplication.delete(command).orElse(null));
+        } catch (Throwable throwable) {
+            return this.outJson(-9999, throwable.getMessage(), null);
+        }
+    }
 }

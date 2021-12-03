@@ -1,7 +1,5 @@
 package com.englishcenter.register.application;
 
-import com.englishcenter.category.course.CategoryCourse;
-import com.englishcenter.category.course.command.CommandAddCategoryCourse;
 import com.englishcenter.classroom.ClassRoom;
 import com.englishcenter.classroom.application.ClassRoomApplication;
 import com.englishcenter.core.utils.MongoDBConnection;
@@ -10,7 +8,6 @@ import com.englishcenter.core.utils.enums.ExceptionEnum;
 import com.englishcenter.core.utils.enums.MongodbEnum;
 import com.englishcenter.course.Course;
 import com.englishcenter.course.application.CourseApplication;
-import com.englishcenter.log.Log;
 import com.englishcenter.member.Member;
 import com.englishcenter.member.application.MemberApplication;
 import com.englishcenter.register.Register;
@@ -22,9 +19,7 @@ import org.bson.Document;
 import org.bson.types.ObjectId;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-import org.springframework.util.CollectionUtils;
 
-import javax.print.Doc;
 import java.util.*;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -144,8 +139,8 @@ public class RegisterApplication {
                 .register(getRegisByMemberId(item.get_id().toHexString(), register.get().getStudent_ids()))
                 .build()).collect(Collectors.toList());
         return Optional.of(Paging.<CommandGetListResponse>builder()
-                        .items(commandGetListResponseList)
-                        .total_items((long) commandGetListResponseList.size())
+                .items(commandGetListResponseList)
+                .total_items((long) commandGetListResponseList.size())
                 .build());
     }
 
@@ -171,12 +166,28 @@ public class RegisterApplication {
         }
         Register register = optionalRegister.get();
         if (StringUtils.isNotBlank(command.getStatus())) {
-            for(Register.StudentRegister studentRegister: register.getStudent_ids()) {
+            for (Register.StudentRegister studentRegister : register.getStudent_ids()) {
                 if (studentRegister.getStudent_id().equals(command.getStudent_id())) {
                     studentRegister.setStatus(command.getStatus());
                 }
             }
         }
+        return mongoDBConnection.update(register.get_id().toHexString(), register);
+    }
+
+    public Optional<Register> delete(CommandAddRegister command) throws Exception {
+        if (!Arrays.asList(Member.MemberType.ADMIN, Member.MemberType.RECEPTIONIST).contains(command.getRole())) {
+            throw new Exception(ExceptionEnum.member_type_deny);
+        }
+        if (StringUtils.isAnyBlank(command.getStudent_id(), command.getClass_id())) {
+            throw new Exception(ExceptionEnum.param_not_null);
+        }
+        Optional<Register> optionalRegister = mongoDBConnection.findOne(new Document("class_id", command.getClass_id()));
+        if (!optionalRegister.isPresent()) {
+            throw new Exception(ExceptionEnum.register_not_exist);
+        }
+        Register register = optionalRegister.get();
+        register.getStudent_ids().removeIf(studentRegister -> studentRegister.getStudent_id().equals(command.getStudent_id()));
         return mongoDBConnection.update(register.get_id().toHexString(), register);
     }
 }
