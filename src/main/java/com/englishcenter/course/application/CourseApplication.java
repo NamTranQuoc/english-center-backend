@@ -15,6 +15,7 @@ import com.englishcenter.log.LogApplication;
 import com.englishcenter.member.Member;
 import org.apache.commons.lang3.StringUtils;
 import org.bson.Document;
+import org.bson.types.ObjectId;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
@@ -104,6 +105,15 @@ public class CourseApplication implements ICourseApplication {
     @Override
     public Optional<List<CommandGetAllCourse>> getCourseByStatus(String status) {
         List<Course> list = mongoDBConnection.find(new Document("status", status)).orElse(new ArrayList<>());
+        return Optional.of(list.stream().map(item -> CommandGetAllCourse.builder()
+                ._id(item.get_id().toHexString())
+                .name(item.getName())
+                .build()).collect(Collectors.toList()));
+    }
+
+    @Override
+    public Optional<List<CommandGetAllCourse>> getCourseByCategoryId(String id) {
+        List<Course> list = mongoDBConnection.find(new Document("category_course_id", id)).orElse(new ArrayList<>());
         return Optional.of(list.stream().map(item -> CommandGetAllCourse.builder()
                 ._id(item.get_id().toHexString())
                 .name(item.getName())

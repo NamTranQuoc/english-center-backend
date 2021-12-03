@@ -2,6 +2,7 @@ package com.englishcenter.classroom.application;
 
 import com.englishcenter.classroom.ClassRoom;
 import com.englishcenter.classroom.command.CommandAddClassRoom;
+import com.englishcenter.classroom.command.CommandGetClass;
 import com.englishcenter.classroom.command.CommandSearchClassRoom;
 import com.englishcenter.core.utils.MongoDBConnection;
 import com.englishcenter.core.utils.Paging;
@@ -19,6 +20,7 @@ import org.springframework.util.CollectionUtils;
 
 import java.util.*;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 @Component
 public class ClassRoomApplication {
@@ -158,5 +160,13 @@ public class ClassRoomApplication {
 
     public Optional<List<ClassRoom>> find(Map<String, Object> query) {
         return mongoDBConnection.find(query);
+    }
+
+    public Optional<List<CommandGetClass>> getClassByCourseId(String id) {
+        List<ClassRoom> list = mongoDBConnection.find(new Document("course_id", id)).orElse(new ArrayList<>());
+        return Optional.of(list.stream().map(item -> CommandGetClass.builder()
+                ._id(item.get_id().toHexString())
+                .name(item.getName())
+                .build()).collect(Collectors.toList()));
     }
 }
