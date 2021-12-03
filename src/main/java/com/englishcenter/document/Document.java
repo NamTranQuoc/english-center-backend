@@ -32,5 +32,6 @@ public class Document implements Serializable {
     public static class DocumentType {
         public final static String IMAGE = "image";
         public final static String DOC = "doc";
+        public final static String ADVERTISEMENT = "advertisement";
     }
 }
