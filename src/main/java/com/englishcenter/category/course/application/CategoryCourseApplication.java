@@ -2,12 +2,15 @@ package com.englishcenter.category.course.application;
 
 import com.englishcenter.category.course.CategoryCourse;
 import com.englishcenter.category.course.command.CommandAddCategoryCourse;
+import com.englishcenter.category.course.command.CommandGetAllResponse;
 import com.englishcenter.category.course.command.CommandGetCourseCategory;
 import com.englishcenter.category.course.command.CommandSearchCategoryCourse;
 import com.englishcenter.core.utils.MongoDBConnection;
 import com.englishcenter.core.utils.Paging;
 import com.englishcenter.core.utils.enums.ExceptionEnum;
 import com.englishcenter.core.utils.enums.MongodbEnum;
+import com.englishcenter.course.Course;
+import com.englishcenter.course.application.CourseApplication;
 import com.englishcenter.log.Log;
 import com.englishcenter.log.LogApplication;
 import com.englishcenter.member.Member;
@@ -31,6 +34,8 @@ public class CategoryCourseApplication implements ICategoryCourseApplication {
 
     @Autowired
     private LogApplication logApplication;
+    @Autowired
+    private CourseApplication courseApplication;
 
     @Override
     public Optional<CategoryCourse> add(CommandAddCategoryCourse command) throws Exception {
@@ -135,5 +140,35 @@ public class CategoryCourseApplication implements ICategoryCourseApplication {
     @Override
     public Optional<List<CategoryCourse>> getAll() {
         return mongoDBConnection.find(new HashMap<>());
+    }
+
+    @Override
+    public Optional<List<CommandGetAllResponse>> view() {
+        List<CategoryCourse> categoryCourses = mongoDBConnection.find(new Document("status", "active")).orElse(new ArrayList<>());
+        Map<String, CommandGetAllResponse> result = new HashMap<>();
+        for (CategoryCourse categoryCourse : categoryCourses) {
+            result.put(categoryCourse.get_id().toHexString(), CommandGetAllResponse.builder()
+                    .courses(new ArrayList<>())
+                    .name(categoryCourse.getName())
+                    .build());
+        }
+        List<Course> courses = courseApplication.mongoDBConnection.find(new Document("status", "active")).orElse(new ArrayList<>());
+        for (Course course : courses) {
+            result.get(course.getCategory_course_id()).getCourses().add(CommandGetAllResponse.Course.builder()
+                    .id(course.get_id().toHexString())
+                    .input_score(course.getInput_score())
+                    .output_score(course.getOutput_score())
+                    .name(course.getName())
+                    .number_of_shift(course.getNumber_of_shift())
+                    .tuition(course.getTuition())
+                    .build());
+        }
+        List<CommandGetAllResponse> commandGetAllResponses = new ArrayList<>();
+        result.forEach((k, v) -> {
+            if (v.getCourses().size() != 0) {
+                commandGetAllResponses.add(v);
+            }
+        });
+        return Optional.of(commandGetAllResponses);
     }
 }

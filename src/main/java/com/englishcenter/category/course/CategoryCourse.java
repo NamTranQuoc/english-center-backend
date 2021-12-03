@@ -25,8 +25,4 @@ public class CategoryCourse implements Serializable {
     private String status;
     private String description;
     private Long create_date;
-
-    public enum StatusType {
-        INACTIVE, ACTIVE
-    }
 }
