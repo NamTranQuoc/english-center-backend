@@ -29,4 +29,7 @@ public class ExceptionEnum {
     public static final String classroom_not_exist = "classroom_not_exist";
     public static final String exam_schedule_not_exist = "exam_schedule_not_exist";
     public static final String room_not_available = "room_not_available";
+    public static final String class_full = "class_full";
+    public static final String input_score_not_enough = "input_score_not_enough";
+    public static final String register_not_exist = "register_not_exist";
 }

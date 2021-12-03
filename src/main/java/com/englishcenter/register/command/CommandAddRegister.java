@@ -14,5 +14,7 @@ public class CommandAddRegister {
     private String student_id;
     private String Status;
     private String update_by;
+    private String current_member;
     private String role;
+    private String Current_member_id;
 }
