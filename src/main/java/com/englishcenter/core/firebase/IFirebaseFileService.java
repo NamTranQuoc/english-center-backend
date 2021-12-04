@@ -18,6 +18,8 @@ public interface IFirebaseFileService {
 
     String save(MultipartFile file) throws IOException;
 
+    String saveFromUrl(String imagePath, String name) throws IOException;
+
     String save(BufferedImage bufferedImage, String originalFileName) throws IOException;
 
     String save(File file, String originalFileName) throws IOException;

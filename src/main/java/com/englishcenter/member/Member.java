@@ -44,7 +44,8 @@ public class Member implements Serializable {
     private Score input_score = Score.builder().build();
     @Builder.Default
     private Score current_score = Score.builder().build();
-    private Guardian guardian;
+    @Builder.Default
+    private Guardian guardian = Guardian.builder().build();
     private List<String> course_ids;
 
 

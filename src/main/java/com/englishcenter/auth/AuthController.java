@@ -3,6 +3,7 @@ package com.englishcenter.auth;
 import com.englishcenter.auth.application.IAuthApplication;
 import com.englishcenter.auth.command.CommandChangePassword;
 import com.englishcenter.auth.command.CommandLogin;
+import com.englishcenter.auth.command.CommandSignInWithGoogle;
 import com.englishcenter.core.utils.ResponseUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -18,6 +19,15 @@ public class AuthController extends ResponseUtils {
     public String login(@RequestBody CommandLogin command) {
         try {
             return this.outJson(9999, null, authApplication.login(command).orElse(null));
+        } catch (Throwable throwable) {
+            return this.outJson(-9999, throwable.getMessage(), null);
+        }
+    }
+
+    @PostMapping(value = "/auth/sign_with_google")
+    public String SignInWithGoogle(@RequestBody CommandSignInWithGoogle command) {
+        try {
+            return this.outJson(9999, null, authApplication.signInWithGoogle(command).orElse(null));
         } catch (Throwable throwable) {
             return this.outJson(-9999, throwable.getMessage(), null);
         }

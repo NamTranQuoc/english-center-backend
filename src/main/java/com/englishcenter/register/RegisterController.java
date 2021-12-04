@@ -1,9 +1,6 @@
 package com.englishcenter.register;
 
-import com.englishcenter.category.course.command.CommandAddCategoryCourse;
-import com.englishcenter.classroom.command.CommandAddClassRoom;
 import com.englishcenter.core.utils.ResponseUtils;
-import com.englishcenter.member.application.IMemberApplication;
 import com.englishcenter.register.application.RegisterApplication;
 import com.englishcenter.register.command.CommandAddRegister;
 import com.englishcenter.register.command.CommandGetListRegister;
