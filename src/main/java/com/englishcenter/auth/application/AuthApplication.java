@@ -4,6 +4,9 @@ import com.englishcenter.auth.Auth;
 import com.englishcenter.auth.command.CommandChangePassword;
 import com.englishcenter.auth.command.CommandJwt;
 import com.englishcenter.auth.command.CommandLogin;
+import com.englishcenter.auth.command.CommandSignInWithGoogle;
+import com.englishcenter.code.CodeApplication;
+import com.englishcenter.core.firebase.FirebaseFileService;
 import com.englishcenter.core.mail.IMailService;
 import com.englishcenter.core.mail.Mail;
 import com.englishcenter.core.thymeleaf.ThymeleafService;
@@ -35,7 +38,11 @@ public class AuthApplication implements IAuthApplication {
     @Autowired
     private IMailService mailService;
     @Autowired
-    ThymeleafService thymeleafService;
+    private ThymeleafService thymeleafService;
+    @Autowired
+    private CodeApplication codeApplication;
+    @Autowired
+    private FirebaseFileService firebaseFileService;
 
     private final String JWT_SECRET = "UUhuhdadyh9*&^777687";
     private final long JWT_EXPIRATION = 24 * 60 * 60 * 1000;
@@ -121,6 +128,60 @@ public class AuthApplication implements IAuthApplication {
         String hashPass = HashUtils.getPasswordMD5(command.getPassword());
         if (!hashPass.equals(auth.get().getPassword())) {
             throw new Exception(ExceptionEnum.password_incorrect);
+        }
+        return this.generateToken(auth.get());
+    }
+
+    @Override
+    public Optional<String> signInWithGoogle(CommandSignInWithGoogle command) throws Exception {
+        if (StringUtils.isAnyBlank(command.getEmail(), command.getName())) {
+            throw new Exception(ExceptionEnum.cannot_connect);
+        }
+        Map<String, Object> query = new HashMap<>();
+        query.put("email", command.getEmail());
+        query.put("status", Member.MemberStatus.ACTIVE);
+        Optional<Member> optional = memberApplication.mongoDBConnection.findOne(query);
+        Member member = null;
+        if (!optional.isPresent()) {
+            member = Member.builder()
+                    .create_date(System.currentTimeMillis())
+                    .name(command.getName())
+                    .email(command.getEmail())
+                    .type(Member.MemberType.STUDENT)
+                    .dob(System.currentTimeMillis())
+                    .gender("other")
+                    .address("")
+                    .phone_number(command.getPhone_number())
+                    .nick_name("")
+                    .note("")
+                    .guardian(Member.Guardian.builder().build())
+                    .build();
+
+            String code = codeApplication.generateCodeByType(member.getType());
+            member.setCode(code);
+            Optional<Member> insert = memberApplication.mongoDBConnection.insert(member);
+            if (!insert.isPresent()) {
+                throw new Exception(ExceptionEnum.cannot_connect);
+            }
+            insert.get().setAvatar("avatar-" + insert.get().get_id().toHexString() + ".png");
+            memberApplication.mongoDBConnection.update(insert.get().get_id().toHexString(), insert.get());
+            this.add(insert.get());
+            if (StringUtils.isNotBlank(command.getAvatar())) {
+                try {
+                    firebaseFileService.saveFromUrl(command.getAvatar(), "images/" + insert.get().getAvatar());
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+
+        } else {
+            member = optional.get();
+        }
+        Map<String, Object> queryAuth = new HashMap<>();
+        queryAuth.put("username", member.getEmail());
+        Optional<Auth> auth = mongoDBConnection.findOne(queryAuth);
+        if (!auth.isPresent()) {
+            throw new Exception(ExceptionEnum.member_not_exist);
         }
         return this.generateToken(auth.get());
     }
