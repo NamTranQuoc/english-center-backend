@@ -18,10 +18,9 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.awt.image.BufferedImage;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
+import java.net.URL;
+import java.net.URLConnection;
 
 @Service
 public class FirebaseFileService implements IFirebaseFileService {
@@ -70,6 +69,29 @@ public class FirebaseFileService implements IFirebaseFileService {
         String name = generateFileName(file.getOriginalFilename());
 
         bucket.create(name, file.getBytes(), file.getContentType());
+
+        return name;
+    }
+
+    @Override
+    public String saveFromUrl(String imagePath, String name) throws IOException {
+
+        Bucket bucket = StorageClient.getInstance().bucket();
+        URL url = new URL(imagePath);
+        ByteArrayOutputStream output = new ByteArrayOutputStream();
+        URLConnection conn = url.openConnection();
+        conn.setRequestProperty("User-Agent", "Firefox");
+
+        try (InputStream inputStream = conn.getInputStream()) {
+            int n = 0;
+            byte[] buffer = new byte[1024];
+            while (-1 != (n = inputStream.read(buffer))) {
+                output.write(buffer, 0, n);
+            }
+        }
+        byte[] img = output.toByteArray();
+
+        bucket.create(name, img);
 
         return name;
     }
