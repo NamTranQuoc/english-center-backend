@@ -4,20 +4,34 @@ import com.englishcenter.classroom.ClassRoom;
 import com.englishcenter.classroom.command.CommandAddClassRoom;
 import com.englishcenter.classroom.command.CommandGetClass;
 import com.englishcenter.classroom.command.CommandSearchClassRoom;
+import com.englishcenter.core.mail.IMailService;
+import com.englishcenter.core.mail.Mail;
+import com.englishcenter.core.thymeleaf.ThymeleafService;
 import com.englishcenter.core.utils.MongoDBConnection;
 import com.englishcenter.core.utils.Paging;
 import com.englishcenter.core.utils.enums.ExceptionEnum;
 import com.englishcenter.core.utils.enums.MongodbEnum;
+import com.englishcenter.exam.schedule.ExamSchedule;
 import com.englishcenter.log.Log;
 import com.englishcenter.log.LogApplication;
 import com.englishcenter.member.Member;
+import com.englishcenter.member.application.MemberApplication;
+import com.englishcenter.register.Register;
+import com.englishcenter.register.application.RegisterApplication;
+import com.englishcenter.room.Room;
+import com.englishcenter.room.application.RoomApplication;
+import com.englishcenter.schedule.Schedule;
 import com.englishcenter.schedule.application.ScheduleApplication;
+import com.mongodb.BasicDBObject;
+import com.mongodb.client.AggregateIterable;
 import org.apache.commons.lang3.StringUtils;
 import org.bson.Document;
+import org.bson.types.ObjectId;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
 
+import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -34,10 +48,21 @@ public class ClassRoomApplication {
     private ScheduleApplication scheduleApplication;
     @Autowired
     private LogApplication logApplication;
+    @Autowired
+    private MemberApplication memberApplication;
+    @Autowired
+    private IMailService mailService;
+    @Autowired
+    private ThymeleafService thymeleafService;
+    @Autowired
+    private RegisterApplication registerApplication;
+    @Autowired
+    private RoomApplication roomApplication;
 
     public Optional<ClassRoom> add(CommandAddClassRoom command) throws Exception {
         if (StringUtils.isAnyBlank(command.getName(), command.getCourse_id(), command.getShift_id())
-                || command.getMax_student() == null || command.getStart_date() == null || CollectionUtils.isEmpty(command.getDow())) {
+                || command.getMax_student() == null || command.getStart_date() == null
+                || CollectionUtils.isEmpty(command.getDow()) || command.getMin_student() == null) {
             throw new Exception(ExceptionEnum.param_not_null);
         }
         if (!Arrays.asList(Member.MemberType.ADMIN, Member.MemberType.RECEPTIONIST).contains(command.getRole())) {
@@ -51,6 +76,7 @@ public class ClassRoomApplication {
                 .course_id(command.getCourse_id())
                 .shift_id(command.getShift_id())
                 .max_student(command.getMax_student())
+                .min_student(command.getMin_student())
                 .start_date(command.getStart_date())
                 .dow(command.getDow())
                 .status(command.getStatus())
@@ -116,6 +142,13 @@ public class ClassRoomApplication {
                     .build());
             classRoom.setMax_student(command.getMax_student());
         }
+        if (command.getMin_student() != null && !command.getMin_student().equals(classRoom.getMin_student())) {
+            changeDetailMap.put("min_student", Log.ChangeDetail.builder()
+                    .old_value(classRoom.getMin_student().toString())
+                    .new_value(command.getMin_student().toString())
+                    .build());
+            classRoom.setMin_student(command.getMin_student());
+        }
         if (command.getStatus() != null && !command.getStatus().equals(classRoom.getStatus())) {
             if (!ClassRoom.Status.create.equals(classRoom.getStatus())) {
                 throw new Exception(ExceptionEnum.cannot_when_status_not_is_create);
@@ -168,5 +201,112 @@ public class ClassRoomApplication {
                 ._id(item.get_id().toHexString())
                 .name(item.getName())
                 .build()).collect(Collectors.toList()));
+    }
+
+    public void sendMailRemind() {
+        try {
+            SimpleDateFormat formatter = new SimpleDateFormat("dd/MM/yyyy");
+            long now = System.currentTimeMillis();
+            String sNow = formatter.format(new Date());
+            Map<String, Object> query = new HashMap<>();
+            query.put("start_date", new Document("$gte", now).append("$lte", now + 86400000L));
+            List<Schedule> schedules = scheduleApplication.mongoDBConnection.find(query).orElse(new ArrayList<>());
+            for (Schedule schedule: schedules) {
+                Optional<Room> room = roomApplication.getById(schedule.getRoom_id());
+                Optional<ClassRoom> classroom = mongoDBConnection.getById(schedule.getClassroom_id());
+                Optional<Register> register = registerApplication.mongoDBConnection.findOne(new Document("class_id", schedule.getClassroom_id()));
+                if (room.isPresent() && classroom.isPresent() && register.isPresent()) {
+                    Map<String, Object> data = new HashMap<>();
+                    Calendar calendar = Calendar.getInstance();
+                    calendar.setTimeInMillis(schedule.getStart_date());
+
+                    data.put("classroom", classroom.get().getName());
+                    data.put("room", room.get().getName());
+                    data.put("start_date", String.format("%s %02dh%02d", sNow, calendar.get(Calendar.HOUR_OF_DAY), calendar.get(Calendar.MINUTE)));
+
+                    List<ObjectId> ids = register.get().getStudent_ids().stream().map(item -> new ObjectId(item.getStudent_id())).collect(Collectors.toList());
+                    List<String> students = memberApplication.mongoDBConnection.find(new Document("_id", new Document("$in", ids)))
+                            .orElse(new ArrayList<>())
+                            .stream().map(Member::getEmail).collect(Collectors.toList());
+                    mailService.sendManyEmail(Mail.builder()
+                            .mail_tos(students)
+                            .mail_subject("Thông báo!")
+                            .mail_content(thymeleafService.getContent("mailRemindSchedule", data))
+                            .build());
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void updateStatusExam() {
+        try {
+            SimpleDateFormat formatter = new SimpleDateFormat("dd/MM/yyyy");
+            long now = System.currentTimeMillis() + 172800000L;
+            Map<String, Object> query = new HashMap<>();
+            query.put("start_date", new Document("$gte", now).append("$lte", now + 86400000L));
+            query.put("status", ExamSchedule.ExamStatus.register);
+            List<String> ids = new ArrayList<>();
+            List<ClassRoom> classRooms = mongoDBConnection.find(query).orElse(new ArrayList<>());
+            List<ObjectId> cancelIds = new ArrayList<>();
+            List<ObjectId> comingIds = new ArrayList<>();
+            for (ClassRoom classRoom: classRooms) {
+                Register register = registerApplication.mongoDBConnection.findOne(new Document("class_id", classRoom.get_id().toHexString())).orElse(Register.builder().build());
+                if (classRoom.getMin_student() > register.getStudent_ids().size()) {
+                    ids.addAll(register.getStudent_ids().stream().map(Register.StudentRegister::getStudent_id).collect(Collectors.toList()));
+                    cancelIds.add(classRoom.get_id());
+                } else {
+                    comingIds.add(classRoom.get_id());
+                }
+            }
+            if (!CollectionUtils.isEmpty(ids)) {
+                Map<String, Object> data = new HashMap<>();
+                data.put("reason", "Lớp học của bạn bắt đầu vào ngày " + formatter.format(new Date(now)) + " đã bị hủy do không đủ số lượng đăng ký");
+                List<ObjectId> objectIds = ids.stream().map(ObjectId::new).collect(Collectors.toList());
+                List<String> students = memberApplication.mongoDBConnection.find(new Document("_id", new Document("$in", objectIds)))
+                        .orElse(new ArrayList<>())
+                        .stream().map(Member::getEmail).collect(Collectors.toList());
+                mailService.sendManyEmail(Mail.builder()
+                        .mail_tos(students)
+                        .mail_subject("Thông báo!")
+                        .mail_content(thymeleafService.getContent("mailWhenCancel", data))
+                        .build());
+            }
+            Map<String, Object> queryUpdate = new HashMap<>();
+            Map<String, Object> dataUpdate = new HashMap<>();
+            queryUpdate.put("_id", new Document("$in", cancelIds));
+            dataUpdate.put("status", ExamSchedule.ExamStatus.cancel);
+            mongoDBConnection.update(queryUpdate, new Document("$set", dataUpdate));
+            queryUpdate.put("_id", new Document("$in", comingIds));
+            dataUpdate.put("status", ExamSchedule.ExamStatus.coming);
+            mongoDBConnection.update(queryUpdate, new Document("$set", dataUpdate));
+
+            List<String> idsCancel = cancelIds.stream().map(ObjectId::toHexString).collect(Collectors.toList());
+            Map<String, Object> deleteQuery = new HashMap<>();
+            deleteQuery.put("classroom_id", new Document("$in", idsCancel));
+            scheduleApplication.mongoDBConnection.delete(deleteQuery);
+
+            List<BasicDBObject> aggregate = Collections.singletonList(
+                    BasicDBObject.parse("{\"$group\": {\"_id\": \"$classroom_id\", \"current\": {\"$sum\": {\"$cond\": {\"if\": {\"$lte\": [\"$end_date\", " + System.currentTimeMillis() + "]}, \"then\": 1, \"else\": 0}}},\"max\": {\"$sum\": 1}}}")
+            );
+            AggregateIterable<Document> documents = mongoDBConnection.aggregate(aggregate);
+            List<ObjectId> finishIds = new ArrayList<>();
+            if (documents != null) {
+                for (Document item : documents) {
+                    if (item.containsKey("_id") && item.get("_id") != null && StringUtils.isNotBlank(item.get("_id").toString())) {
+                        if (item.getInteger("current", 0) >= item.getInteger("max", 0)) {
+                            finishIds.add(new ObjectId(item.getString("_id")));
+                        }
+                    }
+                }
+            }
+            queryUpdate.put("_id", new Document("$in", finishIds));
+            queryUpdate.put("status", ExamSchedule.ExamStatus.coming);
+            dataUpdate.put("status", ExamSchedule.ExamStatus.finish);
+            mongoDBConnection.update(queryUpdate, new Document("$set", dataUpdate));
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 }

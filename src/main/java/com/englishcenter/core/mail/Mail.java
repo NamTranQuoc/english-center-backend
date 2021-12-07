@@ -12,6 +12,7 @@ import java.util.List;
 @AllArgsConstructor
 @NoArgsConstructor
 public class Mail {
+    private List<String> mail_tos;
     private String mail_to;
     private String mail_cc;
     private String mail_bcc;

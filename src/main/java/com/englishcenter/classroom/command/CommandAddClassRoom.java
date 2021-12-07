@@ -22,4 +22,5 @@ public class CommandAddClassRoom {
     private String role;
     private String status;
     private String current_member_id;
+    private Integer min_student;
 }
