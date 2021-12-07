@@ -24,6 +24,7 @@ public class ClassRoom implements Serializable {
     ObjectId _id;
     private String name;
     private Integer max_student;
+    private Integer min_student;
     private List<Integer> dow;
     private String course_id;
     private String shift_id;

@@ -29,4 +29,22 @@ public class MailService implements IMailService {
             e.printStackTrace();
         }
     }
+
+    @Override
+    public void sendManyEmail(Mail mail) {
+        try {
+            MimeMessage msg = javaMailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(msg, true);
+            String[] array = new String[mail.getMail_tos().size()];
+            mail.getMail_tos().toArray(array);
+            helper.setTo(array);
+            helper.setSubject(mail.getMail_subject());
+            helper.setText(mail.getMail_content(), true);
+//            helper.addAttachment("my_photo.png", new ClassPathResource("android.png"));
+
+            javaMailSender.send(msg);
+        } catch (MessagingException e) {
+            e.printStackTrace();
+        }
+    }
 }
