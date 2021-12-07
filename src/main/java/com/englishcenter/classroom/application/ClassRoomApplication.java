@@ -16,7 +16,6 @@ import com.englishcenter.log.Log;
 import com.englishcenter.log.LogApplication;
 import com.englishcenter.member.Member;
 import com.englishcenter.member.application.MemberApplication;
-import com.englishcenter.register.Register;
 import com.englishcenter.register.application.RegisterApplication;
 import com.englishcenter.room.Room;
 import com.englishcenter.room.application.RoomApplication;
@@ -214,8 +213,7 @@ public class ClassRoomApplication {
             for (Schedule schedule: schedules) {
                 Optional<Room> room = roomApplication.getById(schedule.getRoom_id());
                 Optional<ClassRoom> classroom = mongoDBConnection.getById(schedule.getClassroom_id());
-                Optional<Register> register = registerApplication.mongoDBConnection.findOne(new Document("class_id", schedule.getClassroom_id()));
-                if (room.isPresent() && classroom.isPresent() && register.isPresent()) {
+                if (room.isPresent() && classroom.isPresent()) {
                     Map<String, Object> data = new HashMap<>();
                     Calendar calendar = Calendar.getInstance();
                     calendar.setTimeInMillis(schedule.getStart_date());
@@ -224,7 +222,7 @@ public class ClassRoomApplication {
                     data.put("room", room.get().getName());
                     data.put("start_date", String.format("%s %02dh%02d", sNow, calendar.get(Calendar.HOUR_OF_DAY), calendar.get(Calendar.MINUTE)));
 
-                    List<ObjectId> ids = register.get().getStudent_ids().stream().map(item -> new ObjectId(item.getStudent_id())).collect(Collectors.toList());
+                    List<ObjectId> ids = classroom.get().getStudent_ids().stream().map(item -> new ObjectId(item.getStudent_id())).collect(Collectors.toList());
                     List<String> students = memberApplication.mongoDBConnection.find(new Document("_id", new Document("$in", ids)))
                             .orElse(new ArrayList<>())
                             .stream().map(Member::getEmail).collect(Collectors.toList());
@@ -252,9 +250,8 @@ public class ClassRoomApplication {
             List<ObjectId> cancelIds = new ArrayList<>();
             List<ObjectId> comingIds = new ArrayList<>();
             for (ClassRoom classRoom: classRooms) {
-                Register register = registerApplication.mongoDBConnection.findOne(new Document("class_id", classRoom.get_id().toHexString())).orElse(Register.builder().build());
-                if (classRoom.getMin_student() > register.getStudent_ids().size()) {
-                    ids.addAll(register.getStudent_ids().stream().map(Register.StudentRegister::getStudent_id).collect(Collectors.toList()));
+                if (classRoom.getMin_student() > classRoom.getStudent_ids().size()) {
+                    ids.addAll(classRoom.getStudent_ids().stream().map(ClassRoom.StudentRegister::getStudent_id).collect(Collectors.toList()));
                     cancelIds.add(classRoom.get_id());
                 } else {
                     comingIds.add(classRoom.get_id());

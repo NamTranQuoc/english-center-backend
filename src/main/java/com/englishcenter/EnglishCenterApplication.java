@@ -23,7 +23,7 @@ public class EnglishCenterApplication {
     }
 
     //start vào 00h00 mỗi ngày
-    @Scheduled(cron = "0 37 13 ? * *")
+    @Scheduled(cron = "0 0 0 ? * *")
     private void start0hEveryday() {
         //thông báo trước khi thi
         System.out.println(new Date());
@@ -34,7 +34,7 @@ public class EnglishCenterApplication {
     }
 
     //start vào 07h00 mỗi ngày
-    @Scheduled(cron = "0 0/1 7/1 ? * *")
+    @Scheduled(cron = "0 0 7 ? * *")
     private void start7hEveryday() {
 
     }
