@@ -233,7 +233,7 @@ public class ExamScheduleApplication {
         }
     }
 
-    private void createTemplateExport(String pathName, SXSSFWorkbook workbook, List<Member> students) {
+    public void createTemplateExport(String pathName, SXSSFWorkbook workbook, List<Member> students) {
         try {
             if (org.apache.commons.collections4.CollectionUtils.isEmpty(students)) return;
             SXSSFSheet sheet = workbook.createSheet(pathName);
@@ -258,7 +258,7 @@ public class ExamScheduleApplication {
 
                 //STT
                 cell = row.createCell(col_index);
-                cell.setCellValue(row_index - 1);
+                cell.setCellValue(row_index);
 
                 //Mã
                 cell = row.createCell(++col_index);

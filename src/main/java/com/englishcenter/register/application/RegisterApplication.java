@@ -2,12 +2,15 @@ package com.englishcenter.register.application;
 
 import com.englishcenter.classroom.ClassRoom;
 import com.englishcenter.classroom.application.ClassRoomApplication;
+import com.englishcenter.core.firebase.IFirebaseFileService;
 import com.englishcenter.core.utils.MongoDBConnection;
 import com.englishcenter.core.utils.Paging;
 import com.englishcenter.core.utils.enums.ExceptionEnum;
 import com.englishcenter.core.utils.enums.MongodbEnum;
 import com.englishcenter.course.Course;
 import com.englishcenter.course.application.CourseApplication;
+import com.englishcenter.exam.schedule.ExamSchedule;
+import com.englishcenter.exam.schedule.application.ExamScheduleApplication;
 import com.englishcenter.member.Member;
 import com.englishcenter.member.application.MemberApplication;
 import com.englishcenter.register.Register;
@@ -15,11 +18,15 @@ import com.englishcenter.register.command.CommandAddRegister;
 import com.englishcenter.register.command.CommandGetListRegister;
 import com.englishcenter.register.command.CommandGetListResponse;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.poi.xssf.streaming.SXSSFWorkbook;
 import org.bson.Document;
 import org.bson.types.ObjectId;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.util.*;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -41,6 +48,12 @@ public class RegisterApplication {
 
     @Autowired
     private CourseApplication courseApplication;
+
+    @Autowired
+    private ExamScheduleApplication examScheduleApplication;
+
+    @Autowired
+    private IFirebaseFileService firebaseFileService;
 
     public Optional<Register> add(CommandAddRegister command) throws Exception {
         if (StringUtils.isAnyBlank(command.getClass_id(), command.getStudent_id(), command.getStatus())) {
@@ -187,7 +200,50 @@ public class RegisterApplication {
             throw new Exception(ExceptionEnum.register_not_exist);
         }
         Register register = optionalRegister.get();
+        Optional<ClassRoom> optionalClassRoom = classRoomApplication.getById(command.getClass_id());
+        if (!optionalClassRoom.isPresent()) {
+            throw new Exception(ExceptionEnum.classroom_not_exist);
+        }
+
+        ClassRoom classRoom = optionalClassRoom.get();
+        if (System.currentTimeMillis() > (classRoom.getStart_date() + 86400000*7)) {
+            throw new Exception(ExceptionEnum.unsubscribe_timeout);
+        }
         register.getStudent_ids().removeIf(studentRegister -> studentRegister.getStudent_id().equals(command.getStudent_id()));
         return mongoDBConnection.update(register.get_id().toHexString(), register);
+    }
+
+    public Optional<String> exportExcel(String id) throws Exception {
+        if (StringUtils.isBlank(id)) {
+            throw new Exception(ExceptionEnum.param_not_null);
+        }
+        Register register = mongoDBConnection.findOne(new Document("class_id", id)).orElse(Register.builder().build());
+        List<ObjectId> memberIds = register.getStudent_ids().stream().map(item -> new ObjectId(item.getStudent_id())).collect(Collectors.toList());
+        Map<String, Object> query = new HashMap<>();
+        query.put("_id", new Document("$in", memberIds));
+        List<Member> members = memberApplication.find(query).orElse(new ArrayList<>());
+        FileOutputStream fileOutputStream = null;
+        SXSSFWorkbook workbook = new SXSSFWorkbook();;
+        String filePath = "export-register.xlsx";
+        examScheduleApplication.createTemplateExport(filePath, workbook, members);
+        try {
+            fileOutputStream = new FileOutputStream(filePath);
+            workbook.write(fileOutputStream);
+            fileOutputStream.close();
+            workbook.close();
+            File file = new File(filePath);
+            firebaseFileService.save(file, filePath);
+            file.delete();
+            return Optional.of(firebaseFileService.getDownloadUrl(filePath, "exports"));
+        } catch (Exception e) {
+            if (fileOutputStream != null) {
+                try {
+                    fileOutputStream.close();
+                } catch (IOException ex) {
+                    ex.printStackTrace();
+                }
+            }
+        }
+        return Optional.empty();
     }
 }

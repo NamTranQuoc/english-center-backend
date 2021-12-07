@@ -33,4 +33,5 @@ public class ExceptionEnum {
     public static final String class_full = "class_full";
     public static final String input_score_not_enough = "input_score_not_enough";
     public static final String register_not_exist = "register_not_exist";
+    public static final String unsubscribe_timeout = "unsubscribe_timeout";
 }

@@ -20,8 +20,15 @@ public class CommandSearchMember {
     private List<String> types;
     private Long from_date;
     private Long to_date;
+    private Long from_dob_date;
+    private Long to_dob_date;
     private Sort sort;
     private List<String> genders;
+    private List<String> course_ids;
+    private Float min_input_score;
+    private Float max_input_score;
+    private Float min_output_score;
+    private Float max_output_score;
 
     @Data
     @NoArgsConstructor
