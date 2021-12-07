@@ -2,11 +2,11 @@ package com.englishcenter.register.application;
 
 import com.englishcenter.classroom.ClassRoom;
 import com.englishcenter.classroom.application.ClassRoomApplication;
+import com.englishcenter.core.firebase.IFirebaseFileService;
 import com.englishcenter.core.utils.Paging;
 import com.englishcenter.core.utils.enums.ExceptionEnum;
 import com.englishcenter.course.Course;
 import com.englishcenter.course.application.CourseApplication;
-import com.englishcenter.exam.schedule.ExamSchedule;
 import com.englishcenter.exam.schedule.application.ExamScheduleApplication;
 import com.englishcenter.member.Member;
 import com.englishcenter.member.application.MemberApplication;
@@ -176,31 +176,26 @@ public class RegisterApplication {
         if (!optionalClassRoom.isPresent()) {
             throw new Exception(ExceptionEnum.classroom_not_exist);
         }
-        Register register = optionalRegister.get();
-        Optional<ClassRoom> optionalClassRoom = classRoomApplication.getById(command.getClass_id());
-        if (!optionalClassRoom.isPresent()) {
-            throw new Exception(ExceptionEnum.classroom_not_exist);
-        }
-
         ClassRoom classRoom = optionalClassRoom.get();
-        if (System.currentTimeMillis() > (classRoom.getStart_date() + 86400000*7)) {
+        if (System.currentTimeMillis() > (classRoom.getStart_date() + 86400000 * 7)) {
             throw new Exception(ExceptionEnum.unsubscribe_timeout);
         }
-        register.getStudent_ids().removeIf(studentRegister -> studentRegister.getStudent_id().equals(command.getStudent_id()));
-        return mongoDBConnection.update(register.get_id().toHexString(), register);
+        classRoom.getStudent_ids().removeIf(studentRegister -> studentRegister.getStudent_id().equals(command.getStudent_id()));
+        return classRoomApplication.mongoDBConnection.update(classRoom.get_id().toHexString(), classRoom);
     }
 
     public Optional<String> exportExcel(String id) throws Exception {
         if (StringUtils.isBlank(id)) {
             throw new Exception(ExceptionEnum.param_not_null);
         }
-        Register register = mongoDBConnection.findOne(new Document("class_id", id)).orElse(Register.builder().build());
-        List<ObjectId> memberIds = register.getStudent_ids().stream().map(item -> new ObjectId(item.getStudent_id())).collect(Collectors.toList());
+        ClassRoom classRoom = classRoomApplication.mongoDBConnection.getById(id).orElse(ClassRoom.builder().build());
+        List<ObjectId> memberIds = classRoom.getStudent_ids().stream().map(item -> new ObjectId(item.getStudent_id())).collect(Collectors.toList());
         Map<String, Object> query = new HashMap<>();
         query.put("_id", new Document("$in", memberIds));
         List<Member> members = memberApplication.find(query).orElse(new ArrayList<>());
         FileOutputStream fileOutputStream = null;
-        SXSSFWorkbook workbook = new SXSSFWorkbook();;
+        SXSSFWorkbook workbook = new SXSSFWorkbook();
+        ;
         String filePath = "export-register.xlsx";
         examScheduleApplication.createTemplateExport(filePath, workbook, members);
         try {
