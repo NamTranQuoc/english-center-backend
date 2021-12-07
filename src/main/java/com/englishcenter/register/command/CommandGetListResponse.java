@@ -1,7 +1,7 @@
 package com.englishcenter.register.command;
 
+import com.englishcenter.classroom.ClassRoom;
 import com.englishcenter.member.Member;
-import com.englishcenter.register.Register;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -13,6 +13,6 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class CommandGetListResponse {
     private Member member;
-    private Register.StudentRegister register;
+    private ClassRoom.StudentRegister register;
     private String class_id;
 }
