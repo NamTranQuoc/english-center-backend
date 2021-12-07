@@ -62,4 +62,13 @@ public class RegisterController extends ResponseUtils {
             return this.outJson(-9999, throwable.getMessage(), null);
         }
     }
+
+    @PostMapping("/register/export_excel/{id}")
+    public String getList(@PathVariable String id) {
+        try {
+            return this.outJson(9999, null, registerApplication.exportExcel(id).orElse(null));
+        } catch (Throwable throwable) {
+            return this.outJson(-9999, throwable.getMessage(), null);
+        }
+    }
 }

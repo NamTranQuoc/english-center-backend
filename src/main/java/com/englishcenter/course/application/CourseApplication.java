@@ -112,7 +112,7 @@ public class CourseApplication implements ICourseApplication {
 
     @Override
     public Optional<List<CommandGetAllCourse>> getCourseByCategoryId(String id) {
-        List<Course> list = mongoDBConnection.find(new Document("category_course_id", id)).orElse(new ArrayList<>());
+        List<Course> list = mongoDBConnection.find(new Document("category_course_id", id).append("status", "active")).orElse(new ArrayList<>());
         return Optional.of(list.stream().map(item -> CommandGetAllCourse.builder()
                 ._id(item.get_id().toHexString())
                 .name(item.getName())
