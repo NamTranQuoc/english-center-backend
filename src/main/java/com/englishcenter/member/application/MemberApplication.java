@@ -103,6 +103,18 @@ public class MemberApplication implements IMemberApplication {
         if (!CollectionUtils.isEmpty(command.getGenders())) {
             query.put("gender", new Document("$in", command.getGenders()));
         }
+        if (!CollectionUtils.isEmpty(command.getCourse_ids())) {
+            query.put("course_ids", new Document("$in", command.getCourse_ids()));
+        }
+        if (command.getFrom_dob_date() != null && command.getTo_dob_date() != null) {
+            query.put("dob", new Document("$gte", command.getFrom_dob_date()).append("$lte", command.getTo_dob_date()));
+        }
+        if (command.getMin_input_score() != null && command.getMax_input_score() != null) {
+            query.put("input_score.total", new Document("$gte", command.getMin_input_score()).append("$lte", command.getMax_input_score()));
+        }
+        if (command.getMin_output_score() != null && command.getMax_output_score() != null) {
+            query.put("current_score.total", new Document("$gte", command.getMin_output_score()).append("$lte", command.getMax_output_score()));
+        }
         return query;
     }
 
@@ -261,7 +273,7 @@ public class MemberApplication implements IMemberApplication {
 
             List<CommandGetAllCourse> courses = courseApplication.getAll().orElse(new ArrayList<>());
             Map<String, String> mapCourse = new HashMap<>();
-            for (CommandGetAllCourse item: courses) {
+            for (CommandGetAllCourse item : courses) {
                 mapCourse.put(item.get_id(), item.getName());
             }
 
@@ -306,13 +318,13 @@ public class MemberApplication implements IMemberApplication {
                 //Các khóa học có thể dạy
                 String value = "";
                 if (!CollectionUtils.isEmpty(member.getCourse_ids())) {
-                    for (String item: member.getCourse_ids()) {
+                    for (String item : member.getCourse_ids()) {
                         value += mapCourse.get(item) + ", ";
                     }
                     value = value.substring(0, value.length() - 3);
                 }
                 if (!CollectionUtils.isEmpty(member.getCourse_ids()))
-                cell = row.createCell(++col_index);
+                    cell = row.createCell(++col_index);
                 cell.setCellValue(value);
 
                 //địa chỉ

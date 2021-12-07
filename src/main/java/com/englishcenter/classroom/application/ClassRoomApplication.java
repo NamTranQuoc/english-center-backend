@@ -163,7 +163,7 @@ public class ClassRoomApplication {
     }
 
     public Optional<List<CommandGetClass>> getClassByCourseId(String id) {
-        List<ClassRoom> list = mongoDBConnection.find(new Document("course_id", id)).orElse(new ArrayList<>());
+        List<ClassRoom> list = mongoDBConnection.find(new Document("course_id", id).append("status", "register")).orElse(new ArrayList<>());
         return Optional.of(list.stream().map(item -> CommandGetClass.builder()
                 ._id(item.get_id().toHexString())
                 .name(item.getName())
