@@ -1,12 +1,16 @@
 package com.englishcenter.register;
 
+import com.englishcenter.core.utils.Paging;
 import com.englishcenter.core.utils.ResponseUtils;
 import com.englishcenter.register.application.RegisterApplication;
 import com.englishcenter.register.command.CommandAddRegister;
 import com.englishcenter.register.command.CommandGetListRegister;
+import com.englishcenter.register.command.CommandGetListResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.ArrayList;
 
 @Component
 @RestController(value = "/register")
@@ -29,7 +33,10 @@ public class RegisterController extends ResponseUtils {
         try {
             command.setPage(page);
             command.setSize(size);
-            return this.outJson(9999, null, registerApplication.getList(command).orElse(null));
+            return this.outJson(9999, null, registerApplication.getList(command).orElse(Paging.<CommandGetListResponse>builder()
+                    .items(new ArrayList<>())
+                    .total_items(0L)
+                    .build()));
         } catch (Throwable throwable) {
             return this.outJson(-9999, throwable.getMessage(), null);
         }
