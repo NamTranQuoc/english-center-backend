@@ -261,7 +261,7 @@ public class MemberApplication implements IMemberApplication {
 
             List<CommandGetAllCourse> courses = courseApplication.getAll().orElse(new ArrayList<>());
             Map<String, String> mapCourse = new HashMap<>();
-            for (CommandGetAllCourse item: courses) {
+            for (CommandGetAllCourse item : courses) {
                 mapCourse.put(item.get_id(), item.getName());
             }
 
@@ -306,13 +306,13 @@ public class MemberApplication implements IMemberApplication {
                 //Các khóa học có thể dạy
                 String value = "";
                 if (!CollectionUtils.isEmpty(member.getCourse_ids())) {
-                    for (String item: member.getCourse_ids()) {
+                    for (String item : member.getCourse_ids()) {
                         value += mapCourse.get(item) + ", ";
                     }
                     value = value.substring(0, value.length() - 3);
                 }
                 if (!CollectionUtils.isEmpty(member.getCourse_ids()))
-                cell = row.createCell(++col_index);
+                    cell = row.createCell(++col_index);
                 cell.setCellValue(value);
 
                 //địa chỉ
@@ -504,7 +504,7 @@ public class MemberApplication implements IMemberApplication {
                     float read = (float) cellRead.getNumericCellValue();
                     float listen = (float) cellListen.getNumericCellValue();
                     String type = cellType.getStringCellValue();
-                    Optional<Member> member = getByEmail(email);
+                    Optional<Member> member = getByCode(email);
                     if (!member.isPresent() || !Member.MemberType.STUDENT.equals(member.get().getType())) {
                         throw new Exception();
                     }
@@ -515,13 +515,13 @@ public class MemberApplication implements IMemberApplication {
                                 .read(read)
                                 .total(listen + read)
                                 .build());
-                    } else {
-                        student.setCurrent_score(Member.Score.builder()
-                                .listen(listen)
-                                .read(read)
-                                .total(listen + read)
-                                .build());
                     }
+                    student.setCurrent_score(Member.Score.builder()
+                            .listen(listen)
+                            .read(read)
+                            .total(listen + read)
+                            .build());
+
                     mongoDBConnection.update(student.get_id().toHexString(), student);
                 } catch (Exception e) {
                     //e.printStackTrace();
@@ -593,7 +593,7 @@ public class MemberApplication implements IMemberApplication {
                 .phone_number(command.getPhone_number())
                 .nick_name(command.getNick_name())
                 .note(command.getNote())
-                .guardian(command.getGuardian())
+                .guardian(command.getGuardian() == null ? Member.Guardian.builder().build() : command.getGuardian())
                 .course_ids(command.getCourse_ids())
                 .build();
 
@@ -614,6 +614,14 @@ public class MemberApplication implements IMemberApplication {
         Map<String, Object> query = new HashMap<>();
         query.put("is_deleted", false);
         query.put("email", email);
+        return mongoDBConnection.findOne(query);
+    }
+
+    @Override
+    public Optional<Member> getByCode(String email) {
+        Map<String, Object> query = new HashMap<>();
+        query.put("is_deleted", false);
+        query.put("code", email);
         return mongoDBConnection.findOne(query);
     }
 
@@ -675,6 +683,9 @@ public class MemberApplication implements IMemberApplication {
         }
         if (StringUtils.isNotBlank(command.getStatus())) {
             member.setStatus(command.getStatus());
+        }
+        if (command.getGuardian() != null) {
+            member.setGuardian(command.getGuardian());
         }
         return mongoDBConnection.update(member.get_id().toHexString(), member);
     }

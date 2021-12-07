@@ -1,6 +1,9 @@
 package com.englishcenter.exam.schedule.application;
 
 import com.englishcenter.core.firebase.FirebaseFileService;
+import com.englishcenter.core.mail.IMailService;
+import com.englishcenter.core.mail.Mail;
+import com.englishcenter.core.thymeleaf.ThymeleafService;
 import com.englishcenter.core.utils.MongoDBConnection;
 import com.englishcenter.core.utils.Paging;
 import com.englishcenter.core.utils.enums.ExceptionEnum;
@@ -54,6 +57,10 @@ public class ExamScheduleApplication {
     private MemberApplication memberApplication;
     @Autowired
     private FirebaseFileService firebaseFileService;
+    @Autowired
+    private IMailService mailService;
+    @Autowired
+    private ThymeleafService thymeleafService;
 
     public Optional<ExamSchedule> add(CommandAddExamSchedule command) throws Exception {
         if(StringUtils.isAnyBlank(command.getRoom_id())
@@ -365,5 +372,93 @@ public class ExamScheduleApplication {
 
     public Optional<ExamSchedule> getById(String id) {
         return mongoDBConnection.getById(id);
+    }
+
+    public void sendMailRemind() {
+        try {
+            SimpleDateFormat formatter = new SimpleDateFormat("dd/MM/yyyy");
+            long now = System.currentTimeMillis();
+            String sNow = formatter.format(new Date());
+            Map<String, Object> query = new HashMap<>();
+            query.put("start_time", new Document("$gte", now).append("$lte", now + 86400000L));
+            List<ExamSchedule> examSchedules = mongoDBConnection.find(query).orElse(new ArrayList<>());
+            for (ExamSchedule examSchedule: examSchedules) {
+                Optional<Room> room = roomApplication.getById(examSchedule.getRoom_id());
+                if (room.isPresent()) {
+                    Map<String, Object> data = new HashMap<>();
+                    Calendar calendar = Calendar.getInstance();
+                    calendar.setTimeInMillis(examSchedule.getStart_time());
+
+                    data.put("date", sNow);
+                    data.put("room", room.get().getName());
+                    data.put("start_date", String.format("%02dh%02d", calendar.get(Calendar.HOUR_OF_DAY), calendar.get(Calendar.MINUTE)));
+
+                    List<ObjectId> ids = examSchedule.getStudent_ids().stream().map(ObjectId::new).collect(Collectors.toList());
+                    ids.addAll(examSchedule.getMember_ids().stream().map(ObjectId::new).collect(Collectors.toList()));
+                    List<String> students = memberApplication.mongoDBConnection.find(new Document("_id", new Document("$in", ids)))
+                            .orElse(new ArrayList<>())
+                            .stream().map(Member::getEmail).collect(Collectors.toList());
+                    mailService.sendManyEmail(Mail.builder()
+                            .mail_tos(students)
+                            .mail_subject("Thông báo!")
+                            .mail_content(thymeleafService.getContent("mailRemindExam", data))
+                            .build());
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void updateStatusExam() {
+        try {
+            SimpleDateFormat formatter = new SimpleDateFormat("dd/MM/yyyy");
+            long now = System.currentTimeMillis() + 172800000L;
+            Map<String, Object> query = new HashMap<>();
+            query.put("start_time", new Document("$gte", now).append("$lte", now + 86400000L));
+            query.put("status", ExamSchedule.ExamStatus.register);
+            List<String> ids = new ArrayList<>();
+            List<ExamSchedule> examSchedules = mongoDBConnection.find(query).orElse(new ArrayList<>());
+            List<ObjectId> cancelIds = new ArrayList<>();
+            List<ObjectId> comingIds = new ArrayList<>();
+            for (ExamSchedule examSchedule: examSchedules) {
+                if (examSchedule.getMin_quantity() > examSchedule.getStudent_ids().size()) {
+                    examSchedule.setStatus(ExamSchedule.ExamStatus.cancel);
+                    ids.addAll(examSchedule.getStudent_ids());
+                    cancelIds.add(examSchedule.get_id());
+                } else {
+                    examSchedule.setStatus(ExamSchedule.ExamStatus.coming);
+                    comingIds.add(examSchedule.get_id());
+                }
+            }
+            Map<String, Object> data = new HashMap<>();
+            data.put("reason", "Lịch thi của bạn vào ngày " + formatter.format(new Date(now)) + " đã bị hủy do không đủ số lượng đăng ký");
+            List<ObjectId> objectIds = ids.stream().map(ObjectId::new).collect(Collectors.toList());
+            List<String> students = memberApplication.mongoDBConnection.find(new Document("_id", new Document("$in", objectIds)))
+                    .orElse(new ArrayList<>())
+                    .stream().map(Member::getEmail).collect(Collectors.toList());
+            mailService.sendManyEmail(Mail.builder()
+                    .mail_tos(students)
+                    .mail_subject("Thông báo!")
+                    .mail_content(thymeleafService.getContent("mailWhenCancel", data))
+                    .build());
+            Map<String, Object> queryUpdate = new HashMap<>();
+            Map<String, Object> dataUpdate = new HashMap<>();
+            queryUpdate.put("_id", new Document("$in", cancelIds));
+            dataUpdate.put("status", ExamSchedule.ExamStatus.cancel);
+            mongoDBConnection.update(queryUpdate, new Document("$set", dataUpdate));
+            queryUpdate.put("_id", new Document("$in", comingIds));
+            dataUpdate.put("status", ExamSchedule.ExamStatus.coming);
+            mongoDBConnection.update(queryUpdate, new Document("$set", dataUpdate));
+
+            now = System.currentTimeMillis();
+            queryUpdate.remove("_id");
+            queryUpdate.put("start_time", new Document("$lte", now));
+            queryUpdate.put("status", new Document("$ne", ExamSchedule.ExamStatus.cancel));
+            dataUpdate.put("status", ExamSchedule.ExamStatus.finish);
+            mongoDBConnection.update(queryUpdate, new Document("$set", dataUpdate));
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 }

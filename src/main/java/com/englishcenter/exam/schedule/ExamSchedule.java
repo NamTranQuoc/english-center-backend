@@ -31,4 +31,13 @@ public class ExamSchedule implements Serializable {
     private Integer min_quantity;
     @Builder.Default
     private List<String> student_ids = new ArrayList<>();
+    @Builder.Default
+    private String status = ExamStatus.register;
+
+    public static class ExamStatus {
+        public final static String register = "register";
+        public final static String coming = "coming";
+        public final static String cancel = "cancel";
+        public final static String finish = "finish";
+    }
 }

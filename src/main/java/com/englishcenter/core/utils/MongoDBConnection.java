@@ -106,6 +106,14 @@ public class MongoDBConnection<T> {
         }
     }
 
+    public Optional<Boolean> delete(Map<String, Object> query) {
+        try {
+            return Optional.of(mongoCollection.deleteMany(new Document(query)).getDeletedCount() > 0);
+        } catch (Exception e) {
+            return Optional.of(Boolean.FALSE);
+        }
+    }
+
     public Optional<Long> count(Map<String, Object> query) {
         try {
             return Optional.of(mongoCollection.count(new Document(query)));
