@@ -33,7 +33,7 @@ public class LogApplication {
         List<Log> list = mongoDBConnection.findList(new HashMap<>(), CommandSearchMember.Sort.builder()
                 .field("_id")
                 .is_asc(false)
-                .build(), 1, 9).orElse(new ArrayList<>());
+                .build(), 1, 8).orElse(new ArrayList<>());
         List<ObjectId> ids = list.stream().map(item -> new ObjectId(item.getPerform_by())).collect(Collectors.toList());
         Map<String, Object> query = new HashMap<>();
         query.put("_id", new Document("$in", ids));
