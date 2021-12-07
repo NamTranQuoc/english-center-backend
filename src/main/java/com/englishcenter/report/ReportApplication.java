@@ -1,8 +1,11 @@
 package com.englishcenter.report;
 
 import com.englishcenter.classroom.application.ClassRoomApplication;
+import com.englishcenter.course.Course;
+import com.englishcenter.course.application.CourseApplication;
 import com.englishcenter.member.application.MemberApplication;
 import com.englishcenter.report.command.CommandCountMember;
+import com.englishcenter.report.command.CommandStatistical;
 import com.mongodb.BasicDBObject;
 import com.mongodb.client.AggregateIterable;
 import org.apache.commons.lang3.StringUtils;
@@ -18,6 +21,98 @@ public class ReportApplication {
     private MemberApplication memberApplication;
     @Autowired
     private ClassRoomApplication classRoomApplication;
+    @Autowired
+    private CourseApplication courseApplication;
+
+    public Optional<CommandStatistical> statisticalByRegister() {
+        Calendar calendar = Calendar.getInstance();
+        calendar.set(Calendar.HOUR_OF_DAY, 0);
+        calendar.set(Calendar.MINUTE, 0);
+        calendar.set(Calendar.SECOND, 0);
+        calendar.set(Calendar.MILLISECOND, 0);
+        long yesterday = calendar.getTimeInMillis();
+        List<BasicDBObject> aggregate = Arrays.asList(
+                BasicDBObject.parse("{\"$unwind\": \"$student_ids\"}"),
+                BasicDBObject.parse("{\"$group\": {\"_id\": \"$course_id\", \"current\": {\"$sum\": 1}, \"past\": {\"$sum\": {\"$cond\": {\"if\": {\"$lte\": [\"$student_ids.update_date\", " + yesterday + "]}, \"then\": 1, \"else\": 0 }}}}}"),
+                BasicDBObject.parse("{\"$sort\": {\"current\": -1}}"),
+                BasicDBObject.parse("{\"$limit\": 3}")
+        );
+        AggregateIterable<Document> documents = classRoomApplication.mongoDBConnection.aggregate(aggregate);
+        List<CommandStatistical.Detail> details = new ArrayList<>();
+        long total = 0L;
+        long pastTotal = 0L;
+        if (documents != null) {
+            for (Document item : documents) {
+                if (item.containsKey("_id") && item.get("_id") != null && StringUtils.isNotBlank(item.get("_id").toString())) {
+                    long current = Long.parseLong(item.get("current").toString());
+                    long past = Long.parseLong(item.get("past").toString());
+                    total += current;
+                    pastTotal += past;
+                    Course course = courseApplication.mongoDBConnection.getById(item.getString("_id")).orElse(Course.builder()
+                            .name("-")
+                            .build());
+                    details.add(CommandStatistical.Detail.builder()
+                            .name(course.getName())
+                            .total(current)
+                            .build());
+                }
+            }
+        }
+        for (CommandStatistical.Detail detail: details) {
+            detail.setPercent(((float) Math.floor(((float) (detail.getTotal()) / total) * 10000) / 100));
+        }
+        float percent = pastTotal == 0 ? 100 : ((float) Math.floor(((float) (total - pastTotal) / pastTotal) * 10000) / 100);
+        return Optional.of(CommandStatistical.builder()
+                .total(total)
+                .percent(percent)
+                .details(details)
+                .build());
+    }
+
+    public Optional<CommandStatistical> statisticalByPaid() {
+        Calendar calendar = Calendar.getInstance();
+        calendar.set(Calendar.HOUR_OF_DAY, 0);
+        calendar.set(Calendar.MINUTE, 0);
+        calendar.set(Calendar.SECOND, 0);
+        calendar.set(Calendar.MILLISECOND, 0);
+        long yesterday = calendar.getTimeInMillis();
+        List<BasicDBObject> aggregate = Arrays.asList(
+                BasicDBObject.parse("{\"$unwind\": \"$student_ids\"}"),
+                BasicDBObject.parse("{\"$group\": {\"_id\": \"$course_id\", \"current\": {\"$sum\": \"$student_ids.amount_paid\"}, \"past\": {\"$sum\": {\"$cond\": {\"if\": {\"$lte\": [\"$student_ids.update_date\", " + yesterday + "]}, \"then\": \"$student_ids.amount_paid\", \"else\": 0}}}}}"),
+                BasicDBObject.parse("{\"$sort\": {\"current\": -1}}"),
+                BasicDBObject.parse("{\"$limit\": 3}")
+        );
+        AggregateIterable<Document> documents = classRoomApplication.mongoDBConnection.aggregate(aggregate);
+        List<CommandStatistical.Detail> details = new ArrayList<>();
+        long total = 0L;
+        long pastTotal = 0L;
+        if (documents != null) {
+            for (Document item : documents) {
+                if (item.containsKey("_id") && item.get("_id") != null && StringUtils.isNotBlank(item.get("_id").toString())) {
+                    long current = Long.parseLong(item.get("current").toString());
+                    long past = Long.parseLong(item.get("past").toString());
+                    total += current;
+                    pastTotal += past;
+                    Course course = courseApplication.mongoDBConnection.getById(item.getString("_id")).orElse(Course.builder()
+                            .name("-")
+                            .build());
+                    details.add(CommandStatistical.Detail.builder()
+                            .name(course.getName())
+                            .total(current)
+                            .build());
+                }
+            }
+        }
+        for (CommandStatistical.Detail detail: details) {
+            detail.setPercent(((float) Math.floor(((float) (detail.getTotal()) / total) * 10000) / 100));
+        }
+        float percent = pastTotal == 0 ? 100 : ((float) Math.floor(((float) (total - pastTotal) / pastTotal) * 10000) / 100);
+        return Optional.of(CommandStatistical.builder()
+                .total(total)
+                .percent(percent)
+                .details(details)
+                .build());
+    }
 
     public Optional<Map<String, CommandCountMember>> countMember() {
         Calendar calendar = Calendar.getInstance();

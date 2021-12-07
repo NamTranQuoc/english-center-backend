@@ -24,6 +24,24 @@ public class ReportController extends ResponseUtils {
         }
     }
 
+    @GetMapping("/report/statistical_by_register")
+    public String statisticalByRegister() {
+        try {
+            return this.outJson(9999, null, reportApplication.statisticalByRegister().orElse(null));
+        } catch (Throwable throwable) {
+            return this.outJson(-9999, throwable.getMessage(), null);
+        }
+    }
+
+    @GetMapping("/report/statistical_by_paid")
+    public String statisticalByPaid() {
+        try {
+            return this.outJson(9999, null, reportApplication.statisticalByPaid().orElse(null));
+        } catch (Throwable throwable) {
+            return this.outJson(-9999, throwable.getMessage(), null);
+        }
+    }
+
     @GetMapping("/report/get_recent")
     public String getAll() {
         try {
