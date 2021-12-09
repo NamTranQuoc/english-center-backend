@@ -13,4 +13,6 @@ public class CommandSearchSchedule {
     private String keyword;
     private Long from_date;
     private Long to_date;
+    private String current_member_id;
+    private String current_member_role;
 }

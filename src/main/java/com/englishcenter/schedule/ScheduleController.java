@@ -25,8 +25,10 @@ public class ScheduleController extends ResponseUtils {
 //    }
 
     @PostMapping("/schedule/gets")
-    public String gets(@RequestBody CommandSearchSchedule command) {
+    public String gets(@RequestBody CommandSearchSchedule command, @RequestHeader String Authorization) {
         try {
+            command.setCurrent_member_role(this.getMemberType(Authorization));
+            command.setCurrent_member_id(this.getMemberId(Authorization));
             return this.outJson(9999, null, scheduleApplication.gets(command).orElse(null));
         } catch (Throwable throwable) {
             return this.outJson(-9999, throwable.getMessage(), null);
