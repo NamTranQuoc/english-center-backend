@@ -19,4 +19,6 @@ public class CommandSearchDocument {
     private Integer size;
     private List<String> types;
     private List<String> course_ids;
+    private String current_member_id;
+    private String current_member_role;
 }

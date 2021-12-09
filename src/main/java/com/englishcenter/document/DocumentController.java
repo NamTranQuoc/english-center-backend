@@ -33,10 +33,12 @@ public class DocumentController extends ResponseUtils {
     }
 
     @PostMapping("/document/get_list")
-    public String getList(@RequestBody CommandSearchDocument command, @RequestParam Integer page, @RequestParam Integer size) {
+    public String getList(@RequestBody CommandSearchDocument command, @RequestParam Integer page, @RequestParam Integer size, @RequestHeader String Authorization) {
         try {
             command.setPage(page);
             command.setSize(size);
+            command.setCurrent_member_id(this.getMemberId(Authorization));
+            command.setCurrent_member_role(this.getMemberType(Authorization));
             return this.outJson(9999, null, documentApplication.getList(command).orElse(null));
         } catch (Throwable throwable) {
             return this.outJson(-9999, throwable.getMessage(), null);
