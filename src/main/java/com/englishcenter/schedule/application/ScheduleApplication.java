@@ -250,6 +250,16 @@ public class ScheduleApplication {
             throw new Exception(ExceptionEnum.param_not_null);
         }
         Map<String, Object> query = new HashMap<>();
+        if (Member.MemberType.TEACHER.equals(command.getCurrent_member_role())) {
+            query.put("teacher_id", command.getCurrent_member_id());
+        }
+        if (Member.MemberType.STUDENT.equals(command.getCurrent_member_role())) {
+            Map<String, Object> queryRegister = new HashMap<>();
+            queryRegister.put("student_ids.student_id", command.getCurrent_member_id());
+            List<String> classIds = classRoomApplication.mongoDBConnection.find(queryRegister).orElse(new ArrayList<>())
+                    .stream().map(item -> item.get_id().toHexString()).collect(Collectors.toList());
+            query.put("classroom_id", new Document("$in", classIds));
+        }
         query.put("start_date", new Document("$gte", command.getFrom_date()));
         query.put("end_date", new Document("$lte", command.getTo_date()));
         List<Schedule> list = mongoDBConnection.find(query).orElse(new ArrayList<>());
