@@ -25,7 +25,7 @@ public class ExceptionEnum {
     public static final String member_type_deny = "member_type_deny";
     public static final String shift_not_exist = "shift_not_exist";
     public static final String room_not_exist = "room_not_exist";
-	public static final String document_not_exist = "document_not_exist";
+    public static final String document_not_exist = "document_not_exist";
     public static final String document_extension_not_match = "document_extension_not_match";
     public static final String start_date_not_allow = "start_date_not_allow";
     public static final String classroom_not_exist = "classroom_not_exist";
@@ -33,6 +33,8 @@ public class ExceptionEnum {
     public static final String room_not_available = "room_not_available";
     public static final String class_full = "class_full";
     public static final String input_score_not_enough = "input_score_not_enough";
-    public static final String register_not_exist = "register_not_exist";
     public static final String unsubscribe_timeout = "unsubscribe_timeout";
+    public static final String register_not_in_time_register = "register_not_in_time_register";
+    public static final String register_already = "register_already";
+    public static final String exam_schedule_conflict = "exam_schedule_conflict";
 }
