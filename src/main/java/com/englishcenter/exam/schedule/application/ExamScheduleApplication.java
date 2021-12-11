@@ -117,12 +117,21 @@ public class ExamScheduleApplication {
             throw new Exception(ExceptionEnum.exam_schedule_not_exist);
         }
         ExamSchedule examSchedule = optionalExamSchedule.get();
+        if (!ExamSchedule.ExamStatus.register.equals(examSchedule.getStatus())) {
+            throw new Exception(ExceptionEnum.register_not_in_time_register);
+        }
         Map<String, Object> query = new HashMap<>();
-        query.put("$or", Arrays.asList(
+        List<Document> or = new ArrayList<>(Arrays.asList(
                 new Document("email", command.getMember()),
                 new Document("code", command.getMember()),
                 new Document("phone_number", command.getMember())
         ));
+        try {
+            or.add(new Document("_id", new ObjectId(command.getMember())));
+        } catch (Exception e) {
+//            e.printStackTrace();
+        }
+        query.put("$or", or);
         query.put("status", Member.MemberStatus.ACTIVE);
         query.put("type", Member.MemberType.STUDENT);
         Optional<Member> optionalMember = memberApplication.mongoDBConnection.findOne(query);
@@ -130,6 +139,11 @@ public class ExamScheduleApplication {
             throw new Exception(ExceptionEnum.member_not_exist);
         }
         Member student = optionalMember.get();
+
+        if (examSchedule.getStudent_ids().contains(student.get_id().toHexString())) {
+            throw new Exception(ExceptionEnum.register_already);
+        }
+
         Map<String, Object> queryValidate = new HashMap<>();
         queryValidate.put("$or", Arrays.asList(
                 new Document("$and", Arrays.asList(
@@ -144,7 +158,7 @@ public class ExamScheduleApplication {
         queryValidate.put("student_ids", student.get_id().toHexString());
         long count = mongoDBConnection.count(queryValidate).orElse(0L);
         if (count != 0L) {
-            throw new Exception(ExceptionEnum.exam_schedule_exist);
+            throw new Exception(ExceptionEnum.exam_schedule_conflict);
         }
         examSchedule.getStudent_ids().add(student.get_id().toHexString());
         mongoDBConnection.update(examSchedule.get_id().toHexString(), examSchedule);
@@ -160,6 +174,9 @@ public class ExamScheduleApplication {
         }
         if (!CollectionUtils.isEmpty(command.getMember_ids())) {
             query.put("member_ids", new org.bson.Document("$in", command.getMember_ids()));
+        }
+        if (!CollectionUtils.isEmpty(command.getStatuses())) {
+            query.put("status", new org.bson.Document("$in", command.getStatuses()));
         }
         if (command.getRoom_id() != null) {
             query.put("room_id", new org.bson.Document("$in", command.getRoom_id()));
