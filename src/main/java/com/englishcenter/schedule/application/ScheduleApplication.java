@@ -287,6 +287,7 @@ public class ScheduleApplication {
                 .max_student(classRoomMaxStudent.get(item.getClassroom_id()))
                 .course_id(classRoomCourseId.get(item.getClassroom_id()))
                 .took_place(now > item.getStart_date())
+                .classroom_id(item.getClassroom_id())
                 .build()).collect(Collectors.toList()));
     }
 

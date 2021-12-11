@@ -22,4 +22,5 @@ public class CommandSearchExamSchedule {
     private String room_id;
     private List<String> room_ids;
     private List<String> member_ids;
+    private List<String> statuses;
 }
