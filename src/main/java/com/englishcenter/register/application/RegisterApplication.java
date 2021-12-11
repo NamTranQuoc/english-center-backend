@@ -13,6 +13,8 @@ import com.englishcenter.member.application.MemberApplication;
 import com.englishcenter.register.command.CommandAddRegister;
 import com.englishcenter.register.command.CommandGetListRegister;
 import com.englishcenter.register.command.CommandGetListResponse;
+import com.englishcenter.register.command.CommandGetsByClassIdAndSession;
+import com.englishcenter.schedule.application.ScheduleApplication;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.poi.xssf.streaming.SXSSFWorkbook;
 import org.bson.Document;
@@ -35,9 +37,10 @@ public class RegisterApplication {
     private MemberApplication memberApplication;
     @Autowired
     private CourseApplication courseApplication;
-
     @Autowired
     private ExamScheduleApplication examScheduleApplication;
+    @Autowired
+    private ScheduleApplication scheduleApplication;
 
     @Autowired
     private IFirebaseFileService firebaseFileService;
@@ -217,5 +220,30 @@ public class RegisterApplication {
             }
         }
         return Optional.empty();
+    }
+
+    public Optional<List<Member>> getsByClassroomId(CommandGetsByClassIdAndSession command) throws Exception {
+        if (StringUtils.isAnyBlank(command.getClassroom_id(), command.getRole())) {
+            throw new Exception(ExceptionEnum.param_not_null);
+        }
+        if (!Member.MemberType.TEACHER.equals(command.getRole())) {
+            throw new Exception(ExceptionEnum.member_type_deny);
+        }
+        Optional<ClassRoom> optionalClassRoom = classRoomApplication.getById(command.getClassroom_id());
+        if (!optionalClassRoom.isPresent()) {
+            throw new Exception(ExceptionEnum.classroom_not_exist);
+        }
+        ClassRoom classRoom = optionalClassRoom.get();
+        //thêm và bỏ các học viên vắng vào đăng ký học bù chỗ này
+
+        List<ObjectId> ids = classRoom.getStudent_ids().stream().map(item -> new ObjectId(item.getStudent_id())).collect(Collectors.toList());
+        Map<String, Object> query = new HashMap<>();
+        query.put("_id", new Document("$in", ids));
+        if (StringUtils.isNotBlank(command.getKeyword())) {
+            Map<String, Object> $regex = new HashMap<>();
+            $regex.put("$regex", Pattern.compile(command.getKeyword(), Pattern.CASE_INSENSITIVE));
+            query.put("name", $regex);
+        }
+        return memberApplication.find(query);
     }
 }

@@ -20,4 +20,5 @@ public class CommandGetSchedule {
     private String course_id;
     private Integer max_student;
     private Boolean took_place;
+    private String classroom_id;
 }
