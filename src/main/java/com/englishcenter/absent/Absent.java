@@ -1,4 +1,4 @@
-package com.englishcenter.schedule;
+package com.englishcenter.absent;
 
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.fasterxml.jackson.databind.ser.std.ToStringSerializer;
@@ -10,25 +10,18 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.bson.types.ObjectId;
 
-import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.List;
-
 @Data
 @Entity
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class Schedule implements Serializable {
+public class Absent {
     @JsonSerialize(using = ToStringSerializer.class)
     @Id
     ObjectId _id;
+
+    private String student_id;
     private String classroom_id;
-    private String teacher_id;
-    private String room_id;
     private Integer session;
-    private Long start_date;
-    private Long end_date;
-    @Builder.Default
-    private List<String> absent_student_ids = new ArrayList<>();
+    private String backup_classroom_id;
 }

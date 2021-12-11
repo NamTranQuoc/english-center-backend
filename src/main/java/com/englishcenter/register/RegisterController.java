@@ -6,6 +6,7 @@ import com.englishcenter.register.application.RegisterApplication;
 import com.englishcenter.register.command.CommandAddRegister;
 import com.englishcenter.register.command.CommandGetListRegister;
 import com.englishcenter.register.command.CommandGetListResponse;
+import com.englishcenter.register.command.CommandGetsByClassIdAndSession;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.web.bind.annotation.*;
@@ -37,6 +38,16 @@ public class RegisterController extends ResponseUtils {
                     .items(new ArrayList<>())
                     .total_items(0L)
                     .build()));
+        } catch (Throwable throwable) {
+            return this.outJson(-9999, throwable.getMessage(), null);
+        }
+    }
+
+    @PostMapping("/register/gets_by_class")
+    public String getList(@RequestBody CommandGetsByClassIdAndSession command, @RequestHeader String Authorization) {
+        try {
+            command.setRole(getMemberType(Authorization));
+            return this.outJson(9999, null, registerApplication.getsByClassroomId(command).orElse(null));
         } catch (Throwable throwable) {
             return this.outJson(-9999, throwable.getMessage(), null);
         }
