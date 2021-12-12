@@ -1,6 +1,8 @@
 package com.englishcenter.core.utils.enums;
 
 public class ExceptionEnum {
+    public static final String absent_exist = "absent_exist";
+    public static final String cannot_register_absent = "cannot_register_absent";
     public static final String not_during_muster_time = "not_during_muster_time";
     public static final String cannot_connect = "cannot_connect";
     public static final String exam_schedule_exist = "exam_schedule_exist";
