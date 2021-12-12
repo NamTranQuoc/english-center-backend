@@ -194,12 +194,8 @@ public class ClassRoomApplication {
         return mongoDBConnection.find(query);
     }
 
-    public Optional<List<CommandGetClass>> getClassByCourseId(String id) {
-        List<ClassRoom> list = mongoDBConnection.find(new Document("course_id", id).append("status", "register")).orElse(new ArrayList<>());
-        return Optional.of(list.stream().map(item -> CommandGetClass.builder()
-                ._id(item.get_id().toHexString())
-                .name(item.getName())
-                .build()).collect(Collectors.toList()));
+    public Optional<List<ClassRoom>> getClassByCourseId(String id) {
+        return mongoDBConnection.find(new Document("course_id", id).append("status", "register"));
     }
 
     public void sendMailRemind() {
