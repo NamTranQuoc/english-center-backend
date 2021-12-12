@@ -1,5 +1,7 @@
 package com.englishcenter.schedule.application;
 
+import com.englishcenter.absent.Absent;
+import com.englishcenter.absent.AbsentApplication;
 import com.englishcenter.classroom.ClassRoom;
 import com.englishcenter.classroom.application.ClassRoomApplication;
 import com.englishcenter.core.utils.MongoDBConnection;
@@ -24,6 +26,7 @@ import com.englishcenter.shift.Shift;
 import com.englishcenter.shift.application.ShiftApplication;
 import com.mongodb.BasicDBObject;
 import com.mongodb.client.AggregateIterable;
+import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.bson.Document;
 import org.bson.types.ObjectId;
@@ -57,6 +60,8 @@ public class ScheduleApplication {
     private ShiftApplication shiftApplication;
     @Autowired
     private LogApplication logApplication;
+    @Autowired
+    private AbsentApplication absentApplication;
 
     public Optional<Schedule> add(CommandAddSchedule command) throws Exception {
 
@@ -264,6 +269,32 @@ public class ScheduleApplication {
         query.put("end_date", new Document("$lte", command.getTo_date()));
         List<Schedule> list = mongoDBConnection.find(query).orElse(new ArrayList<>());
         Set<String> listClassroomId = list.stream().map(Schedule::getClassroom_id).collect(Collectors.toSet());
+
+        long now = System.currentTimeMillis();
+        if (Member.MemberType.STUDENT.equals(command.getCurrent_member_role())) {
+            List<String> objectIds = list.stream().map(item -> item.get_id().toHexString()).collect(Collectors.toList());
+            Map<String, Object> query1 = new HashMap<>();
+            query1.put("schedule_id", new Document("$in", objectIds));
+            List<Absent> absents = absentApplication.mongoDBConnection.find(query1).orElse(new ArrayList<>());
+            if (!CollectionUtils.isEmpty(absents)) {
+                Map<String, Absent> absentMap = new HashMap<>();
+                for (Absent absent: absents) {
+                    absentMap.put(absent.getSchedule_id(), absent);
+                }
+                absents.stream().map(item -> absentMap.put(item.getSchedule_id(), item));
+                for (int i = 0; i < list.size(); i++) {
+                    if (absentMap.get(list.get(i).get_id().toHexString()) != null) {
+                        Optional<Schedule> schedule1 = mongoDBConnection.getById(absentMap.get(list.get(i).get_id().toHexString()).getBackup_schedule_id());
+                        if (schedule1.isPresent()) {
+                            list.set(i, schedule1.get());
+                            list.get(i).setIs_absent(true);
+                            listClassroomId.add(schedule1.get().getClassroom_id());
+                        }
+                    }
+                }
+            }
+        }
+
         Map<String, Object> queryClassRoom = new HashMap<>();
         queryClassRoom.put("_id", new Document("$in", listClassroomId.stream().map(ObjectId::new).collect(Collectors.toList())));
         List<ClassRoom> classRooms = classRoomApplication.find(queryClassRoom).orElse(new ArrayList<>());
@@ -275,7 +306,7 @@ public class ScheduleApplication {
             classRoomCourseId.put(classRoom.get_id().toHexString(), classRoom.getCourse_id());
             classRoomMaxStudent.put(classRoom.get_id().toHexString(), classRoom.getMax_student());
         }
-        long now = System.currentTimeMillis();
+
         return Optional.of(list.stream().map(item -> CommandGetSchedule.builder()
                 .title(classRoomName.get(item.getClassroom_id()))
                 .id(item.get_id().toHexString())
@@ -287,6 +318,7 @@ public class ScheduleApplication {
                 .max_student(classRoomMaxStudent.get(item.getClassroom_id()))
                 .course_id(classRoomCourseId.get(item.getClassroom_id()))
                 .took_place(now > item.getStart_date())
+                .is_absent(BooleanUtils.isTrue(item.getIs_absent()))
                 .classroom_id(item.getClassroom_id())
                 .build()).collect(Collectors.toList()));
     }

@@ -24,4 +24,6 @@ public class Absent {
     private String classroom_id;
     private Integer session;
     private String backup_classroom_id;
+    private String schedule_id;
+    private String backup_schedule_id;
 }

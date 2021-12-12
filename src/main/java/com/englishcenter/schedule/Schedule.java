@@ -31,4 +31,7 @@ public class Schedule implements Serializable {
     private Long end_date;
     @Builder.Default
     private List<String> absent_student_ids = new ArrayList<>();
+
+    //không lưu db
+    private Boolean is_absent;
 }

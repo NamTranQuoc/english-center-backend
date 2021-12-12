@@ -21,4 +21,5 @@ public class CommandGetSchedule {
     private Integer max_student;
     private Boolean took_place;
     private String classroom_id;
+    private Boolean is_absent; //true : là lớp học bù
 }
