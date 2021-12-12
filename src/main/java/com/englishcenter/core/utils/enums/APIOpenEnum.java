@@ -21,6 +21,7 @@ public class APIOpenEnum {
             "/category_course/view",
             "/course/get_by_category_id/*",
             "/class/get_by_course_id/*",
-            "/auth/sign_with_google"
+            "/auth/sign_with_google",
+            "/shift/get_all"
     );
 }

@@ -63,12 +63,19 @@ public class RegisterApplication {
         Course course = optionalCourse.get();
 
         Map<String, Object> query = new HashMap<>();
-        query.put("$or", Arrays.asList(
+        List<Document> or = new ArrayList<>(Arrays.asList(
                 new Document("email", command.getStudent_id()),
                 new Document("code", command.getStudent_id()),
                 new Document("phone_number", command.getStudent_id())
         ));
+        try {
+            or.add(new Document("_id", new ObjectId(command.getStudent_id())));
+        } catch (Exception e) {
+//            e.printStackTrace();
+        }
+        query.put("$or", or);
         query.put("status", Member.MemberStatus.ACTIVE);
+        query.put("type", Member.MemberType.STUDENT);
         Optional<Member> optionalMember = memberApplication.mongoDBConnection.findOne(query);
         if (!optionalMember.isPresent()) {
             throw new Exception(ExceptionEnum.member_not_exist);
@@ -82,6 +89,13 @@ public class RegisterApplication {
         if (member.getCurrent_score().getTotal() < course.getInput_score()) {
             throw new Exception(ExceptionEnum.input_score_not_enough);
         }
+
+        for (ClassRoom.StudentRegister studentRegister : classRoom.getStudent_ids()) {
+            if (studentRegister.getStudent_id().equals(command.getStudent_id())) {
+                throw new Exception(ExceptionEnum.class_registered);
+            }
+        }
+
         classRoom.getStudent_ids().add(ClassRoom.StudentRegister.builder()
                 .status(command.getStatus())
                 .student_id(member.get_id().toHexString())
