@@ -37,4 +37,5 @@ public class ExceptionEnum {
     public static final String register_not_in_time_register = "register_not_in_time_register";
     public static final String register_already = "register_already";
     public static final String exam_schedule_conflict = "exam_schedule_conflict";
+    public static final String class_registered = "class_registered";
 }
