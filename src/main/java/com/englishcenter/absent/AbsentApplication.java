@@ -62,6 +62,10 @@ public class AbsentApplication {
         List<Absent> absents = mongoDBConnection.find(query1).orElse(new ArrayList<>());
         List<ObjectId> ids = classRoom.getStudent_ids().stream().map(item -> new ObjectId(item.getStudent_id())).collect(Collectors.toList());
         ids.addAll(absents.stream().map(item -> new ObjectId(item.getStudent_id())).collect(Collectors.toList()));
+        Map<String, Object> query2 = new HashMap<>();
+        query2.put("schedule_id", schedule.get_id().toHexString());
+        List<Absent> absents1 = mongoDBConnection.find(query2).orElse(new ArrayList<>());
+        ids.removeAll(absents1.stream().map(item -> new ObjectId(item.getStudent_id())).collect(Collectors.toList()));
         Map<String, Object> queryStudent = new HashMap<>();
         queryStudent.put("_id", new Document("$in", ids));
         List<Member> students = memberApplication.mongoDBConnection.find(queryStudent).orElse(new ArrayList<>());
