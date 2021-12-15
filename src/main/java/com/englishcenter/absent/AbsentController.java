@@ -1,7 +1,9 @@
 package com.englishcenter.absent;
 
+import com.englishcenter.absent.command.CommandGetAbsent;
 import com.englishcenter.absent.command.CommandGetStudent;
 import com.englishcenter.absent.command.CommandMuster;
+import com.englishcenter.absent.command.CommandRegisterAbsent;
 import com.englishcenter.core.utils.ResponseUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -30,6 +32,26 @@ public class AbsentController extends ResponseUtils {
     public String save(@RequestBody CommandMuster command, @RequestHeader String Authorization) {
         try {
             return this.outJson(9999, null, absentApplication.saveAbsent(command).orElse(null));
+        } catch (Throwable throwable) {
+            return this.outJson(-9999, throwable.getMessage(), null);
+        }
+    }
+
+    @PostMapping("/absent/get_classroom_absents")
+    public String getClassroomAbsents(@RequestBody CommandGetAbsent command, @RequestHeader String Authorization) {
+        try {
+            command.setStudent_id(getMemberId(Authorization));
+            return this.outJson(9999, null, absentApplication.getClassroomAbsents(command).orElse(null));
+        } catch (Throwable throwable) {
+            return this.outJson(-9999, throwable.getMessage(), null);
+        }
+    }
+
+    @PostMapping("/absent/register_absent")
+    public String registerAbsent(@RequestBody CommandRegisterAbsent command, @RequestHeader String Authorization) {
+        try {
+            command.setStudent_id(getMemberId(Authorization));
+            return this.outJson(9999, null, absentApplication.registerAbsent(command).orElse(null));
         } catch (Throwable throwable) {
             return this.outJson(-9999, throwable.getMessage(), null);
         }
