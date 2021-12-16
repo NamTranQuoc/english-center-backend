@@ -26,6 +26,7 @@ public class ExamSchedule implements Serializable {
     private Long start_time;
     private Long end_time;
     private String room_id;
+    private String code;
     private List<String> member_ids;
     private Integer max_quantity;
     private Integer min_quantity;
