@@ -31,6 +31,9 @@ public class ShiftApplication {
         if (!Arrays.asList(Member.MemberType.ADMIN, Member.MemberType.RECEPTIONIST).contains(command.getRole())) {
             throw new Exception(ExceptionEnum.member_type_deny);
         }
+        if (mongoDBConnection.checkExistByName(command.getName())) {
+            throw new Exception(ExceptionEnum.shift_exist);
+        }
         Shift shift = Shift.builder()
                 .name(command.getName())
                 .from(command.getFrom())
@@ -62,7 +65,10 @@ public class ShiftApplication {
         }
 
         Shift shift = optional.get();
-        if (StringUtils.isNotBlank(command.getName())) {
+        if (StringUtils.isNotBlank(command.getName()) && !command.getName().equals(shift.getName())) {
+            if (mongoDBConnection.checkExistByName(command.getName())) {
+                throw new Exception(ExceptionEnum.shift_exist);
+            }
             shift.setName(command.getName());
         }
         if (StringUtils.isNotBlank(command.getFrom())) {

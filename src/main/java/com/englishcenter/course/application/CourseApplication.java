@@ -48,6 +48,9 @@ public class CourseApplication implements ICourseApplication {
         if (!categoryCourseOptional.isPresent()) {
             throw new Exception(ExceptionEnum.category_course_not_exist);
         }
+        if (mongoDBConnection.checkExistByName(command.getName())) {
+            throw new Exception(ExceptionEnum.course_exist);
+        }
         Course course = Course.builder()
                 .name(command.getName())
                 .tuition(command.getTuition())
@@ -134,6 +137,9 @@ public class CourseApplication implements ICourseApplication {
         Course course = courseOptional.get();
         Map<String, Log.ChangeDetail> changeDetailMap = new HashMap<>();
         if (StringUtils.isNotBlank(command.getName()) && !command.getName().equals(course.getName())) {
+            if (mongoDBConnection.checkExistByName(command.getName())) {
+                throw new Exception(ExceptionEnum.course_exist);
+            }
             changeDetailMap.put("name", Log.ChangeDetail.builder()
                     .old_value(course.getName())
                     .new_value(command.getName())
