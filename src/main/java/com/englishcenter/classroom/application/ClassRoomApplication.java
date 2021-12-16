@@ -70,6 +70,9 @@ public class ClassRoomApplication {
         if (command.getStart_date() < System.currentTimeMillis()) {
             throw new Exception(ExceptionEnum.start_date_not_allow);
         }
+        if (mongoDBConnection.checkExistByName(command.getName())) {
+            throw new Exception(ExceptionEnum.classroom_exist);
+        }
         ClassRoom classRoom = ClassRoom.builder()
                 .name(command.getName())
                 .course_id(command.getCourse_id())
@@ -128,6 +131,9 @@ public class ClassRoomApplication {
         ClassRoom classRoom = optional.get();
         Map<String, Log.ChangeDetail> changeDetailMap = new HashMap<>();
         if (StringUtils.isNotBlank(command.getName()) && !command.getName().equals(classRoom.getName())) {
+            if (mongoDBConnection.checkExistByName(command.getName())) {
+                throw new Exception(ExceptionEnum.classroom_exist);
+            }
             changeDetailMap.put("name", Log.ChangeDetail.builder()
                     .old_value(classRoom.getName())
                     .new_value(command.getName())

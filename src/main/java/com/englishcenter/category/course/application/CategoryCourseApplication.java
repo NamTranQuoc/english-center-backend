@@ -45,6 +45,9 @@ public class CategoryCourseApplication implements ICategoryCourseApplication {
         if (StringUtils.isAnyBlank(command.getName(), command.getStatus())) {
             throw new Exception(ExceptionEnum.param_not_null);
         }
+        if (mongoDBConnection.checkExistByName(command.getName())) {
+            throw new Exception(ExceptionEnum.category_course_exist);
+        }
         CategoryCourse categoryCourse = CategoryCourse.builder()
                 .name(command.getName())
                 .status(command.getStatus())
@@ -93,6 +96,9 @@ public class CategoryCourseApplication implements ICategoryCourseApplication {
         CategoryCourse categoryCourse = optional.get();
         Map<String, Log.ChangeDetail> changeDetailMap = new HashMap<>();
         if (StringUtils.isNotBlank(command.getName()) && !command.getName().equals(categoryCourse.getName())) {
+            if (mongoDBConnection.checkExistByName(command.getName())) {
+                throw new Exception(ExceptionEnum.category_course_exist);
+            }
             changeDetailMap.put("name", Log.ChangeDetail.builder()
                     .old_value(categoryCourse.getName())
                     .new_value(command.getName())

@@ -136,6 +136,17 @@ public class MongoDBConnection<T> {
         }
     }
 
+    public Boolean checkExistByName(String name) {
+        try {
+            Map<String, Object> query = new HashMap<>();
+            query.put("name", name);
+            long count = count(query).orElse(0L);
+            return count != 0L;
+        } catch (Exception e) {
+            return Boolean.FALSE;
+        }
+    }
+
     public AggregateIterable<Document> aggregate(List<BasicDBObject> basicDBObjects) {
         return mongoCollection.aggregate(new ArrayList<>(basicDBObjects), Document.class).allowDiskUse(true);
     }

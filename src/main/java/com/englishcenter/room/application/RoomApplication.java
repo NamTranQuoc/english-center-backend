@@ -33,6 +33,9 @@ public class RoomApplication {
         if (!Arrays.asList(Member.MemberType.ADMIN, Member.MemberType.RECEPTIONIST).contains(command.getRole())) {
             throw new Exception(ExceptionEnum.member_type_deny);
         }
+        if (mongoDBConnection.checkExistByName(command.getName())) {
+            throw new Exception(ExceptionEnum.room_exist);
+        }
         Room room = Room.builder()
                 .name(command.getName())
                 .capacity(command.getCapacity())
@@ -64,7 +67,10 @@ public class RoomApplication {
         }
 
         Room room = optional.get();
-        if (StringUtils.isNotBlank(command.getName())) {
+        if (StringUtils.isNotBlank(command.getName()) && !command.getName().equals(room.getName())) {
+            if (mongoDBConnection.checkExistByName(command.getName())) {
+                throw new Exception(ExceptionEnum.room_exist);
+            }
             room.setName(command.getName());
         }
         if (command.getCapacity() != null) {

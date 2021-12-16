@@ -1,5 +1,6 @@
 package com.englishcenter.exam.schedule.application;
 
+import com.englishcenter.code.CodeApplication;
 import com.englishcenter.core.firebase.FirebaseFileService;
 import com.englishcenter.core.mail.IMailService;
 import com.englishcenter.core.mail.Mail;
@@ -61,6 +62,8 @@ public class ExamScheduleApplication {
     private IMailService mailService;
     @Autowired
     private ThymeleafService thymeleafService;
+    @Autowired
+    private CodeApplication codeApplication;
 
     public Optional<ExamSchedule> add(CommandAddExamSchedule command) throws Exception {
         if(StringUtils.isAnyBlank(command.getRoom_id())
@@ -104,6 +107,7 @@ public class ExamScheduleApplication {
                 .member_ids(command.getMember_ids())
                 .min_quantity(command.getMin_quantity())
                 .max_quantity(command.getMax_quantity())
+                .code(codeApplication.generateCodeByType("exam"))
                 .build();
         return mongoDBConnection.insert(examSchedule);
     }
