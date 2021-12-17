@@ -2,6 +2,7 @@ package com.englishcenter.document.application;
 
 import com.englishcenter.classroom.ClassRoom;
 import com.englishcenter.classroom.application.ClassRoomApplication;
+import com.englishcenter.code.CodeApplication;
 import com.englishcenter.core.firebase.FirebaseFileService;
 import com.englishcenter.core.utils.MongoDBConnection;
 import com.englishcenter.core.utils.Paging;
@@ -32,12 +33,12 @@ public class DocumentApplication {
 
     @Autowired
     private MemberApplication memberApplication;
-
     @Autowired
     private ClassRoomApplication classRoomApplication;
-
     @Autowired
     private FirebaseFileService firebaseFileService;
+    @Autowired
+    private CodeApplication codeApplication;
 
     public Optional<Document> add(CommandAddDocument command) throws Exception {
         if(StringUtils.isAnyBlank(command.getName(), command.getType(), command.getPath())) {
@@ -56,6 +57,7 @@ public class DocumentApplication {
                 .name(command.getName())
                 .course_ids(command.getCourse_ids())
                 .type(command.getType())
+                .code(codeApplication.generateCodeByType("document"))
                 .build();
         Optional<Document> insert = mongoDBConnection.insert(document);
         if (insert.isPresent()) {

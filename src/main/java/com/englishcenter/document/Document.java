@@ -23,6 +23,7 @@ public class Document implements Serializable {
     @Id
     ObjectId _id;
     private String name;
+    private String code;
     private String type;
     private String path;
     private List<String> course_ids;
