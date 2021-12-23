@@ -277,6 +277,9 @@ public class ClassRoomApplication {
             queryUpdate.put("_id", new Document("$in", cancelIds));
             dataUpdate.put("status", ExamSchedule.ExamStatus.cancel);
             mongoDBConnection.update(queryUpdate, new Document("$set", dataUpdate));
+            Map<String, Object> queryDelete = new HashMap<>();
+            queryDelete.put("classroom_id", new Document("$in", cancelIds.stream().map(ObjectId::toHexString).collect(Collectors.toList())));
+            scheduleApplication.mongoDBConnection.delete(queryDelete);
             queryUpdate.put("_id", new Document("$in", comingIds));
             dataUpdate.put("status", ExamSchedule.ExamStatus.coming);
             mongoDBConnection.update(queryUpdate, new Document("$set", dataUpdate));
