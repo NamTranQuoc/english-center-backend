@@ -23,10 +23,9 @@ public class EnglishCenterApplication {
     }
 
     //start vào 00h00 mỗi ngày
-    @Scheduled(cron = "0 0 0 ? * *")
+    @Scheduled(cron = "* */1 * ? * *")
     private void start0hEveryday() {
         //thông báo trước khi thi
-        System.out.println(new Date());
         examScheduleApplication.sendMailRemind();
         examScheduleApplication.updateStatusExam();
         classRoomApplication.sendMailRemind();

@@ -458,11 +458,13 @@ public class ExamScheduleApplication {
             List<String> students = memberApplication.mongoDBConnection.find(new Document("_id", new Document("$in", objectIds)))
                     .orElse(new ArrayList<>())
                     .stream().map(Member::getEmail).collect(Collectors.toList());
-            mailService.sendManyEmail(Mail.builder()
-                    .mail_tos(students)
-                    .mail_subject("Thông báo!")
-                    .mail_content(thymeleafService.getContent("mailWhenCancel", data))
-                    .build());
+            if (!CollectionUtils.isEmpty(students)) {
+                mailService.sendManyEmail(Mail.builder()
+                        .mail_tos(students)
+                        .mail_subject("Thông báo!")
+                        .mail_content(thymeleafService.getContent("mailWhenCancel", data))
+                        .build());
+            }
             Map<String, Object> queryUpdate = new HashMap<>();
             Map<String, Object> dataUpdate = new HashMap<>();
             queryUpdate.put("_id", new Document("$in", cancelIds));
