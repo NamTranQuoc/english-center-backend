@@ -23,7 +23,7 @@ public class EnglishCenterApplication {
     }
 
     //start vào 00h00 mỗi ngày
-    @Scheduled(cron = "* */1 * ? * *")
+    @Scheduled(cron = "0 0 0 ? * *")
     private void start0hEveryday() {
         //thông báo trước khi thi
         examScheduleApplication.sendMailRemind();
