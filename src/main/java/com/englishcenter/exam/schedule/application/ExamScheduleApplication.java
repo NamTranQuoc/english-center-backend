@@ -419,11 +419,13 @@ public class ExamScheduleApplication {
                     List<String> students = memberApplication.mongoDBConnection.find(new Document("_id", new Document("$in", ids)))
                             .orElse(new ArrayList<>())
                             .stream().map(Member::getEmail).collect(Collectors.toList());
-                    mailService.sendManyEmail(Mail.builder()
-                            .mail_tos(students)
-                            .mail_subject("Thông báo!")
-                            .mail_content(thymeleafService.getContent("mailRemindExam", data))
-                            .build());
+                    if (!CollectionUtils.isEmpty(students)) {
+                        mailService.sendManyEmail(Mail.builder()
+                                .mail_tos(students)
+                                .mail_subject("Thông báo!")
+                                .mail_content(thymeleafService.getContent("mailRemindExam", data))
+                                .build());
+                    }
                 }
             }
         } catch (Exception e) {
