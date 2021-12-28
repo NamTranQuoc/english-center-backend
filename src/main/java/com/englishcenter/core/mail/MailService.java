@@ -1,6 +1,9 @@
 package com.englishcenter.core.mail;
 
+import com.englishcenter.core.kafka.TopicProducer;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Component;
@@ -9,35 +12,22 @@ import javax.mail.MessagingException;
 import javax.mail.internet.MimeMessage;
 
 @Component
-public class MailService implements IMailService {
+public class MailService  {
     @Autowired
     private JavaMailSender javaMailSender;
 
-    @Override
-    public void sendEmail(Mail mail) {
+    @KafkaListener(id = "SEND_MAIL", topics = TopicProducer.SEND_MAIL)
+    private void send(Mail mail) {
         try {
             MimeMessage msg = javaMailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(msg, true);
-
-            helper.setTo(mail.getMail_to());
-            helper.setSubject(mail.getMail_subject());
-            helper.setText(mail.getMail_content(), true);
-//            helper.addAttachment("my_photo.png", new ClassPathResource("android.png"));
-
-            javaMailSender.send(msg);
-        } catch (MessagingException e) {
-            e.printStackTrace();
-        }
-    }
-
-    @Override
-    public void sendManyEmail(Mail mail) {
-        try {
-            MimeMessage msg = javaMailSender.createMimeMessage();
-            MimeMessageHelper helper = new MimeMessageHelper(msg, true);
-            String[] array = new String[mail.getMail_tos().size()];
-            mail.getMail_tos().toArray(array);
-            helper.setTo(array);
+            if (StringUtils.isNotBlank(mail.getMail_to())) {
+                helper.setTo(mail.getMail_to());
+            } else {
+                String[] array = new String[mail.getMail_tos().size()];
+                mail.getMail_tos().toArray(array);
+                helper.setTo(array);
+            }
             helper.setSubject(mail.getMail_subject());
             helper.setText(mail.getMail_content(), true);
 //            helper.addAttachment("my_photo.png", new ClassPathResource("android.png"));
