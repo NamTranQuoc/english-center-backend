@@ -2,9 +2,8 @@ package com.englishcenter.classroom.application;
 
 import com.englishcenter.classroom.ClassRoom;
 import com.englishcenter.classroom.command.CommandAddClassRoom;
-import com.englishcenter.classroom.command.CommandGetClass;
 import com.englishcenter.classroom.command.CommandSearchClassRoom;
-import com.englishcenter.core.mail.IMailService;
+import com.englishcenter.core.kafka.TopicProducer;
 import com.englishcenter.core.mail.Mail;
 import com.englishcenter.core.thymeleaf.ThymeleafService;
 import com.englishcenter.core.utils.MongoDBConnection;
@@ -16,7 +15,6 @@ import com.englishcenter.log.Log;
 import com.englishcenter.log.LogApplication;
 import com.englishcenter.member.Member;
 import com.englishcenter.member.application.MemberApplication;
-import com.englishcenter.register.application.RegisterApplication;
 import com.englishcenter.room.Room;
 import com.englishcenter.room.application.RoomApplication;
 import com.englishcenter.schedule.Schedule;
@@ -27,6 +25,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.bson.Document;
 import org.bson.types.ObjectId;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
 
@@ -50,13 +49,11 @@ public class ClassRoomApplication {
     @Autowired
     private MemberApplication memberApplication;
     @Autowired
-    private IMailService mailService;
-    @Autowired
     private ThymeleafService thymeleafService;
     @Autowired
-    private RegisterApplication registerApplication;
-    @Autowired
     private RoomApplication roomApplication;
+    @Autowired
+    private KafkaTemplate<String, Mail> kafkaEmail;
 
     public Optional<ClassRoom> add(CommandAddClassRoom command) throws Exception {
         if (StringUtils.isAnyBlank(command.getName(), command.getCourse_id(), command.getShift_id())
@@ -229,7 +226,7 @@ public class ClassRoomApplication {
                             .orElse(new ArrayList<>())
                             .stream().map(Member::getEmail).collect(Collectors.toList());
                     if (!CollectionUtils.isEmpty(students)) {
-                        mailService.sendManyEmail(Mail.builder()
+                        kafkaEmail.send(TopicProducer.SEND_MAIL, Mail.builder()
                                 .mail_tos(students)
                                 .mail_subject("Thông báo!")
                                 .mail_content(thymeleafService.getContent("mailRemindSchedule", data))
@@ -268,7 +265,7 @@ public class ClassRoomApplication {
                 List<String> students = memberApplication.mongoDBConnection.find(new Document("_id", new Document("$in", objectIds)))
                         .orElse(new ArrayList<>())
                         .stream().map(Member::getEmail).collect(Collectors.toList());
-                mailService.sendManyEmail(Mail.builder()
+                kafkaEmail.send(TopicProducer.SEND_MAIL, Mail.builder()
                         .mail_tos(students)
                         .mail_subject("Thông báo!")
                         .mail_content(thymeleafService.getContent("mailWhenCancel", data))
