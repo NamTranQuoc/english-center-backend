@@ -7,7 +7,7 @@ import com.englishcenter.auth.command.CommandLogin;
 import com.englishcenter.auth.command.CommandSignInWithGoogle;
 import com.englishcenter.code.CodeApplication;
 import com.englishcenter.core.firebase.FirebaseFileService;
-import com.englishcenter.core.mail.IMailService;
+import com.englishcenter.core.kafka.TopicProducer;
 import com.englishcenter.core.mail.Mail;
 import com.englishcenter.core.thymeleaf.ThymeleafService;
 import com.englishcenter.core.utils.Generate;
@@ -23,6 +23,7 @@ import io.jsonwebtoken.SignatureAlgorithm;
 import org.apache.commons.lang3.StringUtils;
 import org.bson.Document;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Component;
 
 import java.util.Arrays;
@@ -36,13 +37,13 @@ public class AuthApplication implements IAuthApplication {
     @Autowired
     private MemberApplication memberApplication;
     @Autowired
-    private IMailService mailService;
-    @Autowired
     private ThymeleafService thymeleafService;
     @Autowired
     private CodeApplication codeApplication;
     @Autowired
     private FirebaseFileService firebaseFileService;
+    @Autowired
+    private KafkaTemplate<String, Mail> kafkaEmail;
 
     private final String JWT_SECRET = "UUhuhdadyh9*&^777687";
     private final long JWT_EXPIRATION = 24 * 60 * 60 * 1000;
@@ -64,7 +65,7 @@ public class AuthApplication implements IAuthApplication {
         data.put("name", member.getName());
         data.put("username", member.getEmail());
         data.put("password", password);
-        mailService.sendEmail(Mail.builder()
+        kafkaEmail.send(TopicProducer.SEND_MAIL, Mail.builder()
                 .mail_to(member.getEmail())
                 .mail_subject("Thư chào mừng!")
                 .mail_content(thymeleafService.getContent("mailNewMember", data))
@@ -240,7 +241,7 @@ public class AuthApplication implements IAuthApplication {
         Map<String, Object> data = new HashMap<>();
         data.put("name", member.getName());
         data.put("url", String.format("%s%s", "https://englishcenter-2021.web.app/forget_password/", token));
-        mailService.sendEmail(Mail.builder()
+        kafkaEmail.send(TopicProducer.SEND_MAIL, Mail.builder()
                 .mail_to(email)
                 .mail_subject("Khôi phục mật khẩu!")
                 .mail_content(thymeleafService.getContent("mailForgetPassword", data))

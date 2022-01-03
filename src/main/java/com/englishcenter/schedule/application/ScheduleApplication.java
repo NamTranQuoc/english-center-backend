@@ -4,6 +4,7 @@ import com.englishcenter.absent.Absent;
 import com.englishcenter.absent.AbsentApplication;
 import com.englishcenter.classroom.ClassRoom;
 import com.englishcenter.classroom.application.ClassRoomApplication;
+import com.englishcenter.core.kafka.TopicProducer;
 import com.englishcenter.core.utils.MongoDBConnection;
 import com.englishcenter.core.utils.enums.ExceptionEnum;
 import com.englishcenter.core.utils.enums.MongodbEnum;
@@ -31,6 +32,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.bson.Document;
 import org.bson.types.ObjectId;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.kafka.annotation.KafkaListener;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
 
@@ -62,13 +65,15 @@ public class ScheduleApplication {
     private LogApplication logApplication;
     @Autowired
     private AbsentApplication absentApplication;
+    @Autowired
+    private KafkaTemplate<String, CommandAddSchedule> kafkaGenerateSchedule;
 
     public Optional<Schedule> add(CommandAddSchedule command) throws Exception {
-
         return Optional.empty();
     }
 
-    public Optional<Boolean> generate(CommandAddSchedule command) throws Exception {
+    @KafkaListener(id = "GENERATE_SCHEDULE", topics = TopicProducer.GENERATE_SCHEDULE)
+    public void generateEven(CommandAddSchedule command) throws Exception {
         if(StringUtils.isAnyBlank(command.getClassroom_id(), command.getRole())) {
             throw new Exception(ExceptionEnum.param_not_null);
         }
@@ -173,7 +178,12 @@ public class ScheduleApplication {
                 .perform_by(command.getCurrent_member_id())
                 .name(classRoom.getName())
                 .build());
-        return mongoDBConnection.insertMany(schedule);
+        mongoDBConnection.insertMany(schedule);
+    }
+
+    public Optional<Boolean> generate(CommandAddSchedule command) throws Exception {
+        kafkaGenerateSchedule.send(TopicProducer.GENERATE_SCHEDULE, command);
+        return Optional.of(Boolean.TRUE);
     }
 
     public void validateScheduleExits(String classroomId) throws Exception {

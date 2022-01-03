@@ -2,7 +2,7 @@ package com.englishcenter.exam.schedule.application;
 
 import com.englishcenter.code.CodeApplication;
 import com.englishcenter.core.firebase.FirebaseFileService;
-import com.englishcenter.core.mail.IMailService;
+import com.englishcenter.core.kafka.TopicProducer;
 import com.englishcenter.core.mail.Mail;
 import com.englishcenter.core.thymeleaf.ThymeleafService;
 import com.englishcenter.core.utils.MongoDBConnection;
@@ -30,6 +30,7 @@ import org.apache.poi.xssf.streaming.SXSSFWorkbook;
 import org.bson.Document;
 import org.bson.types.ObjectId;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
 
@@ -59,11 +60,11 @@ public class ExamScheduleApplication {
     @Autowired
     private FirebaseFileService firebaseFileService;
     @Autowired
-    private IMailService mailService;
-    @Autowired
     private ThymeleafService thymeleafService;
     @Autowired
     private CodeApplication codeApplication;
+    @Autowired
+    private KafkaTemplate<String, Mail> kafkaEmail;
 
     public Optional<ExamSchedule> add(CommandAddExamSchedule command) throws Exception {
         if(StringUtils.isAnyBlank(command.getRoom_id())
@@ -420,7 +421,7 @@ public class ExamScheduleApplication {
                             .orElse(new ArrayList<>())
                             .stream().map(Member::getEmail).collect(Collectors.toList());
                     if (!CollectionUtils.isEmpty(students)) {
-                        mailService.sendManyEmail(Mail.builder()
+                        kafkaEmail.send(TopicProducer.SEND_MAIL, Mail.builder()
                                 .mail_tos(students)
                                 .mail_subject("Thông báo!")
                                 .mail_content(thymeleafService.getContent("mailRemindExam", data))
@@ -461,7 +462,7 @@ public class ExamScheduleApplication {
                     .orElse(new ArrayList<>())
                     .stream().map(Member::getEmail).collect(Collectors.toList());
             if (!CollectionUtils.isEmpty(students)) {
-                mailService.sendManyEmail(Mail.builder()
+                kafkaEmail.send(TopicProducer.SEND_MAIL, Mail.builder()
                         .mail_tos(students)
                         .mail_subject("Thông báo!")
                         .mail_content(thymeleafService.getContent("mailWhenCancel", data))
