@@ -100,7 +100,11 @@ public class MemberApplication implements IMemberApplication {
         if (StringUtils.isNotBlank(command.getKeyword())) {
             Map<String, Object> $regex = new HashMap<>();
             $regex.put("$regex", Pattern.compile(command.getKeyword(), Pattern.CASE_INSENSITIVE));
-            query.put("name", $regex);
+            query.put("$or", Arrays.asList(
+                    new Document("name", $regex),
+                    new Document("email", $regex),
+                    new Document("code", command.getKeyword())
+            ));
         }
         if (command.getFrom_date() != null && command.getTo_date() != null) {
             query.put("create_date", new Document("$gte", command.getFrom_date()).append("$lte", command.getTo_date()));
