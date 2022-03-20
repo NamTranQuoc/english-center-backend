@@ -32,10 +32,10 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
         @Override
         public CorsConfiguration getCorsConfiguration(final HttpServletRequest request) {
             final CorsConfiguration configuration = new CorsConfiguration();
-            configuration.setAllowCredentials(true);
             configuration.addAllowedOrigin("*");
             configuration.addAllowedHeader("*");
             configuration.addAllowedMethod("*");
+            configuration.addAllowedOriginPattern("*");
             return configuration;
         }
     }
