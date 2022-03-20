@@ -4,14 +4,11 @@ import com.englishcenter.auth.application.IAuthApplication;
 import com.englishcenter.auth.command.CommandChangePassword;
 import com.englishcenter.auth.command.CommandLogin;
 import com.englishcenter.auth.command.CommandSignInWithGoogle;
+import com.englishcenter.core.utils.ResponseDomain;
 import com.englishcenter.core.utils.ResponseUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.HashMap;
-import java.util.Map;
 
 @Component
 @RestController(value = "/auth")
@@ -21,23 +18,20 @@ public class AuthController extends ResponseUtils {
 
     @ResponseBody
     @RequestMapping(value = "/auth/login", method = RequestMethod.POST)
-    public Map<String, Object> login(@RequestBody CommandLogin command) {
+    public ResponseDomain login(@RequestBody CommandLogin command) {
         try {
-            Map<String, Object> result = new HashMap<>();
-            result.put("code", 9999);
-            result.put("payload", authApplication.login(command).orElse(null));
-            return result;
+            return this.outJsonV2(9999, null, authApplication.login(command).orElse(null));
         } catch (Throwable throwable) {
-            return new HashMap<>();
+            return this.outJsonV2(-9999, throwable.getMessage(), null);
         }
     }
 
     @PostMapping(value = "/auth/sign_with_google")
-    public String SignInWithGoogle(@RequestBody CommandSignInWithGoogle command) {
+    public ResponseDomain SignInWithGoogle(@RequestBody CommandSignInWithGoogle command) {
         try {
-            return this.outJson(9999, null, authApplication.signInWithGoogle(command).orElse(null));
+            return this.outJsonV2(9999, null, authApplication.signInWithGoogle(command).orElse(null));
         } catch (Throwable throwable) {
-            return this.outJson(-9999, throwable.getMessage(), null);
+            return this.outJsonV2(-9999, throwable.getMessage(), null);
         }
     }
 
