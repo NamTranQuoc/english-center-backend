@@ -1,6 +1,7 @@
 package com.englishcenter.schedule;
 
 import com.englishcenter.core.utils.ResponseUtils;
+import com.englishcenter.core.utils.ResponseDomain;
 import com.englishcenter.schedule.application.ScheduleApplication;
 import com.englishcenter.schedule.command.CommandAddSchedule;
 import com.englishcenter.schedule.command.CommandSearchSchedule;
@@ -16,44 +17,44 @@ public class ScheduleController extends ResponseUtils {
     private ScheduleApplication scheduleApplication;
 
 //    @GetMapping("/schedule/get_all")
-//    public String getAll() {
+//    public ResponseDomain getAll() {
 //        try {
-//            return this.outJson(9999, null, scheduleApplication.getAll().orElse(null));
+//            return this.outJsonV2(9999, null, scheduleApplication.getAll().orElse(null));
 //        } catch (Throwable throwable) {
-//            return this.outJson(-9999, throwable.getMessage(), null);
+//            return this.outJsonV2(-9999, throwable.getMessage(), null);
 //        }
 //    }
 
     @PostMapping("/schedule/gets")
-    public String gets(@RequestBody CommandSearchSchedule command, @RequestHeader String Authorization) {
+    public ResponseDomain gets(@RequestBody CommandSearchSchedule command, @RequestHeader String Authorization) {
         try {
             command.setCurrent_member_role(this.getMemberType(Authorization));
             command.setCurrent_member_id(this.getMemberId(Authorization));
-            return this.outJson(9999, null, scheduleApplication.gets(command).orElse(null));
+            return this.outJsonV2(9999, null, scheduleApplication.gets(command).orElse(null));
         } catch (Throwable throwable) {
-            return this.outJson(-9999, throwable.getMessage(), null);
+            return this.outJsonV2(-9999, throwable.getMessage(), null);
         }
     }
 
     @PostMapping("/schedule/generate")
-    public String add(@RequestBody CommandAddSchedule command, @RequestHeader String Authorization) {
+    public ResponseDomain add(@RequestBody CommandAddSchedule command, @RequestHeader String Authorization) {
         try {
             command.setRole(this.getMemberType(Authorization));
             command.setCurrent_member_id(this.getMemberId(Authorization));
-            return this.outJson(9999, null, scheduleApplication.generate(command).orElse(null));
+            return this.outJsonV2(9999, null, scheduleApplication.generate(command).orElse(null));
         } catch (Throwable throwable) {
-            return this.outJson(-9999, throwable.getMessage(), null);
+            return this.outJsonV2(-9999, throwable.getMessage(), null);
         }
     }
 
     @PutMapping("/schedule/update")
-    public String update(@RequestBody CommandUpdateSchedule command, @RequestHeader String Authorization) {
+    public ResponseDomain update(@RequestBody CommandUpdateSchedule command, @RequestHeader String Authorization) {
         try {
             command.setRole(this.getMemberType(Authorization));
             command.setCurrent_member_id(this.getMemberId(Authorization));
-            return this.outJson(9999, null, scheduleApplication.update(command).orElse(null));
+            return this.outJsonV2(9999, null, scheduleApplication.update(command).orElse(null));
         } catch (Throwable throwable) {
-            return this.outJson(-9999, throwable.getMessage(), null);
+            return this.outJsonV2(-9999, throwable.getMessage(), null);
         }
     }
 }

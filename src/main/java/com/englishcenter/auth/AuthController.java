@@ -36,41 +36,41 @@ public class AuthController extends ResponseUtils {
     }
 
     @PutMapping(value = "/auth/reset")
-    public String resetPassword(@RequestBody CommandChangePassword command, @RequestHeader String Authorization) {
+    public ResponseDomain resetPassword(@RequestBody CommandChangePassword command, @RequestHeader String Authorization) {
         try {
             command.setRole(getMemberType(Authorization));
-            return this.outJson(9999, null, authApplication.resetPassword(command).orElse(false));
+            return this.outJsonV2(9999, null, authApplication.resetPassword(command).orElse(false));
         } catch (Throwable throwable) {
-            return this.outJson(-9999, throwable.getMessage(), null);
+            return this.outJsonV2(-9999, throwable.getMessage(), null);
         }
     }
 
     @GetMapping(value = "/auth/request_forget_password/{email}")
-    public String requestForgetPassword(@PathVariable String email) {
+    public ResponseDomain requestForgetPassword(@PathVariable String email) {
         try {
-            return this.outJson(9999, null, authApplication.requestForgetPassword(email).orElse(false));
+            return this.outJsonV2(9999, null, authApplication.requestForgetPassword(email).orElse(false));
         } catch (Throwable throwable) {
-            return this.outJson(-9999, throwable.getMessage(), null);
+            return this.outJsonV2(-9999, throwable.getMessage(), null);
         }
     }
 
     @PostMapping(value = "/auth/forget_password")
-    public String forgetPassword(@RequestHeader String Authorization, @RequestBody CommandChangePassword command) {
+    public ResponseDomain forgetPassword(@RequestHeader String Authorization, @RequestBody CommandChangePassword command) {
         try {
             command.setCurrent_id(this.getMemberId(Authorization));
-            return this.outJson(9999, null, authApplication.forgetPassword(command).orElse(false));
+            return this.outJsonV2(9999, null, authApplication.forgetPassword(command).orElse(false));
         } catch (Throwable throwable) {
-            return this.outJson(-9999, throwable.getMessage(), null);
+            return this.outJsonV2(-9999, throwable.getMessage(), null);
         }
     }
 
     @PostMapping(value = "/auth/change_password")
-    public String changePassword(@RequestHeader String Authorization, @RequestBody CommandChangePassword command) {
+    public ResponseDomain changePassword(@RequestHeader String Authorization, @RequestBody CommandChangePassword command) {
         try {
             command.setCurrent_id(this.getMemberId(Authorization));
-            return this.outJson(9999, null, authApplication.changePassword(command).orElse(false));
+            return this.outJsonV2(9999, null, authApplication.changePassword(command).orElse(false));
         } catch (Throwable throwable) {
-            return this.outJson(-9999, throwable.getMessage(), null);
+            return this.outJsonV2(-9999, throwable.getMessage(), null);
         }
     }
 }
