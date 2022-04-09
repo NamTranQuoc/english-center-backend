@@ -1,6 +1,7 @@
 package com.englishcenter.document;
 
 import com.englishcenter.core.utils.ResponseUtils;
+import com.englishcenter.core.utils.ResponseDomain;
 import com.englishcenter.document.application.DocumentApplication;
 import com.englishcenter.document.command.CommandAddDocument;
 import com.englishcenter.document.command.CommandSearchDocument;
@@ -15,63 +16,63 @@ public class DocumentController extends ResponseUtils {
     private DocumentApplication documentApplication;
 
     @GetMapping("/document/get_all")
-    public String getAll() {
+    public ResponseDomain getAll() {
         try {
-            return this.outJson(9999, null, documentApplication.getAll().orElse(null));
+            return this.outJsonV2(9999, null, documentApplication.getAll().orElse(null));
         } catch (Throwable throwable) {
-            return this.outJson(-9999, throwable.getMessage(), null);
+            return this.outJsonV2(-9999, throwable.getMessage(), null);
         }
     }
 
     @GetMapping("/document/get_advertisement")
-    public String getImageAdvertisement() {
+    public ResponseDomain getImageAdvertisement() {
         try {
-            return this.outJson(9999, null, documentApplication.getImageAdvertisement().orElse(null));
+            return this.outJsonV2(9999, null, documentApplication.getImageAdvertisement().orElse(null));
         } catch (Throwable throwable) {
-            return this.outJson(-9999, throwable.getMessage(), null);
+            return this.outJsonV2(-9999, throwable.getMessage(), null);
         }
     }
 
     @PostMapping("/document/get_list")
-    public String getList(@RequestBody CommandSearchDocument command, @RequestParam Integer page, @RequestParam Integer size, @RequestHeader String Authorization) {
+    public ResponseDomain getList(@RequestBody CommandSearchDocument command, @RequestParam Integer page, @RequestParam Integer size, @RequestHeader String Authorization) {
         try {
             command.setPage(page);
             command.setSize(size);
             command.setCurrent_member_id(this.getMemberId(Authorization));
             command.setCurrent_member_role(this.getMemberType(Authorization));
-            return this.outJson(9999, null, documentApplication.getList(command).orElse(null));
+            return this.outJsonV2(9999, null, documentApplication.getList(command).orElse(null));
         } catch (Throwable throwable) {
-            return this.outJson(-9999, throwable.getMessage(), null);
+            return this.outJsonV2(-9999, throwable.getMessage(), null);
         }
     }
 
     @PostMapping("/document/add")
-    public String add(@RequestBody CommandAddDocument command, @RequestHeader String Authorization) {
+    public ResponseDomain add(@RequestBody CommandAddDocument command, @RequestHeader String Authorization) {
         try {
             command.setRole(this.getMemberType(Authorization));
-            return this.outJson(9999, null, documentApplication.add(command).orElse(null));
+            return this.outJsonV2(9999, null, documentApplication.add(command).orElse(null));
         } catch (Throwable throwable) {
-            return this.outJson(-9999, throwable.getMessage(), null);
+            return this.outJsonV2(-9999, throwable.getMessage(), null);
         }
     }
 
     @PutMapping("/document/update")
-    public String update(@RequestBody CommandAddDocument command, @RequestHeader String Authorization) {
+    public ResponseDomain update(@RequestBody CommandAddDocument command, @RequestHeader String Authorization) {
         try {
             command.setRole(this.getMemberType(Authorization));
-            return this.outJson(9999, null, documentApplication.update(command).orElse(null));
+            return this.outJsonV2(9999, null, documentApplication.update(command).orElse(null));
         } catch (Throwable throwable) {
-            return this.outJson(-9999, throwable.getMessage(), null);
+            return this.outJsonV2(-9999, throwable.getMessage(), null);
         }
     }
 
     @PutMapping("/document/delete/{id}")
-    public String update(@RequestHeader String Authorization, @PathVariable String id) {
+    public ResponseDomain update(@RequestHeader String Authorization, @PathVariable String id) {
         try {
             String role = this.getMemberType(Authorization);
-            return this.outJson(9999, null, documentApplication.delete(id, role).orElse(null));
+            return this.outJsonV2(9999, null, documentApplication.delete(id, role).orElse(null));
         } catch (Throwable throwable) {
-            return this.outJson(-9999, throwable.getMessage(), null);
+            return this.outJsonV2(-9999, throwable.getMessage(), null);
         }
     }
 }
