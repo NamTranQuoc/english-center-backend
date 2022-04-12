@@ -285,6 +285,7 @@ public class ScheduleApplication {
             List<String> objectIds = list.stream().map(item -> item.get_id().toHexString()).collect(Collectors.toList());
             Map<String, Object> query1 = new HashMap<>();
             query1.put("schedule_id", new Document("$in", objectIds));
+            query1.put("student_id", command.getCurrent_member_id());
             List<Absent> absents = absentApplication.mongoDBConnection.find(query1).orElse(new ArrayList<>());
             if (!CollectionUtils.isEmpty(absents)) {
                 Map<String, Absent> absentMap = new HashMap<>();
