@@ -26,7 +26,7 @@ public class EnglishCenterApplication {
         //thông báo trước khi thi
         examScheduleApplication.sendMailRemind();
         examScheduleApplication.updateStatusExam();
-        classRoomApplication.sendMailRemind();
+//        classRoomApplication.sendMailRemind();
         classRoomApplication.updateStatusExam();
     }
 

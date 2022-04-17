@@ -1,7 +1,7 @@
 package com.englishcenter.course;
 
-import com.englishcenter.core.utils.ResponseUtils;
 import com.englishcenter.core.utils.ResponseDomain;
+import com.englishcenter.core.utils.ResponseUtils;
 import com.englishcenter.course.application.ICourseApplication;
 import com.englishcenter.course.command.CommandAddCourse;
 import com.englishcenter.course.command.CommandSearchCourse;

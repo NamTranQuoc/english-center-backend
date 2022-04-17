@@ -155,6 +155,12 @@ public class MongoDBConnection<T> {
         mongoCollection.deleteMany(new Document(query)).getDeletedCount();
     }
 
+    public void drop(String id) {
+        Map<String, Object> query = new HashMap<>();
+        query.put("_id", new ObjectId(id));
+        mongoCollection.deleteMany(new Document(query));
+    }
+
     public Optional<Paging<T>> find(Map<String, Object> query, CommandSearchMember.Sort sort, int page, int size) {
         try {
             long count = mongoCollection.count(new Document(query));

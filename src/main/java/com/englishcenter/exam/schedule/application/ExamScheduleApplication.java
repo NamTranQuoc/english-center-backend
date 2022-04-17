@@ -45,12 +45,6 @@ import java.util.stream.Collectors;
 @Component
 public class ExamScheduleApplication {
     public final MongoDBConnection<ExamSchedule> mongoDBConnection;
-
-    @Autowired
-    public ExamScheduleApplication() {
-        mongoDBConnection = new MongoDBConnection<>(MongodbEnum.collection_exam_schedule, ExamSchedule.class);
-    }
-
     @Autowired
     private ScheduleApplication scheduleApplication;
     @Autowired
@@ -65,9 +59,13 @@ public class ExamScheduleApplication {
     private CodeApplication codeApplication;
     @Autowired
     private KafkaTemplate<String, Mail> kafkaEmail;
+    @Autowired
+    public ExamScheduleApplication() {
+        mongoDBConnection = new MongoDBConnection<>(MongodbEnum.collection_exam_schedule, ExamSchedule.class);
+    }
 
     public Optional<ExamSchedule> add(CommandAddExamSchedule command) throws Exception {
-        if(StringUtils.isAnyBlank(command.getRoom_id())
+        if (StringUtils.isAnyBlank(command.getRoom_id())
                 || command.getStart_time() == null
                 || command.getEnd_time() == null
                 || command.getMember_ids().isEmpty()
@@ -209,7 +207,8 @@ public class ExamScheduleApplication {
         query.put("_id", new Document("$in", memberIds));
         List<Member> members = memberApplication.find(query).orElse(new ArrayList<>());
         FileOutputStream fileOutputStream = null;
-        SXSSFWorkbook workbook = new SXSSFWorkbook();;
+        SXSSFWorkbook workbook = new SXSSFWorkbook();
+        ;
         String filePath = "export-exam.xlsx";
         createTemplateExport(filePath, workbook, members);
         try {
@@ -312,7 +311,7 @@ public class ExamScheduleApplication {
     }
 
     public Optional<ExamSchedule> update(CommandAddExamSchedule command) throws Exception {
-        if(StringUtils.isBlank(command.getId())) {
+        if (StringUtils.isBlank(command.getId())) {
             throw new Exception(ExceptionEnum.param_not_null);
         }
         if (!Arrays.asList(Member.MemberType.ADMIN, Member.MemberType.RECEPTIONIST).contains(command.getRole())) {
@@ -404,7 +403,7 @@ public class ExamScheduleApplication {
             Map<String, Object> query = new HashMap<>();
             query.put("start_time", new Document("$gte", now).append("$lte", now + 86400000L));
             List<ExamSchedule> examSchedules = mongoDBConnection.find(query).orElse(new ArrayList<>());
-            for (ExamSchedule examSchedule: examSchedules) {
+            for (ExamSchedule examSchedule : examSchedules) {
                 Optional<Room> room = roomApplication.getById(examSchedule.getRoom_id());
                 if (room.isPresent()) {
                     Map<String, Object> data = new HashMap<>();
@@ -445,7 +444,7 @@ public class ExamScheduleApplication {
             List<ExamSchedule> examSchedules = mongoDBConnection.find(query).orElse(new ArrayList<>());
             List<ObjectId> cancelIds = new ArrayList<>();
             List<ObjectId> comingIds = new ArrayList<>();
-            for (ExamSchedule examSchedule: examSchedules) {
+            for (ExamSchedule examSchedule : examSchedules) {
                 if (examSchedule.getMin_quantity() > examSchedule.getStudent_ids().size()) {
                     examSchedule.setStatus(ExamSchedule.ExamStatus.cancel);
                     ids.addAll(examSchedule.getStudent_ids());

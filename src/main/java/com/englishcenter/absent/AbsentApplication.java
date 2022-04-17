@@ -24,18 +24,16 @@ import java.util.stream.Collectors;
 @Component
 public class AbsentApplication {
     public final MongoDBConnection<Absent> mongoDBConnection;
-
-    @Autowired
-    public AbsentApplication() {
-        mongoDBConnection = new MongoDBConnection<>(MongodbEnum.collection_absent, Absent.class);
-    }
-
     @Autowired
     private ScheduleApplication scheduleApplication;
     @Autowired
     private ClassRoomApplication classRoomApplication;
     @Autowired
     private MemberApplication memberApplication;
+    @Autowired
+    public AbsentApplication() {
+        mongoDBConnection = new MongoDBConnection<>(MongodbEnum.collection_absent, Absent.class);
+    }
 
     public Optional<CommandResponseGetStudent> getStudents(CommandGetStudent command) throws Exception {
         Map<String, Object> query = new HashMap<>();

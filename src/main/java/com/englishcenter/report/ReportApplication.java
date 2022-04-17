@@ -58,7 +58,7 @@ public class ReportApplication {
                 }
             }
         }
-        for (CommandStatistical.Detail detail: details) {
+        for (CommandStatistical.Detail detail : details) {
             detail.setPercent(((float) Math.floor(((float) (detail.getTotal()) / total) * 10000) / 100));
         }
         float percent = pastTotal == 0 ? 100 : ((float) Math.floor(((float) (total - pastTotal) / pastTotal) * 10000) / 100);
@@ -103,7 +103,7 @@ public class ReportApplication {
                 }
             }
         }
-        for (CommandStatistical.Detail detail: details) {
+        for (CommandStatistical.Detail detail : details) {
             detail.setPercent(((float) Math.floor(((float) (detail.getTotal()) / total) * 10000) / 100));
         }
         float percent = pastTotal == 0 ? 100 : ((float) Math.floor(((float) (total - pastTotal) / pastTotal) * 10000) / 100);
