@@ -10,7 +10,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class ResponseDomain {
-  private Integer code;
-  private String message;
-  private Object payload;
+    private Integer code;
+    private String message;
+    private Object payload;
 }

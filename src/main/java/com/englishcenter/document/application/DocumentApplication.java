@@ -25,12 +25,6 @@ import java.util.stream.Collectors;
 @Component
 public class DocumentApplication {
     public final MongoDBConnection<Document> mongoDBConnection;
-
-    @Autowired
-    public DocumentApplication() {
-        mongoDBConnection = new MongoDBConnection<>(MongodbEnum.collection_document, Document.class);
-    }
-
     @Autowired
     private MemberApplication memberApplication;
     @Autowired
@@ -39,9 +33,13 @@ public class DocumentApplication {
     private FirebaseFileService firebaseFileService;
     @Autowired
     private CodeApplication codeApplication;
+    @Autowired
+    public DocumentApplication() {
+        mongoDBConnection = new MongoDBConnection<>(MongodbEnum.collection_document, Document.class);
+    }
 
     public Optional<Document> add(CommandAddDocument command) throws Exception {
-        if(StringUtils.isAnyBlank(command.getName(), command.getType(), command.getPath())) {
+        if (StringUtils.isAnyBlank(command.getName(), command.getType(), command.getPath())) {
             throw new Exception(ExceptionEnum.param_not_null);
         }
         if (!Arrays.asList(Member.MemberType.ADMIN, Member.MemberType.RECEPTIONIST).contains(command.getRole())) {
@@ -110,7 +108,7 @@ public class DocumentApplication {
     }
 
     public Optional<Document> update(CommandAddDocument command) throws Exception {
-        if(StringUtils.isBlank(command.getId())) {
+        if (StringUtils.isBlank(command.getId())) {
             throw new Exception(ExceptionEnum.param_not_null);
         }
         if (!Arrays.asList(Member.MemberType.ADMIN, Member.MemberType.RECEPTIONIST).contains(command.getRole())) {
@@ -146,7 +144,7 @@ public class DocumentApplication {
         return mongoDBConnection.find(new HashMap<>());
     }
 
-    public Optional<Boolean> delete(String id, String role) throws Exception{
+    public Optional<Boolean> delete(String id, String role) throws Exception {
         if (StringUtils.isAnyBlank(id, role)) {
             throw new Exception(ExceptionEnum.param_not_null);
         }

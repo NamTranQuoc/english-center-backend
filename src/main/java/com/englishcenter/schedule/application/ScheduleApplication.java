@@ -5,6 +5,9 @@ import com.englishcenter.absent.AbsentApplication;
 import com.englishcenter.classroom.ClassRoom;
 import com.englishcenter.classroom.application.ClassRoomApplication;
 import com.englishcenter.core.kafka.TopicProducer;
+import com.englishcenter.core.mail.Mail;
+import com.englishcenter.core.schedule.ScheduleName;
+import com.englishcenter.core.schedule.TaskSchedulingService;
 import com.englishcenter.core.utils.MongoDBConnection;
 import com.englishcenter.core.utils.enums.ExceptionEnum;
 import com.englishcenter.core.utils.enums.MongodbEnum;
@@ -23,6 +26,7 @@ import com.englishcenter.schedule.command.CommandAddSchedule;
 import com.englishcenter.schedule.command.CommandGetSchedule;
 import com.englishcenter.schedule.command.CommandSearchSchedule;
 import com.englishcenter.schedule.command.CommandUpdateSchedule;
+import com.englishcenter.schedule.job.ScheduleRemindJob;
 import com.englishcenter.shift.Shift;
 import com.englishcenter.shift.application.ShiftApplication;
 import com.mongodb.BasicDBObject;
@@ -46,11 +50,7 @@ import java.util.stream.Collectors;
 @Component
 public class ScheduleApplication {
     public final MongoDBConnection<Schedule> mongoDBConnection;
-
-    @Autowired
-    public ScheduleApplication() {
-        mongoDBConnection = new MongoDBConnection<>(MongodbEnum.collection_schedule, Schedule.class);
-    }
+    private final long TEN_MINUTE = 600000;
     @Autowired
     private ClassRoomApplication classRoomApplication;
     @Autowired
@@ -67,6 +67,14 @@ public class ScheduleApplication {
     private AbsentApplication absentApplication;
     @Autowired
     private KafkaTemplate<String, CommandAddSchedule> kafkaGenerateSchedule;
+    @Autowired
+    private TaskSchedulingService taskSchedulingService;
+    @Autowired
+    private KafkaTemplate<String, Mail> mailKafkaTemplate;
+    @Autowired
+    public ScheduleApplication() {
+        mongoDBConnection = new MongoDBConnection<>(MongodbEnum.collection_schedule, Schedule.class);
+    }
 
     public Optional<Schedule> add(CommandAddSchedule command) throws Exception {
         return Optional.empty();
@@ -74,7 +82,7 @@ public class ScheduleApplication {
 
     @KafkaListener(id = "GENERATE_SCHEDULE", topics = TopicProducer.GENERATE_SCHEDULE)
     public void generateEven(CommandAddSchedule command) throws Exception {
-        if(StringUtils.isAnyBlank(command.getClassroom_id(), command.getRole())) {
+        if (StringUtils.isAnyBlank(command.getClassroom_id(), command.getRole())) {
             throw new Exception(ExceptionEnum.param_not_null);
         }
         if (!Arrays.asList(Member.MemberType.ADMIN, Member.MemberType.RECEPTIONIST).contains(command.getRole())) {
@@ -134,7 +142,7 @@ public class ScheduleApplication {
                                 new Document("end_date", new Document("$gte", cEnd.getTimeInMillis()))
                         ))
                 ));
-                for (String item: listRoom) {
+                for (String item : listRoom) {
                     query.put("room_id", item);
                     long count = mongoDBConnection.count(query).orElse(0L);
                     if (count == 0) {
@@ -145,7 +153,7 @@ public class ScheduleApplication {
                 String teacherId = null;
                 if (roomId != null) {
                     query.remove("room_id");
-                    for (String item: listTeacher) {
+                    for (String item : listTeacher) {
                         query.put("teacher_id", item);
                         long count = mongoDBConnection.count(query).orElse(0L);
                         if (count == 0) {
@@ -178,7 +186,24 @@ public class ScheduleApplication {
                 .perform_by(command.getCurrent_member_id())
                 .name(classRoom.getName())
                 .build());
-        mongoDBConnection.insertMany(schedule);
+        boolean result = mongoDBConnection.insertMany(schedule).orElse(false);
+        if (result) {
+            Map<String, Object> queryGetListSchedule = new HashMap<>();
+            queryGetListSchedule.put("classroom_id", command.getClassroom_id());
+            List<Schedule> schedules = mongoDBConnection.find(queryGetListSchedule).orElse(new ArrayList<>());
+            if (!CollectionUtils.isEmpty(schedules)) {
+                for (Schedule schedule1 : schedules) {
+                    ScheduleRemindJob scheduleRemindJob = new ScheduleRemindJob();
+                    scheduleRemindJob.setScheduleId(schedule1.get_id().toHexString());
+                    scheduleRemindJob.setMailKafkaTemplate(mailKafkaTemplate);
+                    taskSchedulingService.scheduleATask(
+                            scheduleRemindJob,
+                            schedule1.getStart_date() - TEN_MINUTE,
+                            ScheduleName.SCHEDULE_REMIND,
+                            schedule1.get_id().toHexString());
+                }
+            }
+        }
     }
 
     public Optional<Boolean> generate(CommandAddSchedule command) throws Exception {
@@ -199,9 +224,9 @@ public class ScheduleApplication {
         List<String> full = new ArrayList<>();
         try {
             full = memberApplication.getAllByStatusAndType(CommandGetAllByStatusAndType.builder()
-                            .course_id(course_id)
-                            .status(Member.MemberStatus.ACTIVE)
-                            .type(Member.MemberType.TEACHER)
+                    .course_id(course_id)
+                    .status(Member.MemberStatus.ACTIVE)
+                    .type(Member.MemberType.TEACHER)
                     .build()).orElse(new ArrayList<>()).stream().map(CommandGetAllTeacher::get_id).collect(Collectors.toList());
         } catch (Exception e) {
             e.printStackTrace();
@@ -289,7 +314,7 @@ public class ScheduleApplication {
             List<Absent> absents = absentApplication.mongoDBConnection.find(query1).orElse(new ArrayList<>());
             if (!CollectionUtils.isEmpty(absents)) {
                 Map<String, Absent> absentMap = new HashMap<>();
-                for (Absent absent: absents) {
+                for (Absent absent : absents) {
                     absentMap.put(absent.getSchedule_id(), absent);
                 }
                 absents.stream().map(item -> absentMap.put(item.getSchedule_id(), item));
@@ -312,7 +337,7 @@ public class ScheduleApplication {
         Map<String, String> classRoomName = new HashMap<>();
         Map<String, String> classRoomCourseId = new HashMap<>();
         Map<String, Integer> classRoomMaxStudent = new HashMap<>();
-        for (ClassRoom classRoom: classRooms) {
+        for (ClassRoom classRoom : classRooms) {
             classRoomName.put(classRoom.get_id().toHexString(), classRoom.getName());
             classRoomCourseId.put(classRoom.get_id().toHexString(), classRoom.getCourse_id());
             classRoomMaxStudent.put(classRoom.get_id().toHexString(), classRoom.getMax_student());
@@ -335,7 +360,7 @@ public class ScheduleApplication {
     }
 
     public Optional<Schedule> update(CommandUpdateSchedule command) throws Exception {
-        if(StringUtils.isAnyBlank(command.getId(), command.getRole())) {
+        if (StringUtils.isAnyBlank(command.getId(), command.getRole())) {
             throw new Exception(ExceptionEnum.param_not_null);
         }
         if (!Arrays.asList(Member.MemberType.ADMIN, Member.MemberType.RECEPTIONIST).contains(command.getRole())) {
@@ -346,9 +371,9 @@ public class ScheduleApplication {
             throw new Exception(ExceptionEnum.schedule_not_exist);
         }
         Schedule schedule = optional.get();
-        if (System.currentTimeMillis() + 86400000L > schedule.getStart_date()) {
-            throw new Exception(ExceptionEnum.can_not_update);
-        }
+//        if (System.currentTimeMillis() + 86400000L > schedule.getStart_date()) {
+//            throw new Exception(ExceptionEnum.can_not_update);
+//        }
         ClassRoom classRoom = classRoomApplication.getById(schedule.getClassroom_id()).get();
         Map<String, Log.ChangeDetail> changeDetailMap = new HashMap<>();
         if (command.getStart_time() != null && command.getEnd_time() != null && !command.getStart_time().equals(schedule.getStart_date())) {
@@ -436,6 +461,12 @@ public class ScheduleApplication {
                 .name(classRoom.getName())
                 .detail(changeDetailMap)
                 .build());
-        return mongoDBConnection.update(schedule.get_id().toHexString(), schedule);
+        String id = schedule.get_id().toHexString();
+        taskSchedulingService.removeScheduledTask(ScheduleName.SCHEDULE_REMIND, id);
+        ScheduleRemindJob scheduleRemindJob = new ScheduleRemindJob();
+        scheduleRemindJob.setScheduleId(id);
+        scheduleRemindJob.setMailKafkaTemplate(mailKafkaTemplate);
+        taskSchedulingService.scheduleATask(scheduleRemindJob, schedule.getStart_date() - TEN_MINUTE, ScheduleName.SCHEDULE_REMIND, id);
+        return mongoDBConnection.update(id, schedule);
     }
 }

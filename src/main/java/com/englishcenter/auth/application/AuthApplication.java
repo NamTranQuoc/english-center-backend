@@ -34,6 +34,8 @@ import java.util.Optional;
 @Component
 public class AuthApplication implements IAuthApplication {
     public final MongoDBConnection<Auth> mongoDBConnection;
+    private final String JWT_SECRET = "UUhuhdadyh9*&^777687";
+    private final long JWT_EXPIRATION = 24 * 60 * 60 * 1000;
     @Autowired
     private MemberApplication memberApplication;
     @Autowired
@@ -44,9 +46,6 @@ public class AuthApplication implements IAuthApplication {
     private FirebaseFileService firebaseFileService;
     @Autowired
     private KafkaTemplate<String, Mail> kafkaEmail;
-
-    private final String JWT_SECRET = "UUhuhdadyh9*&^777687";
-    private final long JWT_EXPIRATION = 24 * 60 * 60 * 1000;
 
     @Autowired
     public AuthApplication() {
@@ -198,7 +197,7 @@ public class AuthApplication implements IAuthApplication {
     }
 
     @Override
-    public Optional<Boolean> resetPassword(CommandChangePassword command) throws Exception{
+    public Optional<Boolean> resetPassword(CommandChangePassword command) throws Exception {
         if (!Member.MemberType.ADMIN.equals(command.getRole())) {
             throw new Exception(ExceptionEnum.member_type_deny);
         }

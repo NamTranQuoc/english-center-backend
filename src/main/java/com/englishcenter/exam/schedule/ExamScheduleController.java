@@ -1,7 +1,7 @@
 package com.englishcenter.exam.schedule;
 
-import com.englishcenter.core.utils.ResponseUtils;
 import com.englishcenter.core.utils.ResponseDomain;
+import com.englishcenter.core.utils.ResponseUtils;
 import com.englishcenter.exam.schedule.application.ExamScheduleApplication;
 import com.englishcenter.exam.schedule.command.CommandAddExamSchedule;
 import com.englishcenter.exam.schedule.command.CommandRegisterExam;
@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.*;
 
 @Component
 @RestController(value = "/exam_schedule")
-public class ExamScheduleController extends ResponseUtils  {
+public class ExamScheduleController extends ResponseUtils {
     @Autowired
     private ExamScheduleApplication examScheduleApplication;
 

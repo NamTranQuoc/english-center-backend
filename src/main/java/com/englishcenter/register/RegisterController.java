@@ -1,8 +1,8 @@
 package com.englishcenter.register;
 
 import com.englishcenter.core.utils.Paging;
-import com.englishcenter.core.utils.ResponseUtils;
 import com.englishcenter.core.utils.ResponseDomain;
+import com.englishcenter.core.utils.ResponseUtils;
 import com.englishcenter.register.application.RegisterApplication;
 import com.englishcenter.register.command.CommandAddRegister;
 import com.englishcenter.register.command.CommandGetListRegister;

@@ -27,7 +27,7 @@ public class RoomApplication {
     }
 
     public Optional<Room> add(CommandAddRoom command) throws Exception {
-        if(StringUtils.isAnyBlank(command.getName(), command.getStatus()) || command.getCapacity() == null) {
+        if (StringUtils.isAnyBlank(command.getName(), command.getStatus()) || command.getCapacity() == null) {
             throw new Exception(ExceptionEnum.param_not_null);
         }
         if (!Arrays.asList(Member.MemberType.ADMIN, Member.MemberType.RECEPTIONIST).contains(command.getRole())) {
@@ -55,7 +55,7 @@ public class RoomApplication {
     }
 
     public Optional<Room> update(CommandAddRoom command) throws Exception {
-        if(StringUtils.isBlank(command.getId())) {
+        if (StringUtils.isBlank(command.getId())) {
             throw new Exception(ExceptionEnum.param_not_null);
         }
         if (!Arrays.asList(Member.MemberType.ADMIN, Member.MemberType.RECEPTIONIST).contains(command.getRole())) {
@@ -90,7 +90,7 @@ public class RoomApplication {
         return mongoDBConnection.find(new HashMap<>());
     }
 
-    public Optional<List<Room>> getAllByStatus(CommandGetAllByStatusAndCapacity command) throws Exception{
+    public Optional<List<Room>> getAllByStatus(CommandGetAllByStatusAndCapacity command) throws Exception {
         if (StringUtils.isBlank(command.getStatus()) || command.getCapacity() == null) {
             throw new Exception(ExceptionEnum.param_not_null);
         }

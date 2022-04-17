@@ -1,7 +1,7 @@
 package com.englishcenter.document;
 
-import com.englishcenter.core.utils.ResponseUtils;
 import com.englishcenter.core.utils.ResponseDomain;
+import com.englishcenter.core.utils.ResponseUtils;
 import com.englishcenter.document.application.DocumentApplication;
 import com.englishcenter.document.command.CommandAddDocument;
 import com.englishcenter.document.command.CommandSearchDocument;

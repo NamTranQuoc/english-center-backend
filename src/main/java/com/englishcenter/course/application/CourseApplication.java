@@ -26,15 +26,14 @@ import java.util.stream.Collectors;
 @Component
 public class CourseApplication implements ICourseApplication {
     public final MongoDBConnection<Course> mongoDBConnection;
-
-    @Autowired
-    private CourseApplication() {
-        mongoDBConnection = new MongoDBConnection<>(MongodbEnum.collection_course, Course.class);
-    }
     @Autowired
     private ICategoryCourseApplication categoryCourseApplication;
     @Autowired
     private LogApplication logApplication;
+    @Autowired
+    private CourseApplication() {
+        mongoDBConnection = new MongoDBConnection<>(MongodbEnum.collection_course, Course.class);
+    }
 
     @Override
     public Optional<Course> add(CommandAddCourse command) throws Exception {

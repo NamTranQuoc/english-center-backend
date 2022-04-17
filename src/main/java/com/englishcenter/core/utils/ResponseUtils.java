@@ -29,10 +29,10 @@ public abstract class ResponseUtils {
 
     protected ResponseDomain outJsonV2(Integer code, String message, Object object) {
         return ResponseDomain.builder()
-          .code(code)
-          .message(message)
-          .payload(object)
-          .build();
+                .code(code)
+                .message(message)
+                .payload(object)
+                .build();
     }
 
     protected String getMemberType(String token) {
