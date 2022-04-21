@@ -54,11 +54,29 @@ public class AuthController extends ResponseUtils {
         }
     }
 
+    @GetMapping(value = "/auth/request_code_forget_password/{email}")
+    public ResponseDomain requestCodeForgetPassword(@PathVariable String email) {
+        try {
+            return this.outJsonV2(9999, null, authApplication.requestCodeForgetPassword(email).orElse(false));
+        } catch (Throwable throwable) {
+            return this.outJsonV2(-9999, throwable.getMessage(), null);
+        }
+    }
+
     @PostMapping(value = "/auth/forget_password")
     public ResponseDomain forgetPassword(@RequestHeader String Authorization, @RequestBody CommandChangePassword command) {
         try {
             command.setCurrent_id(this.getMemberId(Authorization));
             return this.outJsonV2(9999, null, authApplication.forgetPassword(command).orElse(false));
+        } catch (Throwable throwable) {
+            return this.outJsonV2(-9999, throwable.getMessage(), null);
+        }
+    }
+
+    @PostMapping(value = "/auth/forget_password/code")
+    public ResponseDomain forgetPassword(@RequestBody CommandChangePassword command) {
+        try {
+            return this.outJsonV2(9999, null, authApplication.forgetPasswordCode(command).orElse(false));
         } catch (Throwable throwable) {
             return this.outJsonV2(-9999, throwable.getMessage(), null);
         }
