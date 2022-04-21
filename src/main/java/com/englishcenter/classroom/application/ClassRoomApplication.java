@@ -15,9 +15,7 @@ import com.englishcenter.log.Log;
 import com.englishcenter.log.LogApplication;
 import com.englishcenter.member.Member;
 import com.englishcenter.member.application.MemberApplication;
-import com.englishcenter.room.Room;
 import com.englishcenter.room.application.RoomApplication;
-import com.englishcenter.schedule.Schedule;
 import com.englishcenter.schedule.application.ScheduleApplication;
 import com.mongodb.BasicDBObject;
 import com.mongodb.client.AggregateIterable;
@@ -37,11 +35,6 @@ import java.util.stream.Collectors;
 @Component
 public class ClassRoomApplication {
     public final MongoDBConnection<ClassRoom> mongoDBConnection;
-
-    @Autowired
-    public ClassRoomApplication() {
-        mongoDBConnection = new MongoDBConnection<>(MongodbEnum.collection_class_room, ClassRoom.class);
-    }
     @Autowired
     private ScheduleApplication scheduleApplication;
     @Autowired
@@ -54,6 +47,10 @@ public class ClassRoomApplication {
     private RoomApplication roomApplication;
     @Autowired
     private KafkaTemplate<String, Mail> kafkaEmail;
+    @Autowired
+    public ClassRoomApplication() {
+        mongoDBConnection = new MongoDBConnection<>(MongodbEnum.collection_class_room, ClassRoom.class);
+    }
 
     public Optional<ClassRoom> add(CommandAddClassRoom command) throws Exception {
         if (StringUtils.isAnyBlank(command.getName(), command.getCourse_id(), command.getShift_id())
@@ -201,43 +198,43 @@ public class ClassRoomApplication {
         return mongoDBConnection.find(new Document("course_id", id).append("status", "register"));
     }
 
-    public void sendMailRemind() {
-        try {
-            SimpleDateFormat formatter = new SimpleDateFormat("dd/MM/yyyy");
-            long now = System.currentTimeMillis();
-            String sNow = formatter.format(new Date());
-            Map<String, Object> query = new HashMap<>();
-            query.put("start_date", new Document("$gte", now).append("$lte", now + 86400000L));
-            List<Schedule> schedules = scheduleApplication.mongoDBConnection.find(query).orElse(new ArrayList<>());
-            for (Schedule schedule: schedules) {
-                Optional<Room> room = roomApplication.getById(schedule.getRoom_id());
-                Optional<ClassRoom> classroom = mongoDBConnection.getById(schedule.getClassroom_id());
-                if (room.isPresent() && classroom.isPresent()) {
-                    Map<String, Object> data = new HashMap<>();
-                    Calendar calendar = Calendar.getInstance();
-                    calendar.setTimeInMillis(schedule.getStart_date());
-
-                    data.put("classroom", classroom.get().getName());
-                    data.put("room", room.get().getName());
-                    data.put("start_date", String.format("%s %02dh%02d", sNow, calendar.get(Calendar.HOUR_OF_DAY), calendar.get(Calendar.MINUTE)));
-
-                    List<ObjectId> ids = classroom.get().getStudent_ids().stream().map(item -> new ObjectId(item.getStudent_id())).collect(Collectors.toList());
-                    List<String> students = memberApplication.mongoDBConnection.find(new Document("_id", new Document("$in", ids)))
-                            .orElse(new ArrayList<>())
-                            .stream().map(Member::getEmail).collect(Collectors.toList());
-                    if (!CollectionUtils.isEmpty(students)) {
-                        kafkaEmail.send(TopicProducer.SEND_MAIL, Mail.builder()
-                                .mail_tos(students)
-                                .mail_subject("Thông báo!")
-                                .mail_content(thymeleafService.getContent("mailRemindSchedule", data))
-                                .build());
-                    }
-                }
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
+//    public void sendMailRemind() {
+//        try {
+//            SimpleDateFormat formatter = new SimpleDateFormat("dd/MM/yyyy");
+//            long now = System.currentTimeMillis();
+//            String sNow = formatter.format(new Date());
+//            Map<String, Object> query = new HashMap<>();
+//            query.put("start_date", new Document("$gte", now).append("$lte", now + 86400000L));
+//            List<Schedule> schedules = scheduleApplication.mongoDBConnection.find(query).orElse(new ArrayList<>());
+//            for (Schedule schedule: schedules) {
+//                Optional<Room> room = roomApplication.getById(schedule.getRoom_id());
+//                Optional<ClassRoom> classroom = mongoDBConnection.getById(schedule.getClassroom_id());
+//                if (room.isPresent() && classroom.isPresent()) {
+//                    Map<String, Object> data = new HashMap<>();
+//                    Calendar calendar = Calendar.getInstance();
+//                    calendar.setTimeInMillis(schedule.getStart_date());
+//
+//                    data.put("classroom", classroom.get().getName());
+//                    data.put("room", room.get().getName());
+//                    data.put("start_date", String.format("%s %02dh%02d", sNow, calendar.get(Calendar.HOUR_OF_DAY), calendar.get(Calendar.MINUTE)));
+//
+//                    List<ObjectId> ids = classroom.get().getStudent_ids().stream().map(item -> new ObjectId(item.getStudent_id())).collect(Collectors.toList());
+//                    List<String> students = memberApplication.mongoDBConnection.find(new Document("_id", new Document("$in", ids)))
+//                            .orElse(new ArrayList<>())
+//                            .stream().map(Member::getEmail).collect(Collectors.toList());
+//                    if (!CollectionUtils.isEmpty(students)) {
+//                        kafkaEmail.send(TopicProducer.SEND_MAIL, Mail.builder()
+//                                .mail_tos(students)
+//                                .mail_subject("Thông báo!")
+//                                .mail_content(thymeleafService.getContent("mailRemindSchedule", data))
+//                                .build());
+//                    }
+//                }
+//            }
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//        }
+//    }
 
     public void updateStatusExam() {
         try {
@@ -250,7 +247,7 @@ public class ClassRoomApplication {
             List<ClassRoom> classRooms = mongoDBConnection.find(query).orElse(new ArrayList<>());
             List<ObjectId> cancelIds = new ArrayList<>();
             List<ObjectId> comingIds = new ArrayList<>();
-            for (ClassRoom classRoom: classRooms) {
+            for (ClassRoom classRoom : classRooms) {
                 if (classRoom.getMin_student() > classRoom.getStudent_ids().size()) {
                     ids.addAll(classRoom.getStudent_ids().stream().map(ClassRoom.StudentRegister::getStudent_id).collect(Collectors.toList()));
                     cancelIds.add(classRoom.get_id());

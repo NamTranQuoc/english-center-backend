@@ -1,4 +1,4 @@
-package com.englishcenter.auth;
+package com.englishcenter.core.schedule;
 
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.fasterxml.jackson.databind.ser.std.ToStringSerializer;
@@ -17,12 +17,11 @@ import java.io.Serializable;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class Auth implements Serializable {
+public class Job implements Serializable {
     @JsonSerialize(using = ToStringSerializer.class)
     @Id
     ObjectId _id;
-    private String member_id;
-    private String username;
-    private String password;
-    private String code;
+    private String name;
+    private String ref_id;
+    private Long start_time;
 }

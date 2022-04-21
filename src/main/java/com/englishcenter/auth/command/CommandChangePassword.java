@@ -17,4 +17,5 @@ public class CommandChangePassword {
     private String current_id;
     private String id;
     private String username;
+    private String code;
 }

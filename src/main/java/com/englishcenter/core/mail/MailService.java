@@ -12,12 +12,12 @@ import javax.mail.MessagingException;
 import javax.mail.internet.MimeMessage;
 
 @Component
-public class MailService  {
+public class MailService {
     @Autowired
     private JavaMailSender javaMailSender;
 
     @KafkaListener(id = "SEND_MAIL", topics = TopicProducer.SEND_MAIL)
-    private void send(Mail mail) {
+    public void send(Mail mail) {
         try {
             MimeMessage msg = javaMailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(msg, true);

@@ -22,6 +22,9 @@ public class APIOpenEnum {
             "/course/get_by_category_id/*",
             "/class/get_by_course_id/*",
             "/auth/sign_with_google",
-            "/shift/get_all"
+            "/shift/get_all",
+            "/schedule/taskdef",
+            "/auth/request_code_forget_password/*",
+            "/auth/forget_password/code"
     );
 }

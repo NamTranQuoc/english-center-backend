@@ -34,6 +34,8 @@ import java.util.Optional;
 @Component
 public class AuthApplication implements IAuthApplication {
     public final MongoDBConnection<Auth> mongoDBConnection;
+    private final String JWT_SECRET = "UUhuhdadyh9*&^777687";
+    private final long JWT_EXPIRATION = 24 * 60 * 60 * 1000;
     @Autowired
     private MemberApplication memberApplication;
     @Autowired
@@ -44,9 +46,6 @@ public class AuthApplication implements IAuthApplication {
     private FirebaseFileService firebaseFileService;
     @Autowired
     private KafkaTemplate<String, Mail> kafkaEmail;
-
-    private final String JWT_SECRET = "UUhuhdadyh9*&^777687";
-    private final long JWT_EXPIRATION = 24 * 60 * 60 * 1000;
 
     @Autowired
     public AuthApplication() {
@@ -198,7 +197,7 @@ public class AuthApplication implements IAuthApplication {
     }
 
     @Override
-    public Optional<Boolean> resetPassword(CommandChangePassword command) throws Exception{
+    public Optional<Boolean> resetPassword(CommandChangePassword command) throws Exception {
         if (!Member.MemberType.ADMIN.equals(command.getRole())) {
             throw new Exception(ExceptionEnum.member_type_deny);
         }
@@ -263,6 +262,30 @@ public class AuthApplication implements IAuthApplication {
     }
 
     @Override
+    public Optional<Boolean> forgetPasswordCode(CommandChangePassword command) throws Exception {
+        if (StringUtils.isAnyBlank(command.getConfirm_password(), command.getNew_password(), command.getCode(), command.getUsername())) {
+            throw new Exception(ExceptionEnum.param_not_null);
+        }
+        if (!command.getNew_password().equals(command.getConfirm_password())) {
+            throw new Exception(ExceptionEnum.confirm_password_incorrect);
+        }
+        Map<String, Object> query = new HashMap<>();
+        query.put("username", command.getUsername());
+        Optional<Auth> optional = mongoDBConnection.findOne(query);
+        if (!optional.isPresent()) {
+            throw new Exception(ExceptionEnum.member_not_exist);
+        }
+        Auth auth = optional.get();
+        if (!command.getCode().equals(auth.getCode())) {
+            throw new Exception(ExceptionEnum.code_incorrect);
+        }
+
+        auth.setPassword(HashUtils.getPasswordMD5(command.getNew_password()));
+
+        return Optional.of(mongoDBConnection.update(auth.get_id().toHexString(), auth).isPresent());
+    }
+
+    @Override
     public Optional<Boolean> changePassword(CommandChangePassword command) throws Exception {
         if (StringUtils.isAnyBlank(command.getCurrent_id(), command.getConfirm_password(), command.getNew_password(), command.getOld_password())) {
             throw new Exception(ExceptionEnum.param_not_null);
@@ -280,5 +303,33 @@ public class AuthApplication implements IAuthApplication {
         }
         auth.setPassword(HashUtils.getPasswordMD5(command.getNew_password()));
         return Optional.of(mongoDBConnection.update(auth.get_id().toHexString(), auth).isPresent());
+    }
+
+    @Override
+    public Optional<Boolean> requestCodeForgetPassword(String email) throws Exception {
+        if (StringUtils.isBlank(email)) {
+            throw new Exception(ExceptionEnum.param_not_null);
+        }
+        Map<String, Object> query = new HashMap<>();
+        query.put("username", email);
+        Optional<Auth> optional = mongoDBConnection.findOne(query);
+        if (!optional.isPresent()) {
+            throw new Exception(ExceptionEnum.member_not_exist);
+        }
+        Auth auth = optional.get();
+        String code = Generate.generateCode();
+        auth.setCode(code);
+        mongoDBConnection.update(auth.get_id().toHexString(), auth);
+
+
+        Map<String, Object> data = new HashMap<>();
+        data.put("username", auth.getUsername());
+        data.put("code", code);
+        kafkaEmail.send(TopicProducer.SEND_MAIL, Mail.builder()
+                .mail_to(email)
+                .mail_subject("Khôi phục mật khẩu!")
+                .mail_content(thymeleafService.getContent("mailForgetPasswordByCode", data))
+                .build());
+        return Optional.of(Boolean.TRUE);
     }
 }
