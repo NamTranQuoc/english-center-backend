@@ -25,4 +25,13 @@ public class Generate {
                 .collect(StringBuilder::new, StringBuilder::append, StringBuilder::append)
                 .toString();
     }
+
+    public static String generateCode() {
+        StringBuilder result = new StringBuilder();
+        for (int i = 0; i < 6; i++) {
+            int random_int = (int) Math.floor(Math.random() * (10) + 0);
+            result.append(random_int);
+        }
+        return result.toString();
+    }
 }

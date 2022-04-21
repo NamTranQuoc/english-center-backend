@@ -24,4 +24,5 @@ public class Auth implements Serializable {
     private String member_id;
     private String username;
     private String password;
+    private String code;
 }

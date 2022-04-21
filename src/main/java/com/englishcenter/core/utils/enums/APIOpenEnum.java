@@ -23,6 +23,8 @@ public class APIOpenEnum {
             "/class/get_by_course_id/*",
             "/auth/sign_with_google",
             "/shift/get_all",
-            "/schedule/taskdef"
+            "/schedule/taskdef",
+            "/auth/request_code_forget_password/*",
+            "/auth/forget_password/code"
     );
 }
