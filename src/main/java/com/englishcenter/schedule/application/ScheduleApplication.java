@@ -19,13 +19,11 @@ import com.englishcenter.member.Member;
 import com.englishcenter.member.application.MemberApplication;
 import com.englishcenter.member.command.CommandGetAllByStatusAndType;
 import com.englishcenter.member.command.CommandGetAllTeacher;
+import com.englishcenter.member.command.CommandSearchMember;
 import com.englishcenter.room.Room;
 import com.englishcenter.room.application.RoomApplication;
 import com.englishcenter.schedule.Schedule;
-import com.englishcenter.schedule.command.CommandAddSchedule;
-import com.englishcenter.schedule.command.CommandGetSchedule;
-import com.englishcenter.schedule.command.CommandSearchSchedule;
-import com.englishcenter.schedule.command.CommandUpdateSchedule;
+import com.englishcenter.schedule.command.*;
 import com.englishcenter.schedule.job.ScheduleRemindJob;
 import com.englishcenter.shift.Shift;
 import com.englishcenter.shift.application.ShiftApplication;
@@ -359,6 +357,8 @@ public class ScheduleApplication {
                 .build()).collect(Collectors.toList()));
     }
 
+
+
     public Optional<Schedule> update(CommandUpdateSchedule command) throws Exception {
         if (StringUtils.isAnyBlank(command.getId(), command.getRole())) {
             throw new Exception(ExceptionEnum.param_not_null);
@@ -468,5 +468,38 @@ public class ScheduleApplication {
         scheduleRemindJob.setMailKafkaTemplate(mailKafkaTemplate);
         taskSchedulingService.scheduleATask(scheduleRemindJob, schedule.getStart_date() - TEN_MINUTE, ScheduleName.SCHEDULE_REMIND, id);
         return mongoDBConnection.update(id, schedule);
+    }
+
+    public Optional<List<CommandGetScheduleV2>> getsV2(CommandSearchSchedule command) throws Exception{
+        List<CommandGetSchedule> commandGetSchedules = gets(command).orElse(new ArrayList<>());
+        List<CommandGetScheduleV2> list = new ArrayList<>();
+
+        Map<String, String> teachers = new HashMap<>();
+        memberApplication.getAll(CommandSearchMember.builder()
+                .types(Collections.singletonList(Member.MemberType.TEACHER))
+                .build()).orElse(new ArrayList<>()).forEach(item -> teachers.put(item.get_id(), item.getName()));
+
+        Map<String, String> rooms = new HashMap<>();
+        roomApplication.getAll().orElse(new ArrayList<>())
+                .forEach(item -> rooms.put(item.get_id().toHexString(), item.getName()));
+
+        for (CommandGetSchedule item: commandGetSchedules) {
+            list.add(CommandGetScheduleV2.builder()
+                    .title(item.getTitle())
+                    .id(item.getId())
+                    .teacher(teachers.get(item.getTeacher_id()))
+                    .room(rooms.get(item.getRoom_id()))
+                    .start(item.getStart())
+                    .end(item.getEnd())
+                    .session(item.getSession())
+                    .max_student(item.getMax_student())
+                    .course_id(item.getCourse_id())
+                    .took_place(item.getTook_place())
+                    .is_absent(item.getIs_absent())
+                    .classroom_id(item.getClassroom_id())
+                    .build());
+        }
+
+        return Optional.of(list);
     }
 }
