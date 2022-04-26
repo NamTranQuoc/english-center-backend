@@ -40,6 +40,17 @@ public class ScheduleController extends ResponseUtils {
         }
     }
 
+    @PostMapping("/schedule/gets_v2")
+    public ResponseDomain getsV2(@RequestBody CommandSearchSchedule command, @RequestHeader String Authorization) {
+        try {
+            command.setCurrent_member_role(this.getMemberType(Authorization));
+            command.setCurrent_member_id(this.getMemberId(Authorization));
+            return this.outJsonV2(9999, null, scheduleApplication.getsV2(command).orElse(null));
+        } catch (Throwable throwable) {
+            return this.outJsonV2(-9999, throwable.getMessage(), null);
+        }
+    }
+
     @PostMapping("/schedule/generate")
     public ResponseDomain add(@RequestBody CommandAddSchedule command, @RequestHeader String Authorization) {
         try {
