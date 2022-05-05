@@ -2,6 +2,7 @@ package com.englishcenter.course.application;
 
 import com.englishcenter.category.course.CategoryCourse;
 import com.englishcenter.category.course.application.ICategoryCourseApplication;
+import com.englishcenter.classroom.application.ClassRoomApplication;
 import com.englishcenter.core.utils.MongoDBConnection;
 import com.englishcenter.core.utils.Paging;
 import com.englishcenter.core.utils.enums.ExceptionEnum;
@@ -13,6 +14,8 @@ import com.englishcenter.course.command.CommandSearchCourse;
 import com.englishcenter.log.Log;
 import com.englishcenter.log.LogApplication;
 import com.englishcenter.member.Member;
+import com.mongodb.BasicDBObject;
+import com.mongodb.client.AggregateIterable;
 import org.apache.commons.lang3.StringUtils;
 import org.bson.Document;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,6 +31,8 @@ public class CourseApplication implements ICourseApplication {
     public final MongoDBConnection<Course> mongoDBConnection;
     @Autowired
     private ICategoryCourseApplication categoryCourseApplication;
+    @Autowired
+    private ClassRoomApplication classRoomApplication;
     @Autowired
     private LogApplication logApplication;
     @Autowired
@@ -97,10 +102,29 @@ public class CourseApplication implements ICourseApplication {
     @Override
     public Optional<List<CommandGetAllCourse>> getAll() {
         List<Course> list = mongoDBConnection.find(new HashMap<>()).orElse(new ArrayList<>());
-        return Optional.of(list.stream().map(item -> CommandGetAllCourse.builder()
+        List<CommandGetAllCourse> courses = list.stream().map(item -> CommandGetAllCourse.builder()
                 ._id(item.get_id().toHexString())
                 .name(item.getName())
-                .build()).collect(Collectors.toList()));
+                .build()).collect(Collectors.toList());
+        if (!CollectionUtils.isEmpty(list)) {
+            List<BasicDBObject> aggregate = Arrays.asList(
+                    BasicDBObject.parse("{\"$match\": {\"status\": \"register\"}}"),
+                    BasicDBObject.parse("{\"$group\": {_id: \"$course_id\", \"count\": {\"$sum\": 1}}}")
+            );
+            AggregateIterable<Document> documents = classRoomApplication.mongoDBConnection.aggregate(aggregate);
+            Map<String, Integer> count = new HashMap<>();
+            if (documents != null) {
+                for (Document item : documents) {
+                    if (item.containsKey("_id") && item.get("_id") != null && StringUtils.isNotBlank(item.get("_id").toString())) {
+                        count.put(item.get("_id").toString(), item.getInteger("count", 0));
+                    }
+                }
+            }
+            for (CommandGetAllCourse c: courses) {
+                c.setNumber_of_class(count.getOrDefault(c.get_id(), 0));
+            }
+        }
+        return Optional.of(courses);
     }
 
     @Override
