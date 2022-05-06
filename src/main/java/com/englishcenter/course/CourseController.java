@@ -35,6 +35,15 @@ public class CourseController extends ResponseUtils {
         }
     }
 
+    @GetMapping("/course/get_by_study_program")
+    public ResponseDomain getByStudyProgram(@RequestParam String id) {
+        try {
+            return this.outJsonV2(9999, null, courseApplication.getByStudyProgram(id).orElse(null));
+        } catch (Throwable throwable) {
+            return this.outJsonV2(-9999, throwable.getMessage(), null);
+        }
+    }
+
     @PostMapping("/course/add")
     public ResponseDomain add(@RequestBody CommandAddCourse command, @RequestHeader String Authorization) {
         try {
