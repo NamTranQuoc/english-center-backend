@@ -237,4 +237,32 @@ public class CourseApplication implements ICourseApplication {
     public Optional<Course> getById(String id) {
         return mongoDBConnection.getById(id);
     }
+
+    @Override
+    public Optional<List<CommandGetAllCourse>> getByStudyProgram(String id) {
+        List<Course> list = mongoDBConnection.find(new HashMap<>()).orElse(new ArrayList<>());
+        List<CommandGetAllCourse> courses = list.stream().map(item -> CommandGetAllCourse.builder()
+                ._id(item.get_id().toHexString())
+                .name(item.getName())
+                .build()).collect(Collectors.toList());
+        if (!CollectionUtils.isEmpty(list)) {
+            List<BasicDBObject> aggregate = Arrays.asList(
+                    BasicDBObject.parse("{\"$match\": {\"status\": \"register\", \"category_course_id\": \"" + id + "\"}}"),
+                    BasicDBObject.parse("{\"$group\": {_id: \"$course_id\", \"count\": {\"$sum\": 1}}}")
+            );
+            AggregateIterable<Document> documents = classRoomApplication.mongoDBConnection.aggregate(aggregate);
+            Map<String, Integer> count = new HashMap<>();
+            if (documents != null) {
+                for (Document item : documents) {
+                    if (item.containsKey("_id") && item.get("_id") != null && StringUtils.isNotBlank(item.get("_id").toString())) {
+                        count.put(item.get("_id").toString(), item.getInteger("count", 0));
+                    }
+                }
+            }
+            for (CommandGetAllCourse c: courses) {
+                c.setNumber_of_class(count.getOrDefault(c.get_id(), 0));
+            }
+        }
+        return Optional.of(courses);
+    }
 }
