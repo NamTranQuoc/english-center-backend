@@ -240,14 +240,25 @@ public class CourseApplication implements ICourseApplication {
 
     @Override
     public Optional<List<CommandGetAllCourse>> getByStudyProgram(String id) {
-        List<Course> list = mongoDBConnection.find(new HashMap<>()).orElse(new ArrayList<>());
+        Map<String, Object> query = new HashMap<>();
+        query.put("status", "active");
+        query.put("category_course_id", id);
+        List<Course> list = mongoDBConnection.find(query).orElse(new ArrayList<>());
         List<CommandGetAllCourse> courses = list.stream().map(item -> CommandGetAllCourse.builder()
                 ._id(item.get_id().toHexString())
                 .name(item.getName())
                 .build()).collect(Collectors.toList());
         if (!CollectionUtils.isEmpty(list)) {
+            StringBuilder ids = new StringBuilder();
+            for (Course c: list) {
+                ids.append("\"").append(c.get_id().toHexString()).append("\"").append(",");
+            }
+            if (!"".equals(ids.toString())) {
+                ids = new StringBuilder(ids.substring(0, ids.length() - 1));
+            }
+
             List<BasicDBObject> aggregate = Arrays.asList(
-                    BasicDBObject.parse("{\"$match\": {\"status\": \"register\", \"category_course_id\": \"" + id + "\"}}"),
+                    BasicDBObject.parse("{\"$match\": {\"status\": \"register\", \"course_id\": {\"$in\": [" + ids + "]}}}"),
                     BasicDBObject.parse("{\"$group\": {_id: \"$course_id\", \"count\": {\"$sum\": 1}}}")
             );
             AggregateIterable<Document> documents = classRoomApplication.mongoDBConnection.aggregate(aggregate);
