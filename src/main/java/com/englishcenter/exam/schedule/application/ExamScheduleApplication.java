@@ -486,4 +486,11 @@ public class ExamScheduleApplication {
             e.printStackTrace();
         }
     }
+
+    public Optional<List<ExamSchedule>> getRegister() {
+        Map<String, Object> query = new HashMap<>();
+        query.put("status", ExamSchedule.ExamStatus.register);
+
+        return mongoDBConnection.find(query);
+    }
 }
