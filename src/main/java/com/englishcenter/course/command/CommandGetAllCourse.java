@@ -13,4 +13,5 @@ public class CommandGetAllCourse {
     private String _id;
     private String name;
     private Integer number_of_class;
+    private Long tuition;
 }

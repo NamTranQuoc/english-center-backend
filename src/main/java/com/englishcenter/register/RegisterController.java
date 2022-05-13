@@ -83,4 +83,15 @@ public class RegisterController extends ResponseUtils {
             return this.outJsonV2(-9999, throwable.getMessage(), null);
         }
     }
+
+    @PostMapping("/register/add_v2")
+    public ResponseDomain addV2(@RequestBody CommandAddRegister command, @RequestHeader String Authorization) {
+        try {
+            command.setCurrent_member(this.getMemberId(Authorization));
+            command.setStudent_id(this.getMemberId(Authorization));
+            return this.outJsonV2(9999, null, registerApplication.add(command).orElse(null));
+        } catch (Throwable throwable) {
+            return this.outJsonV2(-9999, throwable.getMessage(), null);
+        }
+    }
 }
