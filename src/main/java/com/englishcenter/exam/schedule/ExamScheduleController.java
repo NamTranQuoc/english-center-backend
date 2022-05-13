@@ -25,6 +25,15 @@ public class ExamScheduleController extends ResponseUtils {
         }
     }
 
+    @GetMapping("/exam_schedule/get_register")
+    public ResponseDomain getRegister() {
+        try {
+            return this.outJsonV2(9999, null, examScheduleApplication.getRegister().orElse(null));
+        } catch (Throwable throwable) {
+            return this.outJsonV2(-9999, throwable.getMessage(), null);
+        }
+    }
+
     @PostMapping("/exam_schedule/get_list")
     public ResponseDomain getList(@RequestBody CommandSearchExamSchedule command, @RequestParam Integer page, @RequestParam Integer size) {
         try {
@@ -39,6 +48,16 @@ public class ExamScheduleController extends ResponseUtils {
     @PostMapping("/exam_schedule/register")
     public ResponseDomain getList(@RequestBody CommandRegisterExam command) {
         try {
+            return this.outJsonV2(9999, null, examScheduleApplication.register(command).orElse(null));
+        } catch (Throwable throwable) {
+            return this.outJsonV2(-9999, throwable.getMessage(), null);
+        }
+    }
+
+    @PostMapping("/exam_schedule/register_v2")
+    public ResponseDomain getListV2(@RequestBody CommandRegisterExam command, @RequestHeader String Authorization) {
+        try {
+            command.setMember(this.getMemberId(Authorization));
             return this.outJsonV2(9999, null, examScheduleApplication.register(command).orElse(null));
         } catch (Throwable throwable) {
             return this.outJsonV2(-9999, throwable.getMessage(), null);
