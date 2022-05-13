@@ -247,6 +247,8 @@ public class CourseApplication implements ICourseApplication {
         List<CommandGetAllCourse> courses = list.stream().map(item -> CommandGetAllCourse.builder()
                 ._id(item.get_id().toHexString())
                 .name(item.getName())
+
+                .tuition(item.getTuition())
                 .build()).collect(Collectors.toList());
         if (!CollectionUtils.isEmpty(list)) {
             StringBuilder ids = new StringBuilder();
