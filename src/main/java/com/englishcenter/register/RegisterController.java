@@ -54,6 +54,15 @@ public class RegisterController extends ResponseUtils {
         }
     }
 
+    @GetMapping("/register/gets_by_student")
+    public ResponseDomain getListByStudent(@RequestHeader String Authorization) {
+        try {
+            return this.outJsonV2(9999, null, registerApplication.getsByStudent(getMemberId(Authorization)).orElse(new ArrayList<>()));
+        } catch (Throwable throwable) {
+            return this.outJsonV2(-9999, throwable.getMessage(), null);
+        }
+    }
+
     @PutMapping("/register/update")
     public ResponseDomain update(@RequestBody CommandAddRegister command, @RequestHeader String Authorization) {
         try {
