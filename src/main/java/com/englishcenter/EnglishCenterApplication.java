@@ -26,13 +26,6 @@ public class EnglishCenterApplication {
         //thông báo trước khi thi
         examScheduleApplication.sendMailRemind();
         examScheduleApplication.updateStatusExam();
-//        classRoomApplication.sendMailRemind();
         classRoomApplication.updateStatusExam();
-    }
-
-    //start vào 07h00 mỗi ngày
-    @Scheduled(cron = "0 0 7 ? * *")
-    private void start7hEveryday() {
-
     }
 }

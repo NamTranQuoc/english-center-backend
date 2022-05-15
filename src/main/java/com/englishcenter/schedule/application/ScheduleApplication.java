@@ -13,6 +13,8 @@ import com.englishcenter.core.utils.enums.ExceptionEnum;
 import com.englishcenter.core.utils.enums.MongodbEnum;
 import com.englishcenter.course.Course;
 import com.englishcenter.course.application.CourseApplication;
+import com.englishcenter.exam.schedule.ExamSchedule;
+import com.englishcenter.exam.schedule.application.ExamScheduleApplication;
 import com.englishcenter.log.Log;
 import com.englishcenter.log.LogApplication;
 import com.englishcenter.member.Member;
@@ -69,6 +71,9 @@ public class ScheduleApplication {
     private TaskSchedulingService taskSchedulingService;
     @Autowired
     private KafkaTemplate<String, Mail> mailKafkaTemplate;
+    @Autowired
+    private ExamScheduleApplication examScheduleApplication;
+
     @Autowired
     public ScheduleApplication() {
         mongoDBConnection = new MongoDBConnection<>(MongodbEnum.collection_schedule, Schedule.class);
@@ -476,12 +481,35 @@ public class ScheduleApplication {
 
         Map<String, String> teachers = new HashMap<>();
         memberApplication.getAll(CommandSearchMember.builder()
-                .types(Collections.singletonList(Member.MemberType.TEACHER))
+                .types(Arrays.asList(Member.MemberType.RECEPTIONIST, Member.MemberType.TEACHER))
                 .build()).orElse(new ArrayList<>()).forEach(item -> teachers.put(item.get_id(), item.getName()));
 
         Map<String, String> rooms = new HashMap<>();
         roomApplication.getAll().orElse(new ArrayList<>())
                 .forEach(item -> rooms.put(item.get_id().toHexString(), item.getName()));
+
+        Map<String, Object> query = new HashMap<>();
+        query.put("start_time", new Document("$gte", command.getFrom_date()));
+        query.put("end_time", new Document("$lte", command.getTo_date()));
+        query.put("student_ids", command.getCurrent_member_id());
+        List<ExamSchedule> examSchedules = examScheduleApplication.mongoDBConnection.find(query).orElse(new ArrayList<>());
+        examSchedules.forEach(item -> {
+            StringBuilder a = new StringBuilder();
+            for (String id: item.getMember_ids()) {
+                a.append(teachers.get(id)).append("\n");
+            }
+            list.add(CommandGetScheduleV2.builder()
+                    .title(item.getCode())
+                    .id(item.get_id().toHexString())
+                    .teacher(a.toString())
+                    .room(rooms.get(item.getRoom_id()))
+                    .start(item.getStart_time())
+                    .end(item.getEnd_time())
+                    .session(1)
+                    .max_student(item.getMax_quantity())
+                    .is_exam(true)
+                    .build());
+        });
 
         for (CommandGetSchedule item: commandGetSchedules) {
             list.add(CommandGetScheduleV2.builder()
