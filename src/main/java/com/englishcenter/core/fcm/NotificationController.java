@@ -1,5 +1,6 @@
 package com.englishcenter.core.fcm;
 
+import com.englishcenter.core.firebase.FirebaseFileService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -11,7 +12,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class NotificationController {
 
     @Autowired
-    private NotificationService notificationService;
+    private FirebaseFileService notificationService;
 
     @PostMapping("/subscribe")
     public void subscribeToTopic(@RequestBody SubscriptionRequest subscriptionRequestDto) {

@@ -27,6 +27,7 @@ public class APIOpenEnum {
             "/auth/request_code_forget_password/*",
             "/auth/forget_password/code",
             "/course/get_by_study_program",
-            "/exam_schedule/get_register"
+            "/exam_schedule/get_register",
+            "/notification/token"
     );
 }
