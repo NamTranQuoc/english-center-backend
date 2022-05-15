@@ -1,12 +1,19 @@
 package com.englishcenter.core.firebase;
 
+import com.englishcenter.core.fcm.NotificationRequest;
+import com.englishcenter.core.fcm.SubscriptionRequest;
 import com.google.auth.oauth2.GoogleCredentials;
 import com.google.cloud.storage.Blob;
 import com.google.cloud.storage.Bucket;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
 import com.google.firebase.cloud.StorageClient;
+import com.google.firebase.messaging.FirebaseMessaging;
+import com.google.firebase.messaging.FirebaseMessagingException;
+import com.google.firebase.messaging.Message;
+import com.google.firebase.messaging.Notification;
 import lombok.Data;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.boot.context.properties.ConfigurationProperties;
@@ -23,27 +30,27 @@ import java.net.URL;
 import java.net.URLConnection;
 
 @Service
+@Slf4j
 public class FirebaseFileService implements IFirebaseFileService {
 
     @Autowired
     Properties properties;
 
+    private FirebaseApp firebaseApp;
+
     @EventListener
     public void init(ApplicationReadyEvent event) {
-
-        // initialize Firebase
-
         try {
-
-            ClassPathResource serviceAccount = new ClassPathResource("firebase.json");
-
             FirebaseOptions options = new FirebaseOptions.Builder()
-                    .setCredentials(GoogleCredentials.fromStream(serviceAccount.getInputStream()))
+                    .setCredentials(GoogleCredentials.fromStream(new ClassPathResource("fcm-message.json").getInputStream()))
                     .setStorageBucket(properties.bucketName)
                     .build();
 
-            FirebaseApp.initializeApp(options);
-
+            if (FirebaseApp.getApps().isEmpty()) {
+                this.firebaseApp = FirebaseApp.initializeApp(options);
+            } else {
+                this.firebaseApp = FirebaseApp.getInstance();
+            }
         } catch (Exception ex) {
 
             ex.printStackTrace();
@@ -152,4 +159,63 @@ public class FirebaseFileService implements IFirebaseFileService {
         private String fileUrl;
     }
 
+    public void subscribeToTopic(SubscriptionRequest subscriptionRequestDto) {
+        try {
+            FirebaseMessaging.getInstance(firebaseApp).subscribeToTopic(subscriptionRequestDto.getTokens(),
+                    subscriptionRequestDto.getTopicName());
+        } catch (FirebaseMessagingException e) {
+            log.error("Firebase subscribe to topic fail", e);
+        }
+    }
+
+    public void unsubscribeFromTopic(SubscriptionRequest subscriptionRequestDto) {
+        try {
+            FirebaseMessaging.getInstance(firebaseApp).unsubscribeFromTopic(subscriptionRequestDto.getTokens(),
+                    subscriptionRequestDto.getTopicName());
+        } catch (FirebaseMessagingException e) {
+            log.error("Firebase unsubscribe from topic fail", e);
+        }
+    }
+
+    public String sendPnsToDevice(NotificationRequest notificationRequestDto) {
+        Message message = Message.builder()
+                .setToken(notificationRequestDto.getTarget())
+                .setNotification(Notification.builder()
+                        .setTitle(notificationRequestDto.getTitle())
+                        .setBody(notificationRequestDto.getBody())
+                        .build())
+                .putData("content", notificationRequestDto.getTitle())
+                .putData("body", notificationRequestDto.getBody())
+                .build();
+
+        String response = null;
+        try {
+            response = FirebaseMessaging.getInstance().send(message);
+        } catch (FirebaseMessagingException e) {
+            log.error("Fail to send firebase notification", e);
+        }
+
+        return response;
+    }
+
+    public String sendPnsToTopic(NotificationRequest notificationRequestDto) {
+        Message message = Message.builder()
+                .setTopic(notificationRequestDto.getTarget())
+                .setNotification(Notification.builder()
+                        .setTitle(notificationRequestDto.getTitle())
+                        .setBody(notificationRequestDto.getBody())
+                        .build())
+                .putData("content", notificationRequestDto.getTitle())
+                .putData("body", notificationRequestDto.getBody())
+                .build();
+
+        String response = null;
+        try {
+            FirebaseMessaging.getInstance().send(message);
+        } catch (FirebaseMessagingException e) {
+            log.error("Fail to send firebase notification", e);
+        }
+
+        return response;
+    }
 }
