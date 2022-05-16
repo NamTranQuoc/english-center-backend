@@ -5,6 +5,7 @@ import com.englishcenter.absent.AbsentApplication;
 import com.englishcenter.classroom.ClassRoom;
 import com.englishcenter.classroom.application.ClassRoomApplication;
 import com.englishcenter.core.fcm.NotificationRequest;
+import com.englishcenter.core.fcm.SubscriptionRequest;
 import com.englishcenter.core.firebase.FirebaseFileService;
 import com.englishcenter.core.kafka.TopicProducer;
 import com.englishcenter.core.mail.Mail;
@@ -87,16 +88,22 @@ public class ScheduleRemindJob implements Runnable {
                     d.put("type", "schedule");
                     String title = "Bạn có lịch học lớp " + data.get("classroom") + " vào " + data.get("start_date");
 
+                    List<String> tokens = new ArrayList<>();
                     members.forEach(item -> {
-                        if (StringUtils.isNotBlank(item.getToken())) {
+                        if (!CollectionUtils.isEmpty(item.getTokens())) {
+                            tokens.addAll(item.getTokens());
+                        }
+                    });
+                    if (!CollectionUtils.isEmpty(tokens)) {
+                        tokens.forEach(item -> {
                             firebaseFileService.sendPnsToDevice(NotificationRequest.builder()
-                                    .target(item.getToken())
+                                    .target(item)
                                     .title("Thông báo lịch Học")
                                     .body(title)
                                     .data(d)
                                     .build());
-                        }
-                    });
+                        });
+                    }
                 }
             }
         }

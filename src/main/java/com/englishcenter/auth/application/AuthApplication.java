@@ -20,6 +20,7 @@ import com.englishcenter.member.application.MemberApplication;
 import com.google.gson.Gson;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.util.Strings;
 import org.bson.Document;
@@ -336,7 +337,12 @@ public class AuthApplication implements IAuthApplication {
         Optional<Member> optional = memberApplication.getById(memberId);
         if (optional.isPresent()) {
             Member member = optional.get();
-            member.setToken(token);
+            if (CollectionUtils.isEmpty(member.getTokens())) {
+                member.setTokens(new ArrayList<>());
+            }
+            Set<String> tokens = new HashSet<>(member.getTokens());
+            tokens.add(token);
+            member.setTokens(new ArrayList<>(tokens));
 
             memberApplication.mongoDBConnection.update(memberId, member);
             return Optional.of(true);
@@ -349,7 +355,12 @@ public class AuthApplication implements IAuthApplication {
         Optional<Member> optional = memberApplication.getById(memberId);
         if (optional.isPresent()) {
             Member member = optional.get();
-            member.setToken(Strings.EMPTY);
+            if (CollectionUtils.isEmpty(member.getTokens())) {
+                member.setTokens(new ArrayList<>());
+            }
+            Set<String> tokens = new HashSet<>(member.getTokens());
+            tokens.remove(token);
+            member.setTokens(new ArrayList<>(tokens));
 
             memberApplication.mongoDBConnection.update(memberId, member);
             return Optional.of(true);
