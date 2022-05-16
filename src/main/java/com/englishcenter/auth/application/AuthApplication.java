@@ -21,15 +21,13 @@ import com.google.gson.Gson;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.util.Strings;
 import org.bson.Document;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Component;
 
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 
 @Component
 public class AuthApplication implements IAuthApplication {
@@ -331,5 +329,31 @@ public class AuthApplication implements IAuthApplication {
                 .mail_content(thymeleafService.getContent("mailForgetPasswordByCode", data))
                 .build());
         return Optional.of(Boolean.TRUE);
+    }
+
+    @Override
+    public Optional<Boolean> loginSuccess(String token, String memberId) {
+        Optional<Member> optional = memberApplication.getById(memberId);
+        if (optional.isPresent()) {
+            Member member = optional.get();
+            member.setToken(token);
+
+            memberApplication.mongoDBConnection.update(memberId, member);
+            return Optional.of(true);
+        }
+        return Optional.of(false);
+    }
+
+    @Override
+    public Optional<Boolean> logout(String token, String memberId) {
+        Optional<Member> optional = memberApplication.getById(memberId);
+        if (optional.isPresent()) {
+            Member member = optional.get();
+            member.setToken(Strings.EMPTY);
+
+            memberApplication.mongoDBConnection.update(memberId, member);
+            return Optional.of(true);
+        }
+        return Optional.of(false);
     }
 }

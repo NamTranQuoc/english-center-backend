@@ -184,8 +184,7 @@ public class FirebaseFileService implements IFirebaseFileService {
                         .setTitle(notificationRequestDto.getTitle())
                         .setBody(notificationRequestDto.getBody())
                         .build())
-                .putData("content", notificationRequestDto.getTitle())
-                .putData("body", notificationRequestDto.getBody())
+                .putAllData(notificationRequestDto.getData())
                 .build();
 
         String response = null;

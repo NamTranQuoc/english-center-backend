@@ -408,9 +408,9 @@ public class ScheduleApplication {
         query.put("classroom_id", schedule.getClassroom_id());
         query.put("_id", new Document("$ne", schedule.get_id()));
         long countV = mongoDBConnection.count(query).orElse(0L);
-        if (countV > 0) {
-            throw new Exception(ExceptionEnum.schedule_exist);
-        }
+//        if (countV > 0) {
+//            throw new Exception(ExceptionEnum.schedule_exist);
+//        }
         query.remove("classroom_id");
         query.remove("_id");
         if (StringUtils.isNotBlank(command.getRoom_id()) && !command.getRoom_id().equals(schedule.getRoom_id())) {

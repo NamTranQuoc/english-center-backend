@@ -12,6 +12,7 @@ import lombok.NoArgsConstructor;
 import org.bson.types.ObjectId;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.List;
 
 @Data
@@ -47,6 +48,7 @@ public class Member implements Serializable {
     @Builder.Default
     private Guardian guardian = Guardian.builder().build();
     private List<String> course_ids;
+    private String token;
 
 
     public static class MemberType {
