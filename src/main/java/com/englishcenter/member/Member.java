@@ -14,6 +14,7 @@ import org.bson.types.ObjectId;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 @Data
 @Entity
@@ -48,7 +49,7 @@ public class Member implements Serializable {
     @Builder.Default
     private Guardian guardian = Guardian.builder().build();
     private List<String> course_ids;
-    private String token;
+    private List<String> tokens;
 
 
     public static class MemberType {
