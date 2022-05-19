@@ -84,24 +84,35 @@ public class ScheduleRemindJob implements Runnable {
                             .build();
                     mailKafkaTemplate.send(TopicProducer.SEND_MAIL, mail);
                     Map<String, String> d = new HashMap<>();
-                    d.put("schedule_id", schedule.get_id().toHexString());
+                    d.put("id", schedule.get_id().toHexString());
                     d.put("type", "schedule");
+                    d.put("title", classroom.get().getName());
+                    d.put("teacher", memberApplication.getById(schedule.getTeacher_id()).get().getName());
+                    d.put("room", room.get().getName());
+                    d.put("start", schedule.getStart_date().toString());
+                    d.put("end", schedule.getEnd_date().toString());
+                    d.put("session", schedule.getSession().toString());
+                    d.put("course_id", classroom.get().getCourse_id());
+                    d.put("max_student", classroom.get().getMax_student().toString());
+                    d.put("took_place", "false");
+                    d.put("classroom_id", classroom.get().get_id().toHexString());
+                    d.put("is_absent", "true");
+                    d.put("is_exam", "false");
                     String title = "Bạn có lịch học lớp " + data.get("classroom") + " vào " + data.get("start_date");
 
-                    List<String> tokens = new ArrayList<>();
-                    members.forEach(item -> {
-                        if (!CollectionUtils.isEmpty(item.getTokens())) {
-                            tokens.addAll(item.getTokens());
-                        }
-                    });
-                    if (!CollectionUtils.isEmpty(tokens)) {
-                        tokens.forEach(item -> {
-                            firebaseFileService.sendPnsToDevice(NotificationRequest.builder()
-                                    .target(item)
-                                    .title("Thông báo lịch Học")
-                                    .body(title)
-                                    .data(d)
-                                    .build());
+                    if (!CollectionUtils.isEmpty(members)) {
+                        members.forEach(item -> {
+                            if (!CollectionUtils.isEmpty(item.getTokens())) {
+                                d.put("is_absent", Boolean.toString(ids.contains(item.get_id())));
+                                item.getTokens().forEach(sub -> {
+                                    firebaseFileService.sendPnsToDevice(NotificationRequest.builder()
+                                            .target(sub)
+                                            .title("Thông báo lịch Học")
+                                            .body(title)
+                                            .data(d)
+                                            .build());
+                                });
+                            }
                         });
                     }
                 }
