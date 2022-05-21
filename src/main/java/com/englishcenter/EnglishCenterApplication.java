@@ -19,13 +19,4 @@ public class EnglishCenterApplication {
     public static void main(String[] args) {
         SpringApplication.run(EnglishCenterApplication.class, args);
     }
-
-    //start vào 00h00 mỗi ngày
-    @Scheduled(cron = "0 0 0 ? * *")
-    private void start0hEveryday() {
-        //thông báo trước khi thi
-        examScheduleApplication.sendMailRemind();
-        examScheduleApplication.updateStatusExam();
-        classRoomApplication.updateStatusExam();
-    }
 }

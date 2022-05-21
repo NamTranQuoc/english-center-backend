@@ -4,6 +4,8 @@ import com.englishcenter.code.CodeApplication;
 import com.englishcenter.core.firebase.FirebaseFileService;
 import com.englishcenter.core.kafka.TopicProducer;
 import com.englishcenter.core.mail.Mail;
+import com.englishcenter.core.schedule.ScheduleName;
+import com.englishcenter.core.schedule.TaskSchedulingService;
 import com.englishcenter.core.thymeleaf.ThymeleafService;
 import com.englishcenter.core.utils.MongoDBConnection;
 import com.englishcenter.core.utils.Paging;
@@ -13,11 +15,13 @@ import com.englishcenter.exam.schedule.ExamSchedule;
 import com.englishcenter.exam.schedule.command.CommandAddExamSchedule;
 import com.englishcenter.exam.schedule.command.CommandRegisterExam;
 import com.englishcenter.exam.schedule.command.CommandSearchExamSchedule;
+import com.englishcenter.exam.schedule.job.ExamScheduleRemindJob;
 import com.englishcenter.member.Member;
 import com.englishcenter.member.application.MemberApplication;
 import com.englishcenter.room.Room;
 import com.englishcenter.room.application.RoomApplication;
 import com.englishcenter.schedule.application.ScheduleApplication;
+import com.englishcenter.schedule.job.ScheduleRemindJob;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.Font;
@@ -45,6 +49,8 @@ import java.util.stream.Collectors;
 @Component
 public class ExamScheduleApplication {
     public final MongoDBConnection<ExamSchedule> mongoDBConnection;
+
+    private final long TEN_MINUTE = 600000;
     @Autowired
     private ScheduleApplication scheduleApplication;
     @Autowired
@@ -59,6 +65,8 @@ public class ExamScheduleApplication {
     private CodeApplication codeApplication;
     @Autowired
     private KafkaTemplate<String, Mail> kafkaEmail;
+    @Autowired
+    private TaskSchedulingService taskSchedulingService;
     @Autowired
     public ExamScheduleApplication() {
         mongoDBConnection = new MongoDBConnection<>(MongodbEnum.collection_exam_schedule, ExamSchedule.class);
@@ -108,7 +116,19 @@ public class ExamScheduleApplication {
                 .max_quantity(command.getMax_quantity())
                 .code(codeApplication.generateCodeByType("exam"))
                 .build();
-        return mongoDBConnection.insert(examSchedule);
+        Optional<ExamSchedule> result = mongoDBConnection.insert(examSchedule);
+        if (result.isPresent()) {
+            ExamScheduleRemindJob examScheduleRemindJob = new ExamScheduleRemindJob();
+            examScheduleRemindJob.setExamScheduleId(result.get().get_id().toHexString());
+            examScheduleRemindJob.setKafkaEmail(kafkaEmail);
+            examScheduleRemindJob.setTaskSchedulingService(taskSchedulingService);
+            taskSchedulingService.scheduleATask(
+                    examScheduleRemindJob,
+                    result.get().getStart_time() - TEN_MINUTE,
+                    ScheduleName.EXAM_SCHEDULE_REMIND,
+                    result.get().get_id().toHexString());
+        }
+        return result;
     }
 
     public Optional<Boolean> register(CommandRegisterExam command) throws Exception {
@@ -369,6 +389,12 @@ public class ExamScheduleApplication {
             }
             examSchedule.setMember_ids(command.getMember_ids());
         }
+        taskSchedulingService.removeScheduledTask(ScheduleName.EXAM_SCHEDULE_REMIND, command.getId());
+        ExamScheduleRemindJob examScheduleRemindJob = new ExamScheduleRemindJob();
+        examScheduleRemindJob.setExamScheduleId(command.getId());
+        examScheduleRemindJob.setKafkaEmail(kafkaEmail);
+        examScheduleRemindJob.setTaskSchedulingService(taskSchedulingService);
+        taskSchedulingService.scheduleATask(examScheduleRemindJob, examSchedule.getStart_time() - TEN_MINUTE, ScheduleName.EXAM_SCHEDULE_REMIND, command.getId());
         return mongoDBConnection.update(examSchedule.get_id().toHexString(), examSchedule);
     }
 
