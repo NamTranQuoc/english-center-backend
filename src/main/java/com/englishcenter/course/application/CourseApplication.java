@@ -36,7 +36,7 @@ public class CourseApplication implements ICourseApplication {
     @Autowired
     private LogApplication logApplication;
     @Autowired
-    private CourseApplication() {
+    public CourseApplication() {
         mongoDBConnection = new MongoDBConnection<>(MongodbEnum.collection_course, Course.class);
     }
 

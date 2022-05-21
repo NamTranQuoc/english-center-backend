@@ -54,6 +54,9 @@ public class ClassRoom implements Serializable {
     public static class Status {
         public final static String create = "create";
         public final static String register = "register";
+        public final static String coming = "coming";
+        public final static String cancel = "cancel";
+        public final static String finish = "finish";
     }
 
     public static class RegisterStatus {

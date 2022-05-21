@@ -4,6 +4,7 @@ import com.englishcenter.absent.Absent;
 import com.englishcenter.absent.AbsentApplication;
 import com.englishcenter.classroom.ClassRoom;
 import com.englishcenter.classroom.application.ClassRoomApplication;
+import com.englishcenter.classroom.job.ClassroomFinalJob;
 import com.englishcenter.core.fcm.NotificationRequest;
 import com.englishcenter.core.fcm.SubscriptionRequest;
 import com.englishcenter.core.firebase.FirebaseFileService;
@@ -13,6 +14,9 @@ import com.englishcenter.core.mail.MailService;
 import com.englishcenter.core.schedule.ScheduleName;
 import com.englishcenter.core.schedule.TaskSchedulingService;
 import com.englishcenter.core.thymeleaf.ThymeleafService;
+import com.englishcenter.course.Course;
+import com.englishcenter.course.application.CourseApplication;
+import com.englishcenter.exam.schedule.job.ExamScheduleFinalJob;
 import com.englishcenter.member.Member;
 import com.englishcenter.member.application.MemberApplication;
 import com.englishcenter.room.Room;
@@ -36,10 +40,10 @@ import java.util.stream.Collectors;
 public class ScheduleRemindJob implements Runnable {
     private String scheduleId;
     private KafkaTemplate<String, Mail> mailKafkaTemplate;
+    private TaskSchedulingService taskSchedulingService;
 
     @Override
     public void run() {
-        TaskSchedulingService taskSchedulingService = new TaskSchedulingService();
         ClassRoomApplication classRoomApplication = new ClassRoomApplication();
         RoomApplication roomApplication = new RoomApplication();
         MemberApplication memberApplication = new MemberApplication();
@@ -47,6 +51,7 @@ public class ScheduleRemindJob implements Runnable {
         ThymeleafService thymeleafService = new ThymeleafService();
         ScheduleApplication scheduleApplication = new ScheduleApplication();
         FirebaseFileService firebaseFileService = new FirebaseFileService();
+        CourseApplication courseApplication = new CourseApplication();
 
         taskSchedulingService.cleanJobWhenRun(ScheduleName.SCHEDULE_REMIND, scheduleId);
 
@@ -76,6 +81,61 @@ public class ScheduleRemindJob implements Runnable {
                         .orElse(new ArrayList<>());
                 List<String> students = members
                         .stream().map(Member::getEmail).collect(Collectors.toList());
+
+                if (ClassRoom.Status.register.equals(classroom.get().getStatus())) {
+                    if (classroom.get().getStudent_ids().size() >= classroom.get().getMin_student()) {
+                        classroom.get().setStatus(ClassRoom.Status.coming);
+                        classRoomApplication.mongoDBConnection.update(schedule.getClassroom_id(), classroom.get());
+                    } else {
+                        classroom.get().setStatus(ClassRoom.Status.cancel);
+                        classRoomApplication.mongoDBConnection.update(schedule.getClassroom_id(), classroom.get());
+
+                        Map<String, Object> data1 = new HashMap<>();
+                        data1.put("reason", "Lớp học của bạn bắt đầu vào ngày " + formatter.format(new Date(classroom.get().getStart_date())) + " đã bị hủy do không đủ số lượng đăng ký");
+                        mailKafkaTemplate.send(TopicProducer.SEND_MAIL, Mail.builder()
+                                .mail_tos(students)
+                                .mail_subject("Thông báo!")
+                                .mail_content(thymeleafService.getContent("mailWhenCancel", data1))
+                                .build());
+
+                        members.forEach(item -> {
+                            if (!CollectionUtils.isEmpty(item.getTokens())) {
+                                item.getTokens().forEach(sub -> {
+                                    firebaseFileService.sendPnsToDevice(NotificationRequest.builder()
+                                            .target(sub)
+                                            .title("Thông báo hủy lịch học")
+                                            .body("Lớp học bắt đầu ngày " + new SimpleDateFormat("dd/MM/yyyy - HH:mm").format(new Date(classroom.get().getStart_date())) + " đã bị hủy")
+                                            .data(new HashMap<>())
+                                            .build());
+                                });
+                            }
+                        });
+
+                        Map<String, Object> querySchedule = new HashMap<>();
+                        querySchedule.put("classroom_id", classroom.get().get_id().toHexString());
+                        List<Schedule> list = scheduleApplication.mongoDBConnection.find(querySchedule).orElse(new ArrayList<>());
+                        list.forEach(item -> {
+                            taskSchedulingService.cleanJobWhenRun(ScheduleName.SCHEDULE_REMIND, item.get_id().toHexString());
+                            scheduleApplication.mongoDBConnection.drop(item.get_id().toHexString());
+                        });
+
+                        return;
+                    }
+                }
+
+                Optional<Course> course = courseApplication.mongoDBConnection.getById(classroom.get().getCourse_id());
+                if (course.isPresent() && course.get().getNumber_of_shift().equals(schedule.getSession())) {
+                    //job update status when classroom finish
+                    ClassroomFinalJob classroomFinalJob = new ClassroomFinalJob();
+                    classroomFinalJob.setClassroomId(classroom.get().get_id().toHexString());
+                    classroomFinalJob.setTaskSchedulingService(taskSchedulingService);
+                    taskSchedulingService.scheduleATask(
+                            classroomFinalJob,
+                            schedule.getEnd_date(),
+                            ScheduleName.CLASSROOM_FINAL,
+                            classroom.get().get_id().toHexString());
+                }
+
                 if (!CollectionUtils.isEmpty(students)) {
                     Mail mail = Mail.builder()
                             .mail_tos(students)

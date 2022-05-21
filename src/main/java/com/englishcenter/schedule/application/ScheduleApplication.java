@@ -199,6 +199,7 @@ public class ScheduleApplication {
                     ScheduleRemindJob scheduleRemindJob = new ScheduleRemindJob();
                     scheduleRemindJob.setScheduleId(schedule1.get_id().toHexString());
                     scheduleRemindJob.setMailKafkaTemplate(mailKafkaTemplate);
+                    scheduleRemindJob.setTaskSchedulingService(taskSchedulingService);
                     taskSchedulingService.scheduleATask(
                             scheduleRemindJob,
                             schedule1.getStart_date() - TEN_MINUTE,
@@ -471,6 +472,7 @@ public class ScheduleApplication {
         ScheduleRemindJob scheduleRemindJob = new ScheduleRemindJob();
         scheduleRemindJob.setScheduleId(id);
         scheduleRemindJob.setMailKafkaTemplate(mailKafkaTemplate);
+        scheduleRemindJob.setTaskSchedulingService(taskSchedulingService);
         taskSchedulingService.scheduleATask(scheduleRemindJob, schedule.getStart_date() - TEN_MINUTE, ScheduleName.SCHEDULE_REMIND, id);
         return mongoDBConnection.update(id, schedule);
     }
