@@ -50,6 +50,8 @@ public class Member implements Serializable {
     private Guardian guardian = Guardian.builder().build();
     private List<String> course_ids;
     private List<String> tokens;
+    @Builder.Default
+    private List<LogScore> log_score = new ArrayList<>();
 
 
     public static class MemberType {
@@ -62,6 +64,16 @@ public class Member implements Serializable {
     public static class MemberStatus {
         public final static String ACTIVE = "active";
         public final static String BLOCK = "block";
+    }
+
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Embedded
+    @Builder
+    public static class LogScore {
+        private Long date;
+        private Score score;
     }
 
     @Data
