@@ -377,12 +377,14 @@ public class ScheduleApplication {
             throw new Exception(ExceptionEnum.schedule_not_exist);
         }
         Schedule schedule = optional.get();
-//        if (System.currentTimeMillis() + 86400000L > schedule.getStart_date()) {
-//            throw new Exception(ExceptionEnum.can_not_update);
-//        }
+        if (System.currentTimeMillis() + 86400000L > schedule.getStart_date()) {
+            throw new Exception(ExceptionEnum.can_not_update);
+        }
+        boolean lt = true;
         ClassRoom classRoom = classRoomApplication.getById(schedule.getClassroom_id()).get();
         Map<String, Log.ChangeDetail> changeDetailMap = new HashMap<>();
         if (command.getStart_time() != null && command.getEnd_time() != null && !command.getStart_time().equals(schedule.getStart_date())) {
+            lt = command.getStart_time() > schedule.getStart_date();
             changeDetailMap.put("start_date", Log.ChangeDetail.builder()
                     .old_value(schedule.getStart_date().toString())
                     .new_value(command.getStart_time().toString())
@@ -409,9 +411,9 @@ public class ScheduleApplication {
         query.put("classroom_id", schedule.getClassroom_id());
         query.put("_id", new Document("$ne", schedule.get_id()));
         long countV = mongoDBConnection.count(query).orElse(0L);
-//        if (countV > 0) {
-//            throw new Exception(ExceptionEnum.schedule_exist);
-//        }
+        if (countV > 0) {
+            throw new Exception(ExceptionEnum.schedule_exist);
+        }
         query.remove("classroom_id");
         query.remove("_id");
         if (StringUtils.isNotBlank(command.getRoom_id()) && !command.getRoom_id().equals(schedule.getRoom_id())) {
@@ -452,14 +454,26 @@ public class ScheduleApplication {
                 throw new Exception(ExceptionEnum.teacher_not_available);
             }
         }
-        Map<String, Object> queryUpdate = new HashMap<>();
-        queryUpdate.put("classroom_id", schedule.getClassroom_id());
-        queryUpdate.put("session", new Document("$gt", schedule.getSession()));
-        queryUpdate.put("start_date", new Document("$lt", schedule.getStart_date()));
-        Map<String, Object> data = new HashMap<>();
-        data.put("$inc", new Document("session", -1));
-        long countAdd = mongoDBConnection.updateMany(queryUpdate, data).orElse(0L);
-        schedule.setSession(schedule.getSession() + (int) countAdd);
+        if (lt) {
+            Map<String, Object> queryUpdate = new HashMap<>();
+            queryUpdate.put("classroom_id", schedule.getClassroom_id());
+            queryUpdate.put("session", new Document("$gt", schedule.getSession()));
+            queryUpdate.put("start_date", new Document("$lt", schedule.getStart_date()));
+            Map<String, Object> data = new HashMap<>();
+            data.put("$inc", new Document("session", -1));
+            long countAdd = mongoDBConnection.updateMany(queryUpdate, data).orElse(0L);
+            schedule.setSession(schedule.getSession() + (int) countAdd);
+        } else {
+            Map<String, Object> queryUpdate = new HashMap<>();
+            queryUpdate.put("classroom_id", schedule.getClassroom_id());
+            queryUpdate.put("session", new Document("$lt", schedule.getSession()));
+            queryUpdate.put("start_date", new Document("$gt", schedule.getStart_date()));
+            Map<String, Object> data = new HashMap<>();
+            data.put("$inc", new Document("session", 1));
+            long countAdd = mongoDBConnection.updateMany(queryUpdate, data).orElse(0L);
+            schedule.setSession(schedule.getSession() - (int) countAdd);
+        }
+
         logApplication.mongoDBConnection.insert(Log.builder()
                 .class_name(MongodbEnum.collection_schedule)
                 .action(Log.ACTION.update)
