@@ -24,6 +24,15 @@ public class DocumentController extends ResponseUtils {
         }
     }
 
+    @GetMapping("/document/get_by_class")
+    public ResponseDomain getByClass(@RequestParam String id, @RequestHeader String Authorization) {
+        try {
+            return this.outJsonV2(9999, null, documentApplication.getByClass(id, this.getMemberId(Authorization)).orElse(null));
+        } catch (Throwable throwable) {
+            return this.outJsonV2(-9999, throwable.getMessage(), null);
+        }
+    }
+
     @GetMapping("/document/get_advertisement")
     public ResponseDomain getImageAdvertisement() {
         try {

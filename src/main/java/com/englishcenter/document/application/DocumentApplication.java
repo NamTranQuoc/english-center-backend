@@ -153,4 +153,20 @@ public class DocumentApplication {
         }
         return mongoDBConnection.delete(id);
     }
+
+    public Optional<List<Document>> getByClass(String id, String memberId) {
+        List<org.bson.Document> and = new ArrayList<>();
+        Map<String, Object> query = new HashMap<>();
+        Map<String, Object> queryRegister = new HashMap<>();
+        queryRegister.put("student_ids.student_id", memberId);
+        Set<String> course_ids = classRoomApplication.mongoDBConnection.find(queryRegister).orElse(new ArrayList<>())
+                .stream().map(ClassRoom::getCourse_id).collect(Collectors.toSet());
+        and.add(new org.bson.Document("course_ids", new org.bson.Document("$in", course_ids)));
+        and.add(new org.bson.Document("course_ids", id));
+
+        if (!CollectionUtils.isEmpty(and)) {
+            query.put("$and", and);
+        }
+        return mongoDBConnection.find(query);
+    }
 }
