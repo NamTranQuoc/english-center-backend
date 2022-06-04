@@ -377,9 +377,9 @@ public class ScheduleApplication {
             throw new Exception(ExceptionEnum.schedule_not_exist);
         }
         Schedule schedule = optional.get();
-        if (System.currentTimeMillis() + 86400000L > schedule.getStart_date()) {
-            throw new Exception(ExceptionEnum.can_not_update);
-        }
+//        if (System.currentTimeMillis() + 86400000L > schedule.getStart_date()) {
+//            throw new Exception(ExceptionEnum.can_not_update);
+//        }
         boolean lt = true;
         ClassRoom classRoom = classRoomApplication.getById(schedule.getClassroom_id()).get();
         Map<String, Log.ChangeDetail> changeDetailMap = new HashMap<>();
@@ -411,9 +411,9 @@ public class ScheduleApplication {
         query.put("classroom_id", schedule.getClassroom_id());
         query.put("_id", new Document("$ne", schedule.get_id()));
         long countV = mongoDBConnection.count(query).orElse(0L);
-        if (countV > 0) {
-            throw new Exception(ExceptionEnum.schedule_exist);
-        }
+//        if (countV > 0) {
+//            throw new Exception(ExceptionEnum.schedule_exist);
+//        }
         query.remove("classroom_id");
         query.remove("_id");
         if (StringUtils.isNotBlank(command.getRoom_id()) && !command.getRoom_id().equals(schedule.getRoom_id())) {
@@ -508,6 +508,7 @@ public class ScheduleApplication {
         query.put("start_time", new Document("$gte", command.getFrom_date()));
         query.put("end_time", new Document("$lte", command.getTo_date()));
         query.put("student_ids", command.getCurrent_member_id());
+        query.put("status", new Document("$ne", ExamSchedule.ExamStatus.cancel));
         List<ExamSchedule> examSchedules = examScheduleApplication.mongoDBConnection.find(query).orElse(new ArrayList<>());
         examSchedules.forEach(item -> {
             StringBuilder a = new StringBuilder();

@@ -98,6 +98,21 @@ public class ScheduleRemindJob implements Runnable {
                                 .mail_content(thymeleafService.getContent("mailWhenCancel", data1))
                                 .build());
 
+                        Map<String, String> d = new HashMap<>();
+                        d.put("id", schedule.get_id().toHexString());
+                        d.put("type", "cancel");
+                        d.put("title", classroom.get().getName());
+                        d.put("teacher", memberApplication.getById(schedule.getTeacher_id()).get().getName());
+                        d.put("room", room.get().getName());
+                        d.put("start", schedule.getStart_date().toString());
+                        d.put("end", schedule.getEnd_date().toString());
+                        d.put("session", schedule.getSession().toString());
+                        d.put("course_id", classroom.get().getCourse_id());
+                        d.put("max_student", classroom.get().getMax_student().toString());
+                        d.put("took_place", "false");
+                        d.put("classroom_id", classroom.get().get_id().toHexString());
+                        d.put("is_absent", "true");
+                        d.put("is_exam", "false");
                         members.forEach(item -> {
                             if (!CollectionUtils.isEmpty(item.getTokens())) {
                                 item.getTokens().forEach(sub -> {
@@ -105,7 +120,7 @@ public class ScheduleRemindJob implements Runnable {
                                             .target(sub)
                                             .title("Thông báo hủy lịch học")
                                             .body("Lớp học bắt đầu ngày " + new SimpleDateFormat("dd/MM/yyyy - HH:mm").format(new Date(classroom.get().getStart_date())) + " đã bị hủy")
-                                            .data(new HashMap<>())
+                                            .data(d)
                                             .build());
                                 });
                             }
