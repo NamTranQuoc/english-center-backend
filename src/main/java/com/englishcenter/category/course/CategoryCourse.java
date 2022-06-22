@@ -25,4 +25,7 @@ public class CategoryCourse implements Serializable {
     private String status;
     private String description;
     private Long create_date;
+
+    //không lưu DB
+    private Integer number_of_course;
 }

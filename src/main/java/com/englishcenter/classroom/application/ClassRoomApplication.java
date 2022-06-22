@@ -307,4 +307,13 @@ public class ClassRoomApplication {
             e.printStackTrace();
         }
     }
+
+    public Optional<List<ClassRoom>> getByKeyWord(String keyword) {
+        Map<String, Object> query = new HashMap<>();
+        Map<String, Object> $regex = new HashMap<>();
+        $regex.put("$regex", Pattern.compile(keyword, Pattern.CASE_INSENSITIVE));
+        query.put("name", $regex);
+
+        return mongoDBConnection.find(query);
+    }
 }

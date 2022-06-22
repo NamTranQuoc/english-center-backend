@@ -54,6 +54,15 @@ public class RegisterController extends ResponseUtils {
         }
     }
 
+    @GetMapping("/register/gets_by_student")
+    public ResponseDomain getListByStudent(@RequestHeader String Authorization) {
+        try {
+            return this.outJsonV2(9999, null, registerApplication.getsByStudent(getMemberId(Authorization)).orElse(new ArrayList<>()));
+        } catch (Throwable throwable) {
+            return this.outJsonV2(-9999, throwable.getMessage(), null);
+        }
+    }
+
     @PutMapping("/register/update")
     public ResponseDomain update(@RequestBody CommandAddRegister command, @RequestHeader String Authorization) {
         try {
@@ -79,6 +88,17 @@ public class RegisterController extends ResponseUtils {
     public ResponseDomain getList(@PathVariable String id) {
         try {
             return this.outJsonV2(9999, null, registerApplication.exportExcel(id).orElse(null));
+        } catch (Throwable throwable) {
+            return this.outJsonV2(-9999, throwable.getMessage(), null);
+        }
+    }
+
+    @PostMapping("/register/add_v2")
+    public ResponseDomain addV2(@RequestBody CommandAddRegister command, @RequestHeader String Authorization) {
+        try {
+            command.setCurrent_member(this.getMemberId(Authorization));
+            command.setStudent_id(this.getMemberId(Authorization));
+            return this.outJsonV2(9999, null, registerApplication.add(command).orElse(null));
         } catch (Throwable throwable) {
             return this.outJsonV2(-9999, throwable.getMessage(), null);
         }

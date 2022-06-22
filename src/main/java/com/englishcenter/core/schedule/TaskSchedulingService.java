@@ -1,8 +1,11 @@
 package com.englishcenter.core.schedule;
 
+import com.englishcenter.classroom.job.ClassroomFinalJob;
 import com.englishcenter.core.mail.Mail;
 import com.englishcenter.core.utils.MongoDBConnection;
 import com.englishcenter.core.utils.enums.MongodbEnum;
+import com.englishcenter.exam.schedule.job.ExamScheduleFinalJob;
+import com.englishcenter.exam.schedule.job.ExamScheduleRemindJob;
 import com.englishcenter.schedule.job.ScheduleRemindJob;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
@@ -82,9 +85,14 @@ public class TaskSchedulingService {
     @EventListener(ApplicationReadyEvent.class)
     public void onStart() {
         List<Job> jobs = mongoDBConnection.find(new HashMap<>()).orElse(new ArrayList<>());
+        long time = System.currentTimeMillis() + 60000;
         for (Job job : jobs) {
             Runnable runnable = getTask(job);
             assert runnable != null;
+            //nếu job trc đó chưa đc run thì run sau 1 phút
+            if (job.getStart_time() < time) {
+                job.setStart_time(time);
+            }
             ScheduledFuture<?> scheduledTask = taskScheduler.schedule(runnable, Instant.ofEpochMilli(job.getStart_time()));
             jobsMap.put(job.get_id().toHexString(), scheduledTask);
         }
@@ -96,7 +104,24 @@ public class TaskSchedulingService {
                 ScheduleRemindJob scheduleRemindJob = new ScheduleRemindJob();
                 scheduleRemindJob.setScheduleId(job.getRef_id());
                 scheduleRemindJob.setMailKafkaTemplate(mailKafkaTemplate);
+                scheduleRemindJob.setTaskSchedulingService(this);
                 return scheduleRemindJob;
+            case ScheduleName.EXAM_SCHEDULE_REMIND:
+                ExamScheduleRemindJob examScheduleRemindJob = new ExamScheduleRemindJob();
+                examScheduleRemindJob.setExamScheduleId(job.getRef_id());
+                examScheduleRemindJob.setKafkaEmail(mailKafkaTemplate);
+                examScheduleRemindJob.setTaskSchedulingService(this);
+                return examScheduleRemindJob;
+            case ScheduleName.EXAM_SCHEDULE_FINAL:
+                ExamScheduleFinalJob examScheduleFinalJob = new ExamScheduleFinalJob();
+                examScheduleFinalJob.setExamScheduleId(job.getRef_id());
+                examScheduleFinalJob.setTaskSchedulingService(this);
+                return examScheduleFinalJob;
+            case ScheduleName.CLASSROOM_FINAL:
+                ClassroomFinalJob classroomFinalJob = new ClassroomFinalJob();
+                classroomFinalJob.setClassroomId(job.getRef_id());
+                classroomFinalJob.setTaskSchedulingService(this);
+                return classroomFinalJob;
         }
         return null;
     }

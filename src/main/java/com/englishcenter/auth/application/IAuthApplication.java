@@ -31,4 +31,8 @@ public interface IAuthApplication {
     Optional<Boolean> changePassword(CommandChangePassword command) throws Exception;
 
     Optional<Boolean> requestCodeForgetPassword(String email) throws Exception;
+
+    Optional<Boolean> loginSuccess(String token, String memberId);
+
+    Optional<Boolean> logout(String token, String memberId);
 }

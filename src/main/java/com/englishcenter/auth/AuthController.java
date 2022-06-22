@@ -26,6 +26,25 @@ public class AuthController extends ResponseUtils {
         }
     }
 
+
+    @PostMapping(value = "/auth/login_success")
+    public ResponseDomain loginSuccess(@RequestParam String token, @RequestHeader String Authorization) {
+        try {
+            return this.outJsonV2(9999, null, authApplication.loginSuccess(token, getMemberId(Authorization)).orElse(null));
+        } catch (Throwable throwable) {
+            return this.outJsonV2(-9999, throwable.getMessage(), null);
+        }
+    }
+
+    @PostMapping(value = "/auth/logout")
+    public ResponseDomain logout(@RequestParam String token, @RequestHeader String Authorization) {
+        try {
+            return this.outJsonV2(9999, null, authApplication.logout(token, getMemberId(Authorization)).orElse(null));
+        } catch (Throwable throwable) {
+            return this.outJsonV2(-9999, throwable.getMessage(), null);
+        }
+    }
+
     @PostMapping(value = "/auth/sign_with_google")
     public ResponseDomain SignInWithGoogle(@RequestBody CommandSignInWithGoogle command) {
         try {

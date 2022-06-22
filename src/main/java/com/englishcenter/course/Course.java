@@ -11,6 +11,7 @@ import lombok.NoArgsConstructor;
 import org.bson.types.ObjectId;
 
 import java.io.Serializable;
+import java.util.List;
 
 @Data
 @Entity
@@ -30,6 +31,7 @@ public class Course implements Serializable {
     private Float input_score;
     private Float output_score;
     private String status;
+    private List<String> suggest;
 
     public static class CourseStatus {
         public final static String ACTIVE = "active";

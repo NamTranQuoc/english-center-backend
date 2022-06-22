@@ -260,4 +260,13 @@ public class RegisterApplication {
         }
         return memberApplication.find(query);
     }
+
+    public Optional<List<ClassRoom>> getsByStudent(String memberId) {
+        Map<String, Object> query = new HashMap<>();
+        query.put("student_ids.student_id", memberId);
+        Map<String, Object> sort = new HashMap<>();
+        sort.put("start_date", -1);
+
+        return classRoomApplication.mongoDBConnection.find(query, sort);
+    }
 }

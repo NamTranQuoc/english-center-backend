@@ -21,5 +21,7 @@ public class CommandGetScheduleV2 {
     private Integer max_student;
     private Boolean took_place;
     private String classroom_id;
-    private Boolean is_absent; //true : là lớp học bù
+    private Boolean is_absent;
+    @Builder.Default//true : là lớp học bù
+    private Boolean is_exam = false;
 }

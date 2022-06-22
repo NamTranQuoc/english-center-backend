@@ -537,17 +537,23 @@ public class MemberApplication implements IMemberApplication {
                             throw new Exception();
                         }
                         Member student = member.get();
-                        if ("in".equals(type)) {
-                            student.setInput_score(Member.Score.builder()
-                                    .listen(listen)
-                                    .read(read)
-                                    .total(listen + read)
-                                    .build());
-                        }
-                        student.setCurrent_score(Member.Score.builder()
+                        Member.Score score = Member.Score.builder()
                                 .listen(listen)
                                 .read(read)
                                 .total(listen + read)
+                                .build();
+                        if ("in".equals(type)) {
+                            student.setInput_score(score);
+                        }
+
+                        student.setCurrent_score(score);
+
+                        if (CollectionUtils.isEmpty(student.getLog_score())) {
+                            student.setLog_score(new ArrayList<>());
+                        }
+                        student.getLog_score().add(Member.LogScore.builder()
+                                .date(System.currentTimeMillis())
+                                .score(score)
                                 .build());
 
                         mongoDBConnection.update(student.get_id().toHexString(), student);
