@@ -5,6 +5,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.List;
+
 @Data
 @Builder
 @NoArgsConstructor
@@ -21,4 +23,5 @@ public class CommandAddCourse {
     private Float output_score;
     private String status;
     private String current_member_id;
+    private List<String> suggest;
 }

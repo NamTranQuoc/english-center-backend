@@ -6,6 +6,7 @@ import com.englishcenter.course.command.CommandAddCourse;
 import com.englishcenter.course.command.CommandGetAllCourse;
 import com.englishcenter.course.command.CommandSearchCourse;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -25,4 +26,6 @@ public interface ICourseApplication {
     Optional<Course> getById(String id);
 
     Optional<List<CommandGetAllCourse>> getByStudyProgram(String id);
+
+    Optional<List<CommandGetAllCourse>> getCourseSuggest(String memberId);
 }
