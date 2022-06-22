@@ -9,6 +9,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.ArrayList;
+
 @Component
 @RestController(value = "/course")
 public class CourseController extends ResponseUtils {
@@ -79,6 +81,15 @@ public class CourseController extends ResponseUtils {
     public ResponseDomain getByCategoryId(@PathVariable String id) {
         try {
             return this.outJsonV2(9999, null, courseApplication.getCourseByCategoryId(id).orElse(null));
+        } catch (Throwable throwable) {
+            return this.outJsonV2(-9999, throwable.getMessage(), null);
+        }
+    }
+
+    @GetMapping("/course/get_course_suggest")
+    public ResponseDomain getCourseSuggest(@RequestHeader String Authorization) {
+        try {
+            return this.outJsonV2(9999, null, courseApplication.getCourseSuggest(getMemberId(Authorization)).orElse(new ArrayList<>()));
         } catch (Throwable throwable) {
             return this.outJsonV2(-9999, throwable.getMessage(), null);
         }

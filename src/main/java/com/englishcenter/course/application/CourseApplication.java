@@ -2,6 +2,7 @@ package com.englishcenter.course.application;
 
 import com.englishcenter.category.course.CategoryCourse;
 import com.englishcenter.category.course.application.ICategoryCourseApplication;
+import com.englishcenter.classroom.ClassRoom;
 import com.englishcenter.classroom.application.ClassRoomApplication;
 import com.englishcenter.core.utils.MongoDBConnection;
 import com.englishcenter.core.utils.Paging;
@@ -14,10 +15,12 @@ import com.englishcenter.course.command.CommandSearchCourse;
 import com.englishcenter.log.Log;
 import com.englishcenter.log.LogApplication;
 import com.englishcenter.member.Member;
+import com.englishcenter.member.application.MemberApplication;
 import com.mongodb.BasicDBObject;
 import com.mongodb.client.AggregateIterable;
 import org.apache.commons.lang3.StringUtils;
 import org.bson.Document;
+import org.bson.types.ObjectId;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
@@ -29,12 +32,15 @@ import java.util.stream.Collectors;
 @Component
 public class CourseApplication implements ICourseApplication {
     public final MongoDBConnection<Course> mongoDBConnection;
+    private final int COURSE_SIZE_SUGGEST = 10;
     @Autowired
     private ICategoryCourseApplication categoryCourseApplication;
     @Autowired
     private ClassRoomApplication classRoomApplication;
     @Autowired
     private LogApplication logApplication;
+    @Autowired
+    private MemberApplication memberApplication;
     @Autowired
     public CourseApplication() {
         mongoDBConnection = new MongoDBConnection<>(MongodbEnum.collection_course, Course.class);
@@ -65,6 +71,7 @@ public class CourseApplication implements ICourseApplication {
                 .input_score(command.getInput_score())
                 .output_score(command.getOutput_score())
                 .status(command.getStatus())
+                .suggest(command.getSuggest())
                 .build();
         logApplication.mongoDBConnection.insert(Log.builder()
                 .class_name(MongodbEnum.collection_course)
@@ -223,6 +230,13 @@ public class CourseApplication implements ICourseApplication {
                     .build());
             course.setStatus(command.getStatus());
         }
+        if (!CollectionUtils.isEmpty(command.getSuggest())) {
+            changeDetailMap.put("suggest", Log.ChangeDetail.builder()
+                    .old_value(course.getSuggest().toString())
+                    .new_value(command.getSuggest().toString())
+                    .build());
+            course.setSuggest(command.getSuggest());
+        }
         logApplication.mongoDBConnection.insert(Log.builder()
                 .class_name(MongodbEnum.collection_class_room)
                 .action(Log.ACTION.update)
@@ -277,5 +291,62 @@ public class CourseApplication implements ICourseApplication {
             }
         }
         return Optional.of(courses);
+    }
+
+    @Override
+    public Optional<List<CommandGetAllCourse>> getCourseSuggest(String memberId) {
+        Map<String, Object> query = new HashMap<>();
+        query.put("status", ClassRoom.Status.finish);
+        query.put("student_ids.student_id", memberId);
+        List<String> courseIds = classRoomApplication.mongoDBConnection.find(query).orElse(new ArrayList<>())
+                .stream().map(ClassRoom::getCourse_id).collect(Collectors.toList());
+        List<String> courseSuggest = new ArrayList<>();
+        getListByIds(courseIds)
+                .forEach(item -> {
+                    if (!CollectionUtils.isEmpty(item.getSuggest())) {
+                        courseSuggest.addAll(item.getSuggest());
+                    }
+                });
+
+        Map<String, Object> query1 = new HashMap<>();
+        query1.put("status", new Document("$in", Arrays.asList(
+                ClassRoom.Status.coming,
+                ClassRoom.Status.register
+        )));
+        query1.put("course_id", new Document("$in", courseSuggest));
+        List<String> courseRegister = classRoomApplication.mongoDBConnection.find(query1).orElse(new ArrayList<>())
+                .stream().map(ClassRoom::getCourse_id).collect(Collectors.toList());
+        courseSuggest.removeAll(courseRegister);
+
+        List<CommandGetAllCourse> result = getListByIds(courseSuggest)
+                .stream().map(item -> CommandGetAllCourse.builder()
+                        ._id(item.get_id().toHexString())
+                        .name(item.getName())
+                        .number_of_class(item.getNumber_of_shift())
+                        .tuition(item.getTuition())
+                        .build())
+                .collect(Collectors.toList());
+        if (result.size() < COURSE_SIZE_SUGGEST) {
+            Member member = memberApplication.getById(memberId).get();
+            Map<String, Object> query2 = new HashMap<>();
+            query2.put("status", Course.CourseStatus.ACTIVE);
+            query2.put("input_score", new Document("$lte", member.getCurrent_score()));
+            result.addAll(mongoDBConnection.find(query2, COURSE_SIZE_SUGGEST - result.size())
+                    .orElse(new ArrayList<>())
+                    .stream().map(item -> CommandGetAllCourse.builder()
+                            ._id(item.get_id().toHexString())
+                            .name(item.getName())
+                            .number_of_class(item.getNumber_of_shift())
+                            .tuition(item.getTuition())
+                            .build())
+                    .collect(Collectors.toList()));
+        }
+        return Optional.of(result);
+    }
+
+    private List<Course> getListByIds(List<String> ids) {
+        List<ObjectId> objectIds = ids.stream().map(ObjectId::new).collect(Collectors.toList());
+        return mongoDBConnection.find(new Document("_id", new Document("$in", objectIds))
+                .append("status", Course.CourseStatus.ACTIVE)).orElse(new ArrayList<>());
     }
 }

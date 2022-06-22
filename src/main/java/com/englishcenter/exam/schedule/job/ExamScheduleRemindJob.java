@@ -145,6 +145,21 @@ public class ExamScheduleRemindJob implements Runnable {
                             .mail_content(thymeleafService.getContent("mailWhenCancel", data1))
                             .build());
 
+                    Map<String, String> d = new HashMap<>();
+                    d.put("id", examSchedule.get_id().toHexString());
+                    d.put("type", "cancel");
+                    d.put("title", examSchedule.getCode());
+                    d.put("teacher", "");
+                    d.put("room", room.get().getName());
+                    d.put("start", examSchedule.getStart_time().toString());
+                    d.put("end", examSchedule.getEnd_time().toString());
+                    d.put("session", "0");
+                    d.put("max_student", "0");
+                    d.put("took_place", "false");
+                    d.put("classroom_id", "0");
+                    d.put("is_absent", "false");
+                    d.put("is_exam", "true");
+
                     students.forEach(item -> {
                         if (!CollectionUtils.isEmpty(item.getTokens())) {
                             item.getTokens().forEach(sub -> {
@@ -152,7 +167,7 @@ public class ExamScheduleRemindJob implements Runnable {
                                         .target(sub)
                                         .title("Thông báo hủy lịch thi")
                                         .body("Lịch thi ngày " + new SimpleDateFormat("dd/MM/yyyy - HH:mm").format(new Date(examSchedule.getStart_time())) + " đã bị hủy")
-                                        .data(new HashMap<>())
+                                        .data(d)
                                         .build());
                             });
                         }

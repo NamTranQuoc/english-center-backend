@@ -56,6 +56,14 @@ public class MongoDBConnection<T> {
         }
     }
 
+    public Optional<List<T>> find(Map<String, Object> query, int size) {
+        try {
+            return Optional.of(mongoCollection.find(new Document(query)).skip(0).limit(size).into(new ArrayList<>()));
+        } catch (Exception e) {
+            return Optional.empty();
+        }
+    }
+
     public Optional<T> findOne(Map<String, Object> query) {
         try {
             List<T> list = mongoCollection.find(new Document(query)).skip(0).limit(1).into(new ArrayList<>());

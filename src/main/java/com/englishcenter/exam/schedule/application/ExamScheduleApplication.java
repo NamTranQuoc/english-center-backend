@@ -342,9 +342,9 @@ public class ExamScheduleApplication {
             throw new Exception(ExceptionEnum.exam_schedule_not_exist);
         }
         ExamSchedule examSchedule = optional.get();
-        if (System.currentTimeMillis() + 86400000L > command.getStart_time()) {
-            throw new Exception(ExceptionEnum.can_not_update);
-        }
+//        if (System.currentTimeMillis() + 86400000L > command.getStart_time()) {
+//            throw new Exception(ExceptionEnum.can_not_update);
+//        }
         Map<String, Object> query = new HashMap<>();
         query.put("$or", Arrays.asList(
                 new Document("$and", Arrays.asList(
