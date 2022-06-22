@@ -2,6 +2,7 @@ package com.englishcenter.course.application;
 
 import com.englishcenter.category.course.CategoryCourse;
 import com.englishcenter.category.course.application.ICategoryCourseApplication;
+import com.englishcenter.category.course.command.CommandGetAllResponse;
 import com.englishcenter.classroom.ClassRoom;
 import com.englishcenter.classroom.application.ClassRoomApplication;
 import com.englishcenter.core.utils.MongoDBConnection;
@@ -231,10 +232,6 @@ public class CourseApplication implements ICourseApplication {
             course.setStatus(command.getStatus());
         }
         if (!CollectionUtils.isEmpty(command.getSuggest())) {
-            changeDetailMap.put("suggest", Log.ChangeDetail.builder()
-                    .old_value(course.getSuggest().toString())
-                    .new_value(command.getSuggest().toString())
-                    .build());
             course.setSuggest(command.getSuggest());
         }
         logApplication.mongoDBConnection.insert(Log.builder()
@@ -294,7 +291,7 @@ public class CourseApplication implements ICourseApplication {
     }
 
     @Override
-    public Optional<List<CommandGetAllCourse>> getCourseSuggest(String memberId) {
+    public Optional<List<CommandGetAllResponse.Course>> getCourseSuggest(String memberId) {
         Map<String, Object> query = new HashMap<>();
         query.put("status", ClassRoom.Status.finish);
         query.put("student_ids.student_id", memberId);
@@ -318,26 +315,30 @@ public class CourseApplication implements ICourseApplication {
                 .stream().map(ClassRoom::getCourse_id).collect(Collectors.toList());
         courseSuggest.removeAll(courseRegister);
 
-        List<CommandGetAllCourse> result = getListByIds(courseSuggest)
-                .stream().map(item -> CommandGetAllCourse.builder()
-                        ._id(item.get_id().toHexString())
+        List<CommandGetAllResponse.Course> result = getListByIds(courseSuggest)
+                .stream().map(item -> CommandGetAllResponse.Course.builder()
+                        .id(item.get_id().toHexString())
                         .name(item.getName())
-                        .number_of_class(item.getNumber_of_shift())
+                        .number_of_shift(item.getNumber_of_shift())
                         .tuition(item.getTuition())
+                        .input_score(item.getInput_score())
+                        .output_score(item.getOutput_score())
                         .build())
                 .collect(Collectors.toList());
         if (result.size() < COURSE_SIZE_SUGGEST) {
             Member member = memberApplication.getById(memberId).get();
             Map<String, Object> query2 = new HashMap<>();
             query2.put("status", Course.CourseStatus.ACTIVE);
-            query2.put("input_score", new Document("$lte", member.getCurrent_score()));
+            query2.put("input_score", new Document("$lte", member.getCurrent_score().getTotal()));
             result.addAll(mongoDBConnection.find(query2, COURSE_SIZE_SUGGEST - result.size())
                     .orElse(new ArrayList<>())
-                    .stream().map(item -> CommandGetAllCourse.builder()
-                            ._id(item.get_id().toHexString())
+                    .stream().map(item -> CommandGetAllResponse.Course.builder()
+                            .id(item.get_id().toHexString())
                             .name(item.getName())
-                            .number_of_class(item.getNumber_of_shift())
+                            .number_of_shift(item.getNumber_of_shift())
                             .tuition(item.getTuition())
+                            .input_score(item.getInput_score())
+                            .output_score(item.getOutput_score())
                             .build())
                     .collect(Collectors.toList()));
         }

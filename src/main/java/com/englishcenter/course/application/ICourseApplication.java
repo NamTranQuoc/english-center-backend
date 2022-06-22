@@ -1,5 +1,6 @@
 package com.englishcenter.course.application;
 
+import com.englishcenter.category.course.command.CommandGetAllResponse;
 import com.englishcenter.core.utils.Paging;
 import com.englishcenter.course.Course;
 import com.englishcenter.course.command.CommandAddCourse;
@@ -27,5 +28,5 @@ public interface ICourseApplication {
 
     Optional<List<CommandGetAllCourse>> getByStudyProgram(String id);
 
-    Optional<List<CommandGetAllCourse>> getCourseSuggest(String memberId);
+    Optional<List<CommandGetAllResponse.Course>> getCourseSuggest(String memberId);
 }
