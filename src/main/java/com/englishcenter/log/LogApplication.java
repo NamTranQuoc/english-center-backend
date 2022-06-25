@@ -22,6 +22,7 @@ public class LogApplication {
     private MemberApplication memberApplication;
     @Autowired
     private FirebaseFileService firebaseFileService;
+
     @Autowired
     public LogApplication() {
         mongoDBConnection = new MongoDBConnection<>(MongodbEnum.collection_log, Log.class);

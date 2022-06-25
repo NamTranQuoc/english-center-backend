@@ -3,7 +3,6 @@ package com.englishcenter.member.application;
 import com.englishcenter.auth.application.IAuthApplication;
 import com.englishcenter.code.CodeApplication;
 import com.englishcenter.core.firebase.IFirebaseFileService;
-import com.englishcenter.core.kafka.TopicProducer;
 import com.englishcenter.core.utils.MongoDBConnection;
 import com.englishcenter.core.utils.Paging;
 import com.englishcenter.core.utils.enums.ExceptionEnum;
@@ -11,9 +10,13 @@ import com.englishcenter.core.utils.enums.MongodbEnum;
 import com.englishcenter.course.application.CourseApplication;
 import com.englishcenter.course.command.CommandGetAllCourse;
 import com.englishcenter.member.Member;
+import com.englishcenter.member.async.UpdateScoreAsync;
 import com.englishcenter.member.command.*;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.ss.usermodel.CellStyle;
+import org.apache.poi.ss.usermodel.Font;
+import org.apache.poi.ss.usermodel.HorizontalAlignment;
+import org.apache.poi.ss.usermodel.VerticalAlignment;
 import org.apache.poi.ss.util.CellRangeAddress;
 import org.apache.poi.xssf.streaming.SXSSFCell;
 import org.apache.poi.xssf.streaming.SXSSFRow;
@@ -22,18 +25,12 @@ import org.apache.poi.xssf.streaming.SXSSFWorkbook;
 import org.bson.Document;
 import org.bson.types.ObjectId;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.kafka.annotation.KafkaListener;
-import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.net.URL;
-import java.nio.channels.Channels;
-import java.nio.channels.ReadableByteChannel;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.regex.Pattern;
@@ -51,7 +48,7 @@ public class MemberApplication implements IMemberApplication {
     @Autowired
     private CourseApplication courseApplication;
     @Autowired
-    private KafkaTemplate<String, CommandUpdateScoreByExcel> kafkaUpdateScore;
+    private UpdateScoreAsync updateScoreAsync;
 
     @Autowired
     public MemberApplication() {
@@ -496,79 +493,8 @@ public class MemberApplication implements IMemberApplication {
         if (!Arrays.asList(Member.MemberType.ADMIN, Member.MemberType.RECEPTIONIST).contains(command.getRole())) {
             throw new Exception(ExceptionEnum.member_type_deny);
         }
-        kafkaUpdateScore.send(TopicProducer.UPDATE_SCORE_BY_EXCEL, command);
+        updateScoreAsync.consumerUpdateScore(command);
         return Optional.of(Boolean.TRUE);
-    }
-
-    @KafkaListener(id = "UPDATE_SCORE_BY_EXCEL", topics = TopicProducer.UPDATE_SCORE_BY_EXCEL)
-    private void consumerUpdateScore(CommandUpdateScoreByExcel command) {
-        try {
-            URL website = new URL(firebaseFileService.getDownloadUrl(command.getPath(), "imports"));
-            ReadableByteChannel rbc = Channels.newChannel(website.openStream());
-            FileOutputStream fos = new FileOutputStream(command.getPath());
-            fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
-            fos.close();
-            rbc.close();
-
-            File _file = new File(command.getPath());
-            FileInputStream fis = null;
-            Workbook workbook = null;
-            try {
-                fis = new FileInputStream(_file);
-                workbook = WorkbookFactory.create(fis);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-            if (workbook != null) {
-                Sheet sheet = workbook.getSheetAt(0);
-                for (int i = 0; i <= sheet.getLastRowNum(); i++) {
-                    Row row = sheet.getRow(i);
-                    Cell cellEmail = row.getCell(0);
-                    Cell cellRead = row.getCell(1);
-                    Cell cellListen = row.getCell(2);
-                    Cell cellType = row.getCell(3);
-                    try {
-                        String email = cellEmail.getStringCellValue();
-                        float read = (float) cellRead.getNumericCellValue();
-                        float listen = (float) cellListen.getNumericCellValue();
-                        String type = cellType.getStringCellValue();
-                        Optional<Member> member = getByCode(email);
-                        if (!member.isPresent() || !Member.MemberType.STUDENT.equals(member.get().getType())) {
-                            throw new Exception();
-                        }
-                        Member student = member.get();
-                        Member.Score score = Member.Score.builder()
-                                .listen(listen)
-                                .read(read)
-                                .total(listen + read)
-                                .build();
-                        if ("in".equals(type)) {
-                            student.setInput_score(score);
-                        }
-
-                        student.setCurrent_score(score);
-
-                        if (CollectionUtils.isEmpty(student.getLog_score())) {
-                            student.setLog_score(new ArrayList<>());
-                        }
-                        student.getLog_score().add(Member.LogScore.builder()
-                                .date(System.currentTimeMillis())
-                                .score(score)
-                                .build());
-
-                        mongoDBConnection.update(student.get_id().toHexString(), student);
-                    } catch (Exception e) {
-                        //e.printStackTrace();
-                    }
-                }
-            }
-            workbook.close();
-            fis.close();
-            _file.delete();
-            firebaseFileService.delete("imports/" + command.getPath());
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
     }
 
     @Override
