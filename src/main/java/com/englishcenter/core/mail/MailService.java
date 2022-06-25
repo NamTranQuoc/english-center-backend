@@ -1,11 +1,10 @@
 package com.englishcenter.core.mail;
 
-import com.englishcenter.core.kafka.TopicProducer;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 
 import javax.mail.MessagingException;
@@ -16,7 +15,7 @@ public class MailService {
     @Autowired
     private JavaMailSender javaMailSender;
 
-    @KafkaListener(id = "SEND_MAIL", topics = TopicProducer.SEND_MAIL)
+    @Async
     public void send(Mail mail) {
         try {
             MimeMessage msg = javaMailSender.createMimeMessage();
@@ -36,5 +35,6 @@ public class MailService {
         } catch (MessagingException e) {
             e.printStackTrace();
         }
+        System.out.println("2");
     }
 }

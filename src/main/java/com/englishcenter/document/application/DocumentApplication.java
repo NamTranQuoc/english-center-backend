@@ -33,6 +33,7 @@ public class DocumentApplication {
     private FirebaseFileService firebaseFileService;
     @Autowired
     private CodeApplication codeApplication;
+
     @Autowired
     public DocumentApplication() {
         mongoDBConnection = new MongoDBConnection<>(MongodbEnum.collection_document, Document.class);

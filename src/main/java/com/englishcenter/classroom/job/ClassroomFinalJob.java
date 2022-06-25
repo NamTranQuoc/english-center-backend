@@ -4,8 +4,6 @@ import com.englishcenter.classroom.ClassRoom;
 import com.englishcenter.classroom.application.ClassRoomApplication;
 import com.englishcenter.core.schedule.ScheduleName;
 import com.englishcenter.core.schedule.TaskSchedulingService;
-import com.englishcenter.exam.schedule.ExamSchedule;
-import com.englishcenter.exam.schedule.application.ExamScheduleApplication;
 import lombok.Data;
 import lombok.SneakyThrows;
 import org.springframework.stereotype.Service;

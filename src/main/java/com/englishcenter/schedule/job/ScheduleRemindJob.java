@@ -6,9 +6,7 @@ import com.englishcenter.classroom.ClassRoom;
 import com.englishcenter.classroom.application.ClassRoomApplication;
 import com.englishcenter.classroom.job.ClassroomFinalJob;
 import com.englishcenter.core.fcm.NotificationRequest;
-import com.englishcenter.core.fcm.SubscriptionRequest;
 import com.englishcenter.core.firebase.FirebaseFileService;
-import com.englishcenter.core.kafka.TopicProducer;
 import com.englishcenter.core.mail.Mail;
 import com.englishcenter.core.mail.MailService;
 import com.englishcenter.core.schedule.ScheduleName;
@@ -16,7 +14,6 @@ import com.englishcenter.core.schedule.TaskSchedulingService;
 import com.englishcenter.core.thymeleaf.ThymeleafService;
 import com.englishcenter.course.Course;
 import com.englishcenter.course.application.CourseApplication;
-import com.englishcenter.exam.schedule.job.ExamScheduleFinalJob;
 import com.englishcenter.member.Member;
 import com.englishcenter.member.application.MemberApplication;
 import com.englishcenter.room.Room;
@@ -24,10 +21,8 @@ import com.englishcenter.room.application.RoomApplication;
 import com.englishcenter.schedule.Schedule;
 import com.englishcenter.schedule.application.ScheduleApplication;
 import lombok.Data;
-import org.apache.commons.lang3.StringUtils;
 import org.bson.Document;
 import org.bson.types.ObjectId;
-import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 
@@ -39,7 +34,6 @@ import java.util.stream.Collectors;
 @Data
 public class ScheduleRemindJob implements Runnable {
     private String scheduleId;
-    private KafkaTemplate<String, Mail> mailKafkaTemplate;
     private TaskSchedulingService taskSchedulingService;
 
     @Override
@@ -52,6 +46,7 @@ public class ScheduleRemindJob implements Runnable {
         ScheduleApplication scheduleApplication = new ScheduleApplication();
         FirebaseFileService firebaseFileService = new FirebaseFileService();
         CourseApplication courseApplication = new CourseApplication();
+        MailService mailService = new MailService();
 
         taskSchedulingService.cleanJobWhenRun(ScheduleName.SCHEDULE_REMIND, scheduleId);
 
@@ -92,7 +87,7 @@ public class ScheduleRemindJob implements Runnable {
 
                         Map<String, Object> data1 = new HashMap<>();
                         data1.put("reason", "Lớp học của bạn bắt đầu vào ngày " + formatter.format(new Date(classroom.get().getStart_date())) + " đã bị hủy do không đủ số lượng đăng ký");
-                        mailKafkaTemplate.send(TopicProducer.SEND_MAIL, Mail.builder()
+                        mailService.send(Mail.builder()
                                 .mail_tos(students)
                                 .mail_subject("Thông báo!")
                                 .mail_content(thymeleafService.getContent("mailWhenCancel", data1))
@@ -157,7 +152,7 @@ public class ScheduleRemindJob implements Runnable {
                             .mail_subject("Thông báo!")
                             .mail_content(thymeleafService.getContent("mailRemindSchedule", data))
                             .build();
-                    mailKafkaTemplate.send(TopicProducer.SEND_MAIL, mail);
+                    mailService.send(mail);
                     Map<String, String> d = new HashMap<>();
                     d.put("id", schedule.get_id().toHexString());
                     d.put("type", "schedule");

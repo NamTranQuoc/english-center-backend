@@ -1,7 +1,6 @@
 package com.englishcenter.core.schedule;
 
 import com.englishcenter.classroom.job.ClassroomFinalJob;
-import com.englishcenter.core.mail.Mail;
 import com.englishcenter.core.utils.MongoDBConnection;
 import com.englishcenter.core.utils.enums.MongodbEnum;
 import com.englishcenter.exam.schedule.job.ExamScheduleFinalJob;
@@ -10,7 +9,6 @@ import com.englishcenter.schedule.job.ScheduleRemindJob;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
-import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.scheduling.TaskScheduler;
 import org.springframework.stereotype.Service;
 
@@ -24,8 +22,6 @@ public class TaskSchedulingService {
     Map<String, ScheduledFuture<?>> jobsMap = new HashMap<>();
     @Autowired
     private TaskScheduler taskScheduler;
-    @Autowired
-    private KafkaTemplate<String, Mail> mailKafkaTemplate;
 
     @Autowired
     public TaskSchedulingService() {
@@ -103,13 +99,11 @@ public class TaskSchedulingService {
             case ScheduleName.SCHEDULE_REMIND:
                 ScheduleRemindJob scheduleRemindJob = new ScheduleRemindJob();
                 scheduleRemindJob.setScheduleId(job.getRef_id());
-                scheduleRemindJob.setMailKafkaTemplate(mailKafkaTemplate);
                 scheduleRemindJob.setTaskSchedulingService(this);
                 return scheduleRemindJob;
             case ScheduleName.EXAM_SCHEDULE_REMIND:
                 ExamScheduleRemindJob examScheduleRemindJob = new ExamScheduleRemindJob();
                 examScheduleRemindJob.setExamScheduleId(job.getRef_id());
-                examScheduleRemindJob.setKafkaEmail(mailKafkaTemplate);
                 examScheduleRemindJob.setTaskSchedulingService(this);
                 return examScheduleRemindJob;
             case ScheduleName.EXAM_SCHEDULE_FINAL:

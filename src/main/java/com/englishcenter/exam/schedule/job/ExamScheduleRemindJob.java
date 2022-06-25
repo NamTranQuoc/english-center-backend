@@ -2,8 +2,8 @@ package com.englishcenter.exam.schedule.job;
 
 import com.englishcenter.core.fcm.NotificationRequest;
 import com.englishcenter.core.firebase.FirebaseFileService;
-import com.englishcenter.core.kafka.TopicProducer;
 import com.englishcenter.core.mail.Mail;
+import com.englishcenter.core.mail.MailService;
 import com.englishcenter.core.schedule.ScheduleName;
 import com.englishcenter.core.schedule.TaskSchedulingService;
 import com.englishcenter.core.thymeleaf.ThymeleafService;
@@ -18,7 +18,6 @@ import lombok.Data;
 import lombok.SneakyThrows;
 import org.bson.Document;
 import org.bson.types.ObjectId;
-import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 
@@ -30,7 +29,6 @@ import java.util.stream.Collectors;
 @Data
 public class ExamScheduleRemindJob implements Runnable {
     private String examScheduleId;
-    private KafkaTemplate<String, Mail> kafkaEmail;
     private TaskSchedulingService taskSchedulingService;
 
     @SneakyThrows
@@ -41,6 +39,7 @@ public class ExamScheduleRemindJob implements Runnable {
         ThymeleafService thymeleafService = new ThymeleafService();
         FirebaseFileService firebaseFileService = new FirebaseFileService();
         ExamScheduleApplication examScheduleApplication = new ExamScheduleApplication();
+        MailService mailService = new MailService();
 
         taskSchedulingService.cleanJobWhenRun(ScheduleName.EXAM_SCHEDULE_REMIND, examScheduleId);
 
@@ -69,7 +68,7 @@ public class ExamScheduleRemindJob implements Runnable {
 
             List<String> emails = students.stream().map(Member::getEmail).collect(Collectors.toList());
             if (!CollectionUtils.isEmpty(students) && examSchedule.getStudent_ids().size() >= examSchedule.getMin_quantity()) {
-                kafkaEmail.send(TopicProducer.SEND_MAIL, Mail.builder()
+                mailService.send(Mail.builder()
                         .mail_tos(emails)
                         .mail_subject("Thông báo!")
                         .mail_content(thymeleafService.getContent("mailRemindExam", data))
@@ -139,7 +138,7 @@ public class ExamScheduleRemindJob implements Runnable {
                     List<String> emails1 = students
                             .stream().map(Member::getEmail).collect(Collectors.toList());
 
-                    kafkaEmail.send(TopicProducer.SEND_MAIL, Mail.builder()
+                    mailService.send(Mail.builder()
                             .mail_tos(emails1)
                             .mail_subject("Thông báo!")
                             .mail_content(thymeleafService.getContent("mailWhenCancel", data1))

@@ -1,6 +1,5 @@
 package com.englishcenter.schedule;
 
-import com.englishcenter.core.mail.Mail;
 import com.englishcenter.core.utils.ResponseDomain;
 import com.englishcenter.core.utils.ResponseUtils;
 import com.englishcenter.schedule.application.ScheduleApplication;
@@ -8,7 +7,6 @@ import com.englishcenter.schedule.command.CommandAddSchedule;
 import com.englishcenter.schedule.command.CommandSearchSchedule;
 import com.englishcenter.schedule.command.CommandUpdateSchedule;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Component;
 import org.springframework.web.bind.annotation.*;
 
@@ -26,9 +24,6 @@ public class ScheduleController extends ResponseUtils {
 //            return this.outJsonV2(-9999, throwable.getMessage(), null);
 //        }
 //    }
-    @Autowired
-    private KafkaTemplate<String, Mail> mailKafkaTemplate;
-
     @PostMapping("/schedule/gets")
     public ResponseDomain gets(@RequestBody CommandSearchSchedule command, @RequestHeader String Authorization) {
         try {

@@ -6,7 +6,6 @@ import com.englishcenter.classroom.application.ClassRoomApplication;
 import com.englishcenter.core.utils.MongoDBConnection;
 import com.englishcenter.core.utils.enums.ExceptionEnum;
 import com.englishcenter.core.utils.enums.MongodbEnum;
-import com.englishcenter.exam.schedule.ExamSchedule;
 import com.englishcenter.member.Member;
 import com.englishcenter.member.application.MemberApplication;
 import com.englishcenter.room.application.RoomApplication;
@@ -34,6 +33,7 @@ public class AbsentApplication {
     private MemberApplication memberApplication;
     @Autowired
     private RoomApplication roomApplication;
+
     @Autowired
     public AbsentApplication() {
         mongoDBConnection = new MongoDBConnection<>(MongodbEnum.collection_absent, Absent.class);

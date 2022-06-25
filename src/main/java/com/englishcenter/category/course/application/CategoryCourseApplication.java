@@ -18,7 +18,6 @@ import com.mongodb.BasicDBObject;
 import com.mongodb.client.AggregateIterable;
 import org.apache.commons.lang3.StringUtils;
 import org.bson.Document;
-import org.bson.types.ObjectId;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -33,6 +32,7 @@ public class CategoryCourseApplication implements ICategoryCourseApplication {
     private LogApplication logApplication;
     @Autowired
     private CourseApplication courseApplication;
+
     @Autowired
     public CategoryCourseApplication() {
         mongoDBConnection = new MongoDBConnection<>(MongodbEnum.collection_category_course, CategoryCourse.class);
@@ -161,7 +161,7 @@ public class CategoryCourseApplication implements ICategoryCourseApplication {
                     }
                 }
             }
-            for (CategoryCourse c: categoryCourses.get()) {
+            for (CategoryCourse c : categoryCourses.get()) {
                 c.setNumber_of_course(count.getOrDefault(c.get_id().toHexString(), 0));
             }
         }
