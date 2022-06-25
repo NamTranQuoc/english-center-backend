@@ -2,8 +2,8 @@ package com.englishcenter.exam.schedule.application;
 
 import com.englishcenter.code.CodeApplication;
 import com.englishcenter.core.firebase.FirebaseFileService;
-import com.englishcenter.core.kafka.TopicProducer;
 import com.englishcenter.core.mail.Mail;
+import com.englishcenter.core.mail.MailService;
 import com.englishcenter.core.schedule.ScheduleName;
 import com.englishcenter.core.schedule.TaskSchedulingService;
 import com.englishcenter.core.thymeleaf.ThymeleafService;
@@ -21,7 +21,6 @@ import com.englishcenter.member.application.MemberApplication;
 import com.englishcenter.room.Room;
 import com.englishcenter.room.application.RoomApplication;
 import com.englishcenter.schedule.application.ScheduleApplication;
-import com.englishcenter.schedule.job.ScheduleRemindJob;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.Font;
@@ -34,7 +33,6 @@ import org.apache.poi.xssf.streaming.SXSSFWorkbook;
 import org.bson.Document;
 import org.bson.types.ObjectId;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
 
@@ -64,9 +62,10 @@ public class ExamScheduleApplication {
     @Autowired
     private CodeApplication codeApplication;
     @Autowired
-    private KafkaTemplate<String, Mail> kafkaEmail;
-    @Autowired
     private TaskSchedulingService taskSchedulingService;
+    @Autowired
+    private MailService mailService;
+
     @Autowired
     public ExamScheduleApplication() {
         mongoDBConnection = new MongoDBConnection<>(MongodbEnum.collection_exam_schedule, ExamSchedule.class);
@@ -120,7 +119,6 @@ public class ExamScheduleApplication {
         if (result.isPresent()) {
             ExamScheduleRemindJob examScheduleRemindJob = new ExamScheduleRemindJob();
             examScheduleRemindJob.setExamScheduleId(result.get().get_id().toHexString());
-            examScheduleRemindJob.setKafkaEmail(kafkaEmail);
             examScheduleRemindJob.setTaskSchedulingService(taskSchedulingService);
             taskSchedulingService.scheduleATask(
                     examScheduleRemindJob,
@@ -392,7 +390,6 @@ public class ExamScheduleApplication {
         taskSchedulingService.removeScheduledTask(ScheduleName.EXAM_SCHEDULE_REMIND, command.getId());
         ExamScheduleRemindJob examScheduleRemindJob = new ExamScheduleRemindJob();
         examScheduleRemindJob.setExamScheduleId(command.getId());
-        examScheduleRemindJob.setKafkaEmail(kafkaEmail);
         examScheduleRemindJob.setTaskSchedulingService(taskSchedulingService);
         taskSchedulingService.scheduleATask(examScheduleRemindJob, examSchedule.getStart_time() - TEN_MINUTE, ScheduleName.EXAM_SCHEDULE_REMIND, command.getId());
         return mongoDBConnection.update(examSchedule.get_id().toHexString(), examSchedule);
@@ -446,7 +443,7 @@ public class ExamScheduleApplication {
                             .orElse(new ArrayList<>())
                             .stream().map(Member::getEmail).collect(Collectors.toList());
                     if (!CollectionUtils.isEmpty(students)) {
-                        kafkaEmail.send(TopicProducer.SEND_MAIL, Mail.builder()
+                        mailService.send(Mail.builder()
                                 .mail_tos(students)
                                 .mail_subject("Thông báo!")
                                 .mail_content(thymeleafService.getContent("mailRemindExam", data))
@@ -487,7 +484,7 @@ public class ExamScheduleApplication {
                     .orElse(new ArrayList<>())
                     .stream().map(Member::getEmail).collect(Collectors.toList());
             if (!CollectionUtils.isEmpty(students)) {
-                kafkaEmail.send(TopicProducer.SEND_MAIL, Mail.builder()
+                mailService.send(Mail.builder()
                         .mail_tos(students)
                         .mail_subject("Thông báo!")
                         .mail_content(thymeleafService.getContent("mailWhenCancel", data))

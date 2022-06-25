@@ -42,6 +42,7 @@ public class CourseApplication implements ICourseApplication {
     private LogApplication logApplication;
     @Autowired
     private MemberApplication memberApplication;
+
     @Autowired
     public CourseApplication() {
         mongoDBConnection = new MongoDBConnection<>(MongodbEnum.collection_course, Course.class);
@@ -128,7 +129,7 @@ public class CourseApplication implements ICourseApplication {
                     }
                 }
             }
-            for (CommandGetAllCourse c: courses) {
+            for (CommandGetAllCourse c : courses) {
                 c.setNumber_of_class(count.getOrDefault(c.get_id(), 0));
             }
         }
@@ -263,7 +264,7 @@ public class CourseApplication implements ICourseApplication {
                 .build()).collect(Collectors.toList());
         if (!CollectionUtils.isEmpty(list)) {
             StringBuilder ids = new StringBuilder();
-            for (Course c: list) {
+            for (Course c : list) {
                 ids.append("\"").append(c.get_id().toHexString()).append("\"").append(",");
             }
             if (!"".equals(ids.toString())) {
@@ -283,7 +284,7 @@ public class CourseApplication implements ICourseApplication {
                     }
                 }
             }
-            for (CommandGetAllCourse c: courses) {
+            for (CommandGetAllCourse c : courses) {
                 c.setNumber_of_class(count.getOrDefault(c.get_id(), 0));
             }
         }

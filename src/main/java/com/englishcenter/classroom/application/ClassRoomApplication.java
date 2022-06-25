@@ -3,8 +3,8 @@ package com.englishcenter.classroom.application;
 import com.englishcenter.classroom.ClassRoom;
 import com.englishcenter.classroom.command.CommandAddClassRoom;
 import com.englishcenter.classroom.command.CommandSearchClassRoom;
-import com.englishcenter.core.kafka.TopicProducer;
 import com.englishcenter.core.mail.Mail;
+import com.englishcenter.core.mail.MailService;
 import com.englishcenter.core.thymeleaf.ThymeleafService;
 import com.englishcenter.core.utils.MongoDBConnection;
 import com.englishcenter.core.utils.Paging;
@@ -23,7 +23,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.bson.Document;
 import org.bson.types.ObjectId;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
 
@@ -46,7 +45,8 @@ public class ClassRoomApplication {
     @Autowired
     private RoomApplication roomApplication;
     @Autowired
-    private KafkaTemplate<String, Mail> kafkaEmail;
+    private MailService mailService;
+
     @Autowired
     public ClassRoomApplication() {
         mongoDBConnection = new MongoDBConnection<>(MongodbEnum.collection_class_room, ClassRoom.class);
@@ -262,7 +262,7 @@ public class ClassRoomApplication {
                 List<String> students = memberApplication.mongoDBConnection.find(new Document("_id", new Document("$in", objectIds)))
                         .orElse(new ArrayList<>())
                         .stream().map(Member::getEmail).collect(Collectors.toList());
-                kafkaEmail.send(TopicProducer.SEND_MAIL, Mail.builder()
+                mailService.send(Mail.builder()
                         .mail_tos(students)
                         .mail_subject("Thông báo!")
                         .mail_content(thymeleafService.getContent("mailWhenCancel", data))

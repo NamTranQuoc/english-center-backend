@@ -7,8 +7,8 @@ import com.englishcenter.auth.command.CommandLogin;
 import com.englishcenter.auth.command.CommandSignInWithGoogle;
 import com.englishcenter.code.CodeApplication;
 import com.englishcenter.core.firebase.FirebaseFileService;
-import com.englishcenter.core.kafka.TopicProducer;
 import com.englishcenter.core.mail.Mail;
+import com.englishcenter.core.mail.MailService;
 import com.englishcenter.core.thymeleaf.ThymeleafService;
 import com.englishcenter.core.utils.Generate;
 import com.englishcenter.core.utils.HashUtils;
@@ -22,10 +22,8 @@ import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.util.Strings;
 import org.bson.Document;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Component;
 
 import java.util.*;
@@ -43,8 +41,9 @@ public class AuthApplication implements IAuthApplication {
     private CodeApplication codeApplication;
     @Autowired
     private FirebaseFileService firebaseFileService;
+
     @Autowired
-    private KafkaTemplate<String, Mail> kafkaEmail;
+    private MailService mailService;
 
     @Autowired
     public AuthApplication() {
@@ -63,7 +62,7 @@ public class AuthApplication implements IAuthApplication {
         data.put("name", member.getName());
         data.put("username", member.getEmail());
         data.put("password", password);
-        kafkaEmail.send(TopicProducer.SEND_MAIL, Mail.builder()
+        mailService.send(Mail.builder()
                 .mail_to(member.getEmail())
                 .mail_subject("Thư chào mừng!")
                 .mail_content(thymeleafService.getContent("mailNewMember", data))
@@ -239,11 +238,12 @@ public class AuthApplication implements IAuthApplication {
         Map<String, Object> data = new HashMap<>();
         data.put("name", member.getName());
         data.put("url", String.format("%s%s", "https://englishcenter-2021.web.app/forget_password/", token));
-        kafkaEmail.send(TopicProducer.SEND_MAIL, Mail.builder()
+        mailService.send(Mail.builder()
                 .mail_to(email)
                 .mail_subject("Khôi phục mật khẩu!")
                 .mail_content(thymeleafService.getContent("mailForgetPassword", data))
                 .build());
+        System.out.println("1");
         return Optional.of(Boolean.TRUE);
     }
 
@@ -324,7 +324,7 @@ public class AuthApplication implements IAuthApplication {
         Map<String, Object> data = new HashMap<>();
         data.put("username", auth.getUsername());
         data.put("code", code);
-        kafkaEmail.send(TopicProducer.SEND_MAIL, Mail.builder()
+        mailService.send(Mail.builder()
                 .mail_to(email)
                 .mail_subject("Khôi phục mật khẩu!")
                 .mail_content(thymeleafService.getContent("mailForgetPasswordByCode", data))
