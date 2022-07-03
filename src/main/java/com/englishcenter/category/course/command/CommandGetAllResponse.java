@@ -13,6 +13,7 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 public class CommandGetAllResponse {
+    private String id;
     private String name;
     private List<Course> courses;
 
