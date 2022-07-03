@@ -332,7 +332,7 @@ public class CourseApplication implements ICourseApplication {
             query2.put("status", Course.CourseStatus.ACTIVE);
             query2.put("input_score", new Document("$lte", member.getCurrent_score().getTotal()));
             Map<String, Object> sort = new HashMap<>();
-            sort.put("input_score", "-1");
+            sort.put("input_score", -1);
             result.addAll(mongoDBConnection.find(query2, COURSE_SIZE_SUGGEST - result.size(), sort)
                     .orElse(new ArrayList<>())
                     .stream().map(item -> CommandGetAllResponse.Course.builder()
