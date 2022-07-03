@@ -176,6 +176,7 @@ public class CategoryCourseApplication implements ICategoryCourseApplication {
             result.put(categoryCourse.get_id().toHexString(), CommandGetAllResponse.builder()
                     .courses(new ArrayList<>())
                     .name(categoryCourse.getName())
+                    .id(categoryCourse.get_id().toHexString())
                     .build());
         }
         List<Course> courses = courseApplication.mongoDBConnection.find(new Document("status", "active")).orElse(new ArrayList<>());
