@@ -33,7 +33,7 @@ import java.util.stream.Collectors;
 @Component
 public class CourseApplication implements ICourseApplication {
     public final MongoDBConnection<Course> mongoDBConnection;
-    private final int COURSE_SIZE_SUGGEST = 10;
+    private final int COURSE_SIZE_SUGGEST = 6;
     @Autowired
     private ICategoryCourseApplication categoryCourseApplication;
     @Autowired
@@ -331,7 +331,9 @@ public class CourseApplication implements ICourseApplication {
             Map<String, Object> query2 = new HashMap<>();
             query2.put("status", Course.CourseStatus.ACTIVE);
             query2.put("input_score", new Document("$lte", member.getCurrent_score().getTotal()));
-            result.addAll(mongoDBConnection.find(query2, COURSE_SIZE_SUGGEST - result.size())
+            Map<String, Object> sort = new HashMap<>();
+            sort.put("input_score", "-1");
+            result.addAll(mongoDBConnection.find(query2, COURSE_SIZE_SUGGEST - result.size(), sort)
                     .orElse(new ArrayList<>())
                     .stream().map(item -> CommandGetAllResponse.Course.builder()
                             .id(item.get_id().toHexString())
