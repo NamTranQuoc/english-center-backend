@@ -56,6 +56,22 @@ public class MongoDBConnection<T> {
         }
     }
 
+    public Optional<List<T>> find(Map<String, Object> query, int size) {
+        try {
+            return Optional.of(mongoCollection.find(new Document(query)).skip(0).limit(size).into(new ArrayList<>()));
+        } catch (Exception e) {
+            return Optional.empty();
+        }
+    }
+
+    public Optional<List<T>> find(Map<String, Object> query, int size, Map<String, Object> sort) {
+        try {
+            return Optional.of(mongoCollection.find(new Document(query)).sort(new Document(sort)).skip(0).limit(size).into(new ArrayList<>()));
+        } catch (Exception e) {
+            return Optional.empty();
+        }
+    }
+
     public Optional<T> findOne(Map<String, Object> query) {
         try {
             List<T> list = mongoCollection.find(new Document(query)).skip(0).limit(1).into(new ArrayList<>());
@@ -153,6 +169,12 @@ public class MongoDBConnection<T> {
 
     public void drop(Map<String, Object> query) {
         mongoCollection.deleteMany(new Document(query)).getDeletedCount();
+    }
+
+    public void drop(String id) {
+        Map<String, Object> query = new HashMap<>();
+        query.put("_id", new ObjectId(id));
+        mongoCollection.deleteMany(new Document(query));
     }
 
     public Optional<Paging<T>> find(Map<String, Object> query, CommandSearchMember.Sort sort, int page, int size) {

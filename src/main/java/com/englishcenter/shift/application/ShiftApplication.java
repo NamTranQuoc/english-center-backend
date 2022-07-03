@@ -25,7 +25,7 @@ public class ShiftApplication {
     }
 
     public Optional<Shift> add(CommandAddShift command) throws Exception {
-        if(StringUtils.isAnyBlank(command.getName(), command.getFrom(), command.getTo())) {
+        if (StringUtils.isAnyBlank(command.getName(), command.getFrom(), command.getTo())) {
             throw new Exception(ExceptionEnum.param_not_null);
         }
         if (!Arrays.asList(Member.MemberType.ADMIN, Member.MemberType.RECEPTIONIST).contains(command.getRole())) {
@@ -53,7 +53,7 @@ public class ShiftApplication {
     }
 
     public Optional<Shift> update(CommandAddShift command) throws Exception {
-        if(StringUtils.isBlank(command.getId())) {
+        if (StringUtils.isBlank(command.getId())) {
             throw new Exception(ExceptionEnum.param_not_null);
         }
         if (!Arrays.asList(Member.MemberType.ADMIN, Member.MemberType.RECEPTIONIST).contains(command.getRole())) {

@@ -25,12 +25,6 @@ import java.util.stream.Collectors;
 @Component
 public class DocumentApplication {
     public final MongoDBConnection<Document> mongoDBConnection;
-
-    @Autowired
-    public DocumentApplication() {
-        mongoDBConnection = new MongoDBConnection<>(MongodbEnum.collection_document, Document.class);
-    }
-
     @Autowired
     private MemberApplication memberApplication;
     @Autowired
@@ -40,8 +34,13 @@ public class DocumentApplication {
     @Autowired
     private CodeApplication codeApplication;
 
+    @Autowired
+    public DocumentApplication() {
+        mongoDBConnection = new MongoDBConnection<>(MongodbEnum.collection_document, Document.class);
+    }
+
     public Optional<Document> add(CommandAddDocument command) throws Exception {
-        if(StringUtils.isAnyBlank(command.getName(), command.getType(), command.getPath())) {
+        if (StringUtils.isAnyBlank(command.getName(), command.getType(), command.getPath())) {
             throw new Exception(ExceptionEnum.param_not_null);
         }
         if (!Arrays.asList(Member.MemberType.ADMIN, Member.MemberType.RECEPTIONIST).contains(command.getRole())) {
@@ -110,7 +109,7 @@ public class DocumentApplication {
     }
 
     public Optional<Document> update(CommandAddDocument command) throws Exception {
-        if(StringUtils.isBlank(command.getId())) {
+        if (StringUtils.isBlank(command.getId())) {
             throw new Exception(ExceptionEnum.param_not_null);
         }
         if (!Arrays.asList(Member.MemberType.ADMIN, Member.MemberType.RECEPTIONIST).contains(command.getRole())) {
@@ -146,7 +145,7 @@ public class DocumentApplication {
         return mongoDBConnection.find(new HashMap<>());
     }
 
-    public Optional<Boolean> delete(String id, String role) throws Exception{
+    public Optional<Boolean> delete(String id, String role) throws Exception {
         if (StringUtils.isAnyBlank(id, role)) {
             throw new Exception(ExceptionEnum.param_not_null);
         }
@@ -154,5 +153,21 @@ public class DocumentApplication {
             throw new Exception(ExceptionEnum.member_type_deny);
         }
         return mongoDBConnection.delete(id);
+    }
+
+    public Optional<List<Document>> getByClass(String id, String memberId) {
+        List<org.bson.Document> and = new ArrayList<>();
+        Map<String, Object> query = new HashMap<>();
+        Map<String, Object> queryRegister = new HashMap<>();
+        queryRegister.put("student_ids.student_id", memberId);
+        Set<String> course_ids = classRoomApplication.mongoDBConnection.find(queryRegister).orElse(new ArrayList<>())
+                .stream().map(ClassRoom::getCourse_id).collect(Collectors.toSet());
+        and.add(new org.bson.Document("course_ids", new org.bson.Document("$in", course_ids)));
+        and.add(new org.bson.Document("course_ids", id));
+
+        if (!CollectionUtils.isEmpty(and)) {
+            query.put("$and", and);
+        }
+        return mongoDBConnection.find(query);
     }
 }

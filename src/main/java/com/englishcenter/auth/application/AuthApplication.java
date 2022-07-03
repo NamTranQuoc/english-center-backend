@@ -7,8 +7,8 @@ import com.englishcenter.auth.command.CommandLogin;
 import com.englishcenter.auth.command.CommandSignInWithGoogle;
 import com.englishcenter.code.CodeApplication;
 import com.englishcenter.core.firebase.FirebaseFileService;
-import com.englishcenter.core.mail.IMailService;
 import com.englishcenter.core.mail.Mail;
+import com.englishcenter.core.mail.MailService;
 import com.englishcenter.core.thymeleaf.ThymeleafService;
 import com.englishcenter.core.utils.Generate;
 import com.englishcenter.core.utils.HashUtils;
@@ -20,23 +20,21 @@ import com.englishcenter.member.application.MemberApplication;
 import com.google.gson.Gson;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.bson.Document;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 
 @Component
 public class AuthApplication implements IAuthApplication {
     public final MongoDBConnection<Auth> mongoDBConnection;
+    private final String JWT_SECRET = "UUhuhdadyh9*&^777687";
+    private final long JWT_EXPIRATION = 24 * 60 * 60 * 1000;
     @Autowired
     private MemberApplication memberApplication;
-    @Autowired
-    private IMailService mailService;
     @Autowired
     private ThymeleafService thymeleafService;
     @Autowired
@@ -44,8 +42,8 @@ public class AuthApplication implements IAuthApplication {
     @Autowired
     private FirebaseFileService firebaseFileService;
 
-    private final String JWT_SECRET = "UUhuhdadyh9*&^777687";
-    private final long JWT_EXPIRATION = 24 * 60 * 60 * 1000;
+    @Autowired
+    private MailService mailService;
 
     @Autowired
     public AuthApplication() {
@@ -64,7 +62,7 @@ public class AuthApplication implements IAuthApplication {
         data.put("name", member.getName());
         data.put("username", member.getEmail());
         data.put("password", password);
-        mailService.sendEmail(Mail.builder()
+        mailService.send(Mail.builder()
                 .mail_to(member.getEmail())
                 .mail_subject("Thư chào mừng!")
                 .mail_content(thymeleafService.getContent("mailNewMember", data))
@@ -197,7 +195,7 @@ public class AuthApplication implements IAuthApplication {
     }
 
     @Override
-    public Optional<Boolean> resetPassword(CommandChangePassword command) throws Exception{
+    public Optional<Boolean> resetPassword(CommandChangePassword command) throws Exception {
         if (!Member.MemberType.ADMIN.equals(command.getRole())) {
             throw new Exception(ExceptionEnum.member_type_deny);
         }
@@ -240,11 +238,12 @@ public class AuthApplication implements IAuthApplication {
         Map<String, Object> data = new HashMap<>();
         data.put("name", member.getName());
         data.put("url", String.format("%s%s", "https://englishcenter-2021.web.app/forget_password/", token));
-        mailService.sendEmail(Mail.builder()
+        mailService.send(Mail.builder()
                 .mail_to(email)
                 .mail_subject("Khôi phục mật khẩu!")
                 .mail_content(thymeleafService.getContent("mailForgetPassword", data))
                 .build());
+        System.out.println("1");
         return Optional.of(Boolean.TRUE);
     }
 
@@ -259,6 +258,30 @@ public class AuthApplication implements IAuthApplication {
         Map<String, Object> query = new HashMap<>();
         query.put("member_id", command.getCurrent_id());
         return mongoDBConnection.update(query, new Document("$set", new Document("password", HashUtils.getPasswordMD5(command.getNew_password()))));
+    }
+
+    @Override
+    public Optional<Boolean> forgetPasswordCode(CommandChangePassword command) throws Exception {
+        if (StringUtils.isAnyBlank(command.getConfirm_password(), command.getNew_password(), command.getCode(), command.getUsername())) {
+            throw new Exception(ExceptionEnum.param_not_null);
+        }
+        if (!command.getNew_password().equals(command.getConfirm_password())) {
+            throw new Exception(ExceptionEnum.confirm_password_incorrect);
+        }
+        Map<String, Object> query = new HashMap<>();
+        query.put("username", command.getUsername());
+        Optional<Auth> optional = mongoDBConnection.findOne(query);
+        if (!optional.isPresent()) {
+            throw new Exception(ExceptionEnum.member_not_exist);
+        }
+        Auth auth = optional.get();
+        if (!command.getCode().equals(auth.getCode())) {
+            throw new Exception(ExceptionEnum.code_incorrect);
+        }
+
+        auth.setPassword(HashUtils.getPasswordMD5(command.getNew_password()));
+
+        return Optional.of(mongoDBConnection.update(auth.get_id().toHexString(), auth).isPresent());
     }
 
     @Override
@@ -279,5 +302,69 @@ public class AuthApplication implements IAuthApplication {
         }
         auth.setPassword(HashUtils.getPasswordMD5(command.getNew_password()));
         return Optional.of(mongoDBConnection.update(auth.get_id().toHexString(), auth).isPresent());
+    }
+
+    @Override
+    public Optional<Boolean> requestCodeForgetPassword(String email) throws Exception {
+        if (StringUtils.isBlank(email)) {
+            throw new Exception(ExceptionEnum.param_not_null);
+        }
+        Map<String, Object> query = new HashMap<>();
+        query.put("username", email);
+        Optional<Auth> optional = mongoDBConnection.findOne(query);
+        if (!optional.isPresent()) {
+            throw new Exception(ExceptionEnum.member_not_exist);
+        }
+        Auth auth = optional.get();
+        String code = Generate.generateCode();
+        auth.setCode(code);
+        mongoDBConnection.update(auth.get_id().toHexString(), auth);
+
+
+        Map<String, Object> data = new HashMap<>();
+        data.put("username", auth.getUsername());
+        data.put("code", code);
+        mailService.send(Mail.builder()
+                .mail_to(email)
+                .mail_subject("Khôi phục mật khẩu!")
+                .mail_content(thymeleafService.getContent("mailForgetPasswordByCode", data))
+                .build());
+        return Optional.of(Boolean.TRUE);
+    }
+
+    @Override
+    public Optional<Boolean> loginSuccess(String token, String memberId) {
+        Optional<Member> optional = memberApplication.getById(memberId);
+        if (optional.isPresent()) {
+            Member member = optional.get();
+            if (CollectionUtils.isEmpty(member.getTokens())) {
+                member.setTokens(new ArrayList<>());
+            }
+            Set<String> tokens = new HashSet<>(member.getTokens());
+            tokens.add(token);
+            member.setTokens(new ArrayList<>(tokens));
+
+            memberApplication.mongoDBConnection.update(memberId, member);
+            return Optional.of(true);
+        }
+        return Optional.of(false);
+    }
+
+    @Override
+    public Optional<Boolean> logout(String token, String memberId) {
+        Optional<Member> optional = memberApplication.getById(memberId);
+        if (optional.isPresent()) {
+            Member member = optional.get();
+            if (CollectionUtils.isEmpty(member.getTokens())) {
+                member.setTokens(new ArrayList<>());
+            }
+            Set<String> tokens = new HashSet<>(member.getTokens());
+            tokens.remove(token);
+            member.setTokens(new ArrayList<>(tokens));
+
+            memberApplication.mongoDBConnection.update(memberId, member);
+            return Optional.of(true);
+        }
+        return Optional.of(false);
     }
 }

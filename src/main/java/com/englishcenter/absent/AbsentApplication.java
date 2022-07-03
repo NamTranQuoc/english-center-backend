@@ -6,11 +6,12 @@ import com.englishcenter.classroom.application.ClassRoomApplication;
 import com.englishcenter.core.utils.MongoDBConnection;
 import com.englishcenter.core.utils.enums.ExceptionEnum;
 import com.englishcenter.core.utils.enums.MongodbEnum;
-import com.englishcenter.exam.schedule.ExamSchedule;
 import com.englishcenter.member.Member;
 import com.englishcenter.member.application.MemberApplication;
+import com.englishcenter.room.application.RoomApplication;
 import com.englishcenter.schedule.Schedule;
 import com.englishcenter.schedule.application.ScheduleApplication;
+import com.englishcenter.schedule.command.CommandGetScheduleV2;
 import org.apache.commons.lang3.StringUtils;
 import org.bson.Document;
 import org.bson.types.ObjectId;
@@ -24,18 +25,19 @@ import java.util.stream.Collectors;
 @Component
 public class AbsentApplication {
     public final MongoDBConnection<Absent> mongoDBConnection;
-
-    @Autowired
-    public AbsentApplication() {
-        mongoDBConnection = new MongoDBConnection<>(MongodbEnum.collection_absent, Absent.class);
-    }
-
     @Autowired
     private ScheduleApplication scheduleApplication;
     @Autowired
     private ClassRoomApplication classRoomApplication;
     @Autowired
     private MemberApplication memberApplication;
+    @Autowired
+    private RoomApplication roomApplication;
+
+    @Autowired
+    public AbsentApplication() {
+        mongoDBConnection = new MongoDBConnection<>(MongodbEnum.collection_absent, Absent.class);
+    }
 
     public Optional<CommandResponseGetStudent> getStudents(CommandGetStudent command) throws Exception {
         Map<String, Object> query = new HashMap<>();
@@ -129,7 +131,7 @@ public class AbsentApplication {
         }
         Map<String, Object> query1 = new HashMap<>();
         query1.put("course_id", classRoom.getCourse_id());
-        query1.put("status", ExamSchedule.ExamStatus.coming);
+//        query1.put("status", ExamSchedule.ExamStatus.coming);
         List<ClassRoom> classRooms = classRoomApplication.find(query1).orElse(new ArrayList<>());
         Map<String, String> name = new HashMap<>();
         List<String> classroomIds = classRooms.stream().map(item -> {
@@ -137,7 +139,10 @@ public class AbsentApplication {
             return item.get_id().toHexString();
         }).collect(Collectors.toList());
         Map<String, Object> query4 = new HashMap<>();
-        query4.put("classroom_id", new Document("$in", classroomIds));
+        query4.put("$and", Arrays.asList(
+                new Document("classroom_id", new Document("$in", classroomIds)),
+                new Document("classroom_id", new Document("$ne", schedule.getClassroom_id()))
+        ));
         query4.put("start_date", new Document("$gt", start));
         query4.put("end_date", new Document("$lt", end));
         query4.put("session", schedule.getSession());
@@ -149,7 +154,7 @@ public class AbsentApplication {
                 .build()).collect(Collectors.toList()));
     }
 
-    public Optional<Absent> registerAbsent(CommandRegisterAbsent command) throws Exception {
+    public Optional<CommandGetScheduleV2> registerAbsent(CommandRegisterAbsent command) throws Exception {
         if (StringUtils.isAnyBlank(command.getSchedule_id(), command.getStudent_id(), command.getClassroom_id())) {
             throw new Exception(ExceptionEnum.param_not_null);
         }
@@ -181,6 +186,21 @@ public class AbsentApplication {
                 .schedule_id(schedule.get_id().toHexString())
                 .backup_schedule_id(schedule1.get().get_id().toHexString())
                 .build();
-        return mongoDBConnection.insert(absent);
+        mongoDBConnection.insert(absent);
+        ClassRoom classRoom = classRoomApplication.getById(command.getClassroom_id()).get();
+        return Optional.of(CommandGetScheduleV2.builder()
+                .title(classRoom.getName())
+                .id(schedule1.get().get_id().toHexString())
+                .teacher(memberApplication.getById(schedule1.get().getTeacher_id()).get().getName())
+                .room(roomApplication.getById(schedule1.get().getRoom_id()).get().getName())
+                .start(schedule1.get().getStart_date())
+                .end(schedule1.get().getEnd_date())
+                .session(schedule1.get().getSession())
+                .max_student(classRoom.getMax_student())
+                .course_id(classRoom.getCourse_id())
+                .took_place(false)
+                .is_absent(true)
+                .classroom_id(schedule1.get().getClassroom_id())
+                .build());
     }
 }

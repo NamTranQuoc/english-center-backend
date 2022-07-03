@@ -2,8 +2,10 @@ package com.englishcenter.exam.schedule.application;
 
 import com.englishcenter.code.CodeApplication;
 import com.englishcenter.core.firebase.FirebaseFileService;
-import com.englishcenter.core.mail.IMailService;
 import com.englishcenter.core.mail.Mail;
+import com.englishcenter.core.mail.MailService;
+import com.englishcenter.core.schedule.ScheduleName;
+import com.englishcenter.core.schedule.TaskSchedulingService;
 import com.englishcenter.core.thymeleaf.ThymeleafService;
 import com.englishcenter.core.utils.MongoDBConnection;
 import com.englishcenter.core.utils.Paging;
@@ -13,6 +15,7 @@ import com.englishcenter.exam.schedule.ExamSchedule;
 import com.englishcenter.exam.schedule.command.CommandAddExamSchedule;
 import com.englishcenter.exam.schedule.command.CommandRegisterExam;
 import com.englishcenter.exam.schedule.command.CommandSearchExamSchedule;
+import com.englishcenter.exam.schedule.job.ExamScheduleRemindJob;
 import com.englishcenter.member.Member;
 import com.englishcenter.member.application.MemberApplication;
 import com.englishcenter.room.Room;
@@ -45,11 +48,7 @@ import java.util.stream.Collectors;
 public class ExamScheduleApplication {
     public final MongoDBConnection<ExamSchedule> mongoDBConnection;
 
-    @Autowired
-    public ExamScheduleApplication() {
-        mongoDBConnection = new MongoDBConnection<>(MongodbEnum.collection_exam_schedule, ExamSchedule.class);
-    }
-
+    private final long TEN_MINUTE = 600000;
     @Autowired
     private ScheduleApplication scheduleApplication;
     @Autowired
@@ -59,14 +58,21 @@ public class ExamScheduleApplication {
     @Autowired
     private FirebaseFileService firebaseFileService;
     @Autowired
-    private IMailService mailService;
-    @Autowired
     private ThymeleafService thymeleafService;
     @Autowired
     private CodeApplication codeApplication;
+    @Autowired
+    private TaskSchedulingService taskSchedulingService;
+    @Autowired
+    private MailService mailService;
+
+    @Autowired
+    public ExamScheduleApplication() {
+        mongoDBConnection = new MongoDBConnection<>(MongodbEnum.collection_exam_schedule, ExamSchedule.class);
+    }
 
     public Optional<ExamSchedule> add(CommandAddExamSchedule command) throws Exception {
-        if(StringUtils.isAnyBlank(command.getRoom_id())
+        if (StringUtils.isAnyBlank(command.getRoom_id())
                 || command.getStart_time() == null
                 || command.getEnd_time() == null
                 || command.getMember_ids().isEmpty()
@@ -109,7 +115,18 @@ public class ExamScheduleApplication {
                 .max_quantity(command.getMax_quantity())
                 .code(codeApplication.generateCodeByType("exam"))
                 .build();
-        return mongoDBConnection.insert(examSchedule);
+        Optional<ExamSchedule> result = mongoDBConnection.insert(examSchedule);
+        if (result.isPresent()) {
+            ExamScheduleRemindJob examScheduleRemindJob = new ExamScheduleRemindJob();
+            examScheduleRemindJob.setExamScheduleId(result.get().get_id().toHexString());
+            examScheduleRemindJob.setTaskSchedulingService(taskSchedulingService);
+            taskSchedulingService.scheduleATask(
+                    examScheduleRemindJob,
+                    result.get().getStart_time() - TEN_MINUTE,
+                    ScheduleName.EXAM_SCHEDULE_REMIND,
+                    result.get().get_id().toHexString());
+        }
+        return result;
     }
 
     public Optional<Boolean> register(CommandRegisterExam command) throws Exception {
@@ -208,7 +225,8 @@ public class ExamScheduleApplication {
         query.put("_id", new Document("$in", memberIds));
         List<Member> members = memberApplication.find(query).orElse(new ArrayList<>());
         FileOutputStream fileOutputStream = null;
-        SXSSFWorkbook workbook = new SXSSFWorkbook();;
+        SXSSFWorkbook workbook = new SXSSFWorkbook();
+        ;
         String filePath = "export-exam.xlsx";
         createTemplateExport(filePath, workbook, members);
         try {
@@ -311,7 +329,7 @@ public class ExamScheduleApplication {
     }
 
     public Optional<ExamSchedule> update(CommandAddExamSchedule command) throws Exception {
-        if(StringUtils.isBlank(command.getId())) {
+        if (StringUtils.isBlank(command.getId())) {
             throw new Exception(ExceptionEnum.param_not_null);
         }
         if (!Arrays.asList(Member.MemberType.ADMIN, Member.MemberType.RECEPTIONIST).contains(command.getRole())) {
@@ -322,9 +340,9 @@ public class ExamScheduleApplication {
             throw new Exception(ExceptionEnum.exam_schedule_not_exist);
         }
         ExamSchedule examSchedule = optional.get();
-        if (System.currentTimeMillis() + 86400000L > command.getStart_time()) {
-            throw new Exception(ExceptionEnum.can_not_update);
-        }
+//        if (System.currentTimeMillis() + 86400000L > command.getStart_time()) {
+//            throw new Exception(ExceptionEnum.can_not_update);
+//        }
         Map<String, Object> query = new HashMap<>();
         query.put("$or", Arrays.asList(
                 new Document("$and", Arrays.asList(
@@ -369,6 +387,11 @@ public class ExamScheduleApplication {
             }
             examSchedule.setMember_ids(command.getMember_ids());
         }
+        taskSchedulingService.removeScheduledTask(ScheduleName.EXAM_SCHEDULE_REMIND, command.getId());
+        ExamScheduleRemindJob examScheduleRemindJob = new ExamScheduleRemindJob();
+        examScheduleRemindJob.setExamScheduleId(command.getId());
+        examScheduleRemindJob.setTaskSchedulingService(taskSchedulingService);
+        taskSchedulingService.scheduleATask(examScheduleRemindJob, examSchedule.getStart_time() - TEN_MINUTE, ScheduleName.EXAM_SCHEDULE_REMIND, command.getId());
         return mongoDBConnection.update(examSchedule.get_id().toHexString(), examSchedule);
     }
 
@@ -403,7 +426,7 @@ public class ExamScheduleApplication {
             Map<String, Object> query = new HashMap<>();
             query.put("start_time", new Document("$gte", now).append("$lte", now + 86400000L));
             List<ExamSchedule> examSchedules = mongoDBConnection.find(query).orElse(new ArrayList<>());
-            for (ExamSchedule examSchedule: examSchedules) {
+            for (ExamSchedule examSchedule : examSchedules) {
                 Optional<Room> room = roomApplication.getById(examSchedule.getRoom_id());
                 if (room.isPresent()) {
                     Map<String, Object> data = new HashMap<>();
@@ -420,7 +443,7 @@ public class ExamScheduleApplication {
                             .orElse(new ArrayList<>())
                             .stream().map(Member::getEmail).collect(Collectors.toList());
                     if (!CollectionUtils.isEmpty(students)) {
-                        mailService.sendManyEmail(Mail.builder()
+                        mailService.send(Mail.builder()
                                 .mail_tos(students)
                                 .mail_subject("Thông báo!")
                                 .mail_content(thymeleafService.getContent("mailRemindExam", data))
@@ -444,7 +467,7 @@ public class ExamScheduleApplication {
             List<ExamSchedule> examSchedules = mongoDBConnection.find(query).orElse(new ArrayList<>());
             List<ObjectId> cancelIds = new ArrayList<>();
             List<ObjectId> comingIds = new ArrayList<>();
-            for (ExamSchedule examSchedule: examSchedules) {
+            for (ExamSchedule examSchedule : examSchedules) {
                 if (examSchedule.getMin_quantity() > examSchedule.getStudent_ids().size()) {
                     examSchedule.setStatus(ExamSchedule.ExamStatus.cancel);
                     ids.addAll(examSchedule.getStudent_ids());
@@ -461,7 +484,7 @@ public class ExamScheduleApplication {
                     .orElse(new ArrayList<>())
                     .stream().map(Member::getEmail).collect(Collectors.toList());
             if (!CollectionUtils.isEmpty(students)) {
-                mailService.sendManyEmail(Mail.builder()
+                mailService.send(Mail.builder()
                         .mail_tos(students)
                         .mail_subject("Thông báo!")
                         .mail_content(thymeleafService.getContent("mailWhenCancel", data))
@@ -485,5 +508,12 @@ public class ExamScheduleApplication {
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    public Optional<List<ExamSchedule>> getRegister() {
+        Map<String, Object> query = new HashMap<>();
+        query.put("status", ExamSchedule.ExamStatus.register);
+
+        return mongoDBConnection.find(query);
     }
 }

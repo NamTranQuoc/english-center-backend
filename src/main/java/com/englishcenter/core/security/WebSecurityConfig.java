@@ -10,7 +10,6 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 
 import javax.servlet.http.HttpServletRequest;
-import java.util.Arrays;
 
 @Configuration
 @EnableWebSecurity
@@ -32,28 +31,10 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
         @Override
         public CorsConfiguration getCorsConfiguration(final HttpServletRequest request) {
             final CorsConfiguration configuration = new CorsConfiguration();
-            configuration.setAllowCredentials(true);
-            configuration.setAllowedOrigins(Arrays.asList(
-                    "http://localhost:3000/",
-                    "https://englishcenter-2021.web.app/",
-                    "https://englishcenter-bd4ab.web.app/",
-                    "http://localhost:3001/",
-                    "https://englishcenter-2021.firebaseapp.com/"
-            ));
-            configuration.setAllowedMethods(Arrays.asList(
-                    "GET",
-                    "POST",
-                    "PUT",
-                    "DELETE"
-            ));
-            configuration.setAllowedHeaders(Arrays.asList(
-                    "Content-Type",
-                    "X-Requested-With",
-                    "accept",
-                    "Origin",
-                    "Access-Control-Request-Method",
-                    "Access-Control-Request-Headers",
-                    "Authorization"));
+            configuration.addAllowedOrigin("*");
+            configuration.addAllowedHeader("*");
+            configuration.addAllowedMethod("*");
+            configuration.addAllowedOriginPattern("*");
             return configuration;
         }
     }

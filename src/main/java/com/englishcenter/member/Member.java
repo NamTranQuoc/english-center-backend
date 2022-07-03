@@ -12,6 +12,7 @@ import lombok.NoArgsConstructor;
 import org.bson.types.ObjectId;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.List;
 
 @Data
@@ -47,6 +48,9 @@ public class Member implements Serializable {
     @Builder.Default
     private Guardian guardian = Guardian.builder().build();
     private List<String> course_ids;
+    private List<String> tokens;
+    @Builder.Default
+    private List<LogScore> log_score = new ArrayList<>();
 
 
     public static class MemberType {
@@ -59,6 +63,16 @@ public class Member implements Serializable {
     public static class MemberStatus {
         public final static String ACTIVE = "active";
         public final static String BLOCK = "block";
+    }
+
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Embedded
+    @Builder
+    public static class LogScore {
+        private Long date;
+        private Score score;
     }
 
     @Data

@@ -14,6 +14,8 @@ import com.englishcenter.course.application.CourseApplication;
 import com.englishcenter.log.Log;
 import com.englishcenter.log.LogApplication;
 import com.englishcenter.member.Member;
+import com.mongodb.BasicDBObject;
+import com.mongodb.client.AggregateIterable;
 import org.apache.commons.lang3.StringUtils;
 import org.bson.Document;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,16 +28,15 @@ import java.util.stream.Collectors;
 @Component
 public class CategoryCourseApplication implements ICategoryCourseApplication {
     public final MongoDBConnection<CategoryCourse> mongoDBConnection;
+    @Autowired
+    private LogApplication logApplication;
+    @Autowired
+    private CourseApplication courseApplication;
 
     @Autowired
     public CategoryCourseApplication() {
         mongoDBConnection = new MongoDBConnection<>(MongodbEnum.collection_category_course, CategoryCourse.class);
     }
-
-    @Autowired
-    private LogApplication logApplication;
-    @Autowired
-    private CourseApplication courseApplication;
 
     @Override
     public Optional<CategoryCourse> add(CommandAddCategoryCourse command) throws Exception {
@@ -145,7 +146,26 @@ public class CategoryCourseApplication implements ICategoryCourseApplication {
 
     @Override
     public Optional<List<CategoryCourse>> getAll() {
-        return mongoDBConnection.find(new HashMap<>());
+        Optional<List<CategoryCourse>> categoryCourses = mongoDBConnection.find(new HashMap<>());
+        if (categoryCourses.isPresent()) {
+            List<BasicDBObject> aggregate = Arrays.asList(
+                    BasicDBObject.parse("{\"$match\": {\"status\": \"active\"}}"),
+                    BasicDBObject.parse("{\"$group\": {_id: \"$category_course_id\", \"count\": {\"$sum\": 1}}}")
+            );
+            AggregateIterable<Document> documents = courseApplication.mongoDBConnection.aggregate(aggregate);
+            Map<String, Integer> count = new HashMap<>();
+            if (documents != null) {
+                for (Document item : documents) {
+                    if (item.containsKey("_id") && item.get("_id") != null && StringUtils.isNotBlank(item.get("_id").toString())) {
+                        count.put(item.get("_id").toString(), item.getInteger("count", 0));
+                    }
+                }
+            }
+            for (CategoryCourse c : categoryCourses.get()) {
+                c.setNumber_of_course(count.getOrDefault(c.get_id().toHexString(), 0));
+            }
+        }
+        return categoryCourses;
     }
 
     @Override
@@ -156,6 +176,7 @@ public class CategoryCourseApplication implements ICategoryCourseApplication {
             result.put(categoryCourse.get_id().toHexString(), CommandGetAllResponse.builder()
                     .courses(new ArrayList<>())
                     .name(categoryCourse.getName())
+                    .id(categoryCourse.get_id().toHexString())
                     .build());
         }
         List<Course> courses = courseApplication.mongoDBConnection.find(new Document("status", "active")).orElse(new ArrayList<>());

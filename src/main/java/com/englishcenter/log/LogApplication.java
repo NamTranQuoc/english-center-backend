@@ -18,16 +18,15 @@ import java.util.stream.Collectors;
 @Component
 public class LogApplication {
     public final MongoDBConnection<Log> mongoDBConnection;
+    @Autowired
+    private MemberApplication memberApplication;
+    @Autowired
+    private FirebaseFileService firebaseFileService;
 
     @Autowired
     public LogApplication() {
         mongoDBConnection = new MongoDBConnection<>(MongodbEnum.collection_log, Log.class);
     }
-
-    @Autowired
-    private MemberApplication memberApplication;
-    @Autowired
-    private FirebaseFileService firebaseFileService;
 
     public Optional<List<CommandGetRecent>> getRecent() {
         List<Log> list = mongoDBConnection.findList(new HashMap<>(), CommandSearchMember.Sort.builder()
@@ -39,7 +38,7 @@ public class LogApplication {
         query.put("_id", new Document("$in", ids));
         Map<String, Member> listMember = new HashMap<>();
         List<Member> members = memberApplication.mongoDBConnection.find(query).orElse(new ArrayList<>());
-        for (Member member: members) {
+        for (Member member : members) {
             listMember.put(member.get_id().toHexString(), member);
         }
         return Optional.of(list.stream()

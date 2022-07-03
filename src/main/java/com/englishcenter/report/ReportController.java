@@ -1,5 +1,6 @@
 package com.englishcenter.report;
 
+import com.englishcenter.core.utils.ResponseDomain;
 import com.englishcenter.core.utils.ResponseUtils;
 import com.englishcenter.log.LogApplication;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,38 +17,38 @@ public class ReportController extends ResponseUtils {
     private LogApplication logApplication;
 
     @GetMapping("/report/count_member")
-    public String countMember() {
+    public ResponseDomain countMember() {
         try {
-            return this.outJson(9999, null, reportApplication.countMember().orElse(null));
+            return this.outJsonV2(9999, null, reportApplication.countMember().orElse(null));
         } catch (Throwable throwable) {
-            return this.outJson(-9999, throwable.getMessage(), null);
+            return this.outJsonV2(-9999, throwable.getMessage(), null);
         }
     }
 
     @GetMapping("/report/statistical_by_register")
-    public String statisticalByRegister() {
+    public ResponseDomain statisticalByRegister() {
         try {
-            return this.outJson(9999, null, reportApplication.statisticalByRegister().orElse(null));
+            return this.outJsonV2(9999, null, reportApplication.statisticalByRegister().orElse(null));
         } catch (Throwable throwable) {
-            return this.outJson(-9999, throwable.getMessage(), null);
+            return this.outJsonV2(-9999, throwable.getMessage(), null);
         }
     }
 
     @GetMapping("/report/statistical_by_paid")
-    public String statisticalByPaid() {
+    public ResponseDomain statisticalByPaid() {
         try {
-            return this.outJson(9999, null, reportApplication.statisticalByPaid().orElse(null));
+            return this.outJsonV2(9999, null, reportApplication.statisticalByPaid().orElse(null));
         } catch (Throwable throwable) {
-            return this.outJson(-9999, throwable.getMessage(), null);
+            return this.outJsonV2(-9999, throwable.getMessage(), null);
         }
     }
 
     @GetMapping("/report/get_recent")
-    public String getAll() {
+    public ResponseDomain getAll() {
         try {
-            return this.outJson(9999, null, logApplication.getRecent().orElse(null));
+            return this.outJsonV2(9999, null, logApplication.getRecent().orElse(null));
         } catch (Throwable throwable) {
-            return this.outJson(-9999, throwable.getMessage(), null);
+            return this.outJsonV2(-9999, throwable.getMessage(), null);
         }
     }
 }
