@@ -662,4 +662,12 @@ public class MemberApplication implements IMemberApplication {
         }
         return mongoDBConnection.delete(id);
     }
+
+    public void test() {
+        Map<String, Object> query = new HashMap<>();
+        query.put("email", "heg58147@zwoho.com");
+        Member member = mongoDBConnection.findOne(query).get();
+        member.setIs_deleted(!member.getIs_deleted());
+        mongoDBConnection.update(member.get_id().toHexString(), member);
+    }
 }
