@@ -2,6 +2,8 @@ package com.englishcenter.schedule.async;
 
 import com.englishcenter.classroom.ClassRoom;
 import com.englishcenter.classroom.application.ClassRoomApplication;
+import com.englishcenter.core.firebase.FirebaseFileService;
+import com.englishcenter.core.mail.MailService;
 import com.englishcenter.core.schedule.ScheduleName;
 import com.englishcenter.core.schedule.TaskSchedulingService;
 import com.englishcenter.core.utils.enums.ExceptionEnum;
@@ -43,6 +45,10 @@ public class GenerateAsync {
     private LogApplication logApplication;
     @Autowired
     private TaskSchedulingService taskSchedulingService;
+    @Autowired
+    private MailService mailService;
+    @Autowired
+    private FirebaseFileService firebaseFileService;
     private final long TEN_MINUTE = 600000;
 
     @Async
@@ -161,6 +167,8 @@ public class GenerateAsync {
                     ScheduleRemindJob scheduleRemindJob = new ScheduleRemindJob();
                     scheduleRemindJob.setScheduleId(schedule1.get_id().toHexString());
                     scheduleRemindJob.setTaskSchedulingService(taskSchedulingService);
+                    scheduleRemindJob.setMailService(mailService);
+                    scheduleRemindJob.setFirebaseFileService(firebaseFileService);
                     taskSchedulingService.scheduleATask(
                             scheduleRemindJob,
                             schedule1.getStart_date() - TEN_MINUTE,

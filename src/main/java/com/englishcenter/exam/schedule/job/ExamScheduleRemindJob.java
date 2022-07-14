@@ -30,6 +30,8 @@ import java.util.stream.Collectors;
 public class ExamScheduleRemindJob implements Runnable {
     private String examScheduleId;
     private TaskSchedulingService taskSchedulingService;
+    private MailService mailService;
+    private FirebaseFileService firebaseFileService;
 
     @SneakyThrows
     @Override
@@ -37,9 +39,7 @@ public class ExamScheduleRemindJob implements Runnable {
         RoomApplication roomApplication = new RoomApplication();
         MemberApplication memberApplication = new MemberApplication();
         ThymeleafService thymeleafService = new ThymeleafService();
-        FirebaseFileService firebaseFileService = new FirebaseFileService();
         ExamScheduleApplication examScheduleApplication = new ExamScheduleApplication();
-        MailService mailService = new MailService();
 
         taskSchedulingService.cleanJobWhenRun(ScheduleName.EXAM_SCHEDULE_REMIND, examScheduleId);
 

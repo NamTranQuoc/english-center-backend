@@ -1,6 +1,8 @@
 package com.englishcenter.core.schedule;
 
 import com.englishcenter.classroom.job.ClassroomFinalJob;
+import com.englishcenter.core.firebase.FirebaseFileService;
+import com.englishcenter.core.mail.MailService;
 import com.englishcenter.core.utils.MongoDBConnection;
 import com.englishcenter.core.utils.enums.MongodbEnum;
 import com.englishcenter.exam.schedule.job.ExamScheduleFinalJob;
@@ -22,6 +24,10 @@ public class TaskSchedulingService {
     Map<String, ScheduledFuture<?>> jobsMap = new HashMap<>();
     @Autowired
     private TaskScheduler taskScheduler;
+    @Autowired
+    private MailService mailService;
+    @Autowired
+    private FirebaseFileService firebaseFileService;
 
     @Autowired
     public TaskSchedulingService() {
@@ -100,11 +106,15 @@ public class TaskSchedulingService {
                 ScheduleRemindJob scheduleRemindJob = new ScheduleRemindJob();
                 scheduleRemindJob.setScheduleId(job.getRef_id());
                 scheduleRemindJob.setTaskSchedulingService(this);
+                scheduleRemindJob.setMailService(mailService);
+                scheduleRemindJob.setFirebaseFileService(firebaseFileService);
                 return scheduleRemindJob;
             case ScheduleName.EXAM_SCHEDULE_REMIND:
                 ExamScheduleRemindJob examScheduleRemindJob = new ExamScheduleRemindJob();
                 examScheduleRemindJob.setExamScheduleId(job.getRef_id());
                 examScheduleRemindJob.setTaskSchedulingService(this);
+                examScheduleRemindJob.setMailService(mailService);
+                examScheduleRemindJob.setFirebaseFileService(firebaseFileService);
                 return examScheduleRemindJob;
             case ScheduleName.EXAM_SCHEDULE_FINAL:
                 ExamScheduleFinalJob examScheduleFinalJob = new ExamScheduleFinalJob();
