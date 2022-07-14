@@ -4,6 +4,8 @@ import com.englishcenter.absent.Absent;
 import com.englishcenter.absent.AbsentApplication;
 import com.englishcenter.classroom.ClassRoom;
 import com.englishcenter.classroom.application.ClassRoomApplication;
+import com.englishcenter.core.firebase.FirebaseFileService;
+import com.englishcenter.core.mail.MailService;
 import com.englishcenter.core.schedule.ScheduleName;
 import com.englishcenter.core.schedule.TaskSchedulingService;
 import com.englishcenter.core.utils.MongoDBConnection;
@@ -42,7 +44,7 @@ import java.util.stream.Collectors;
 @Component
 public class ScheduleApplication {
     public final MongoDBConnection<Schedule> mongoDBConnection;
-    private final long TEN_MINUTE = 600000;
+    private final long TEN_MINUTE = 3600000;
     @Autowired
     private ClassRoomApplication classRoomApplication;
     @Autowired
@@ -63,6 +65,10 @@ public class ScheduleApplication {
     private ExamScheduleApplication examScheduleApplication;
     @Autowired
     private GenerateAsync generateAsync;
+    @Autowired
+    private MailService mailService;
+    @Autowired
+    private FirebaseFileService firebaseFileService;
 
     @Autowired
     public ScheduleApplication() {
@@ -348,6 +354,8 @@ public class ScheduleApplication {
         ScheduleRemindJob scheduleRemindJob = new ScheduleRemindJob();
         scheduleRemindJob.setScheduleId(id);
         scheduleRemindJob.setTaskSchedulingService(taskSchedulingService);
+        scheduleRemindJob.setMailService(mailService);
+        scheduleRemindJob.setFirebaseFileService(firebaseFileService);
         taskSchedulingService.scheduleATask(scheduleRemindJob, schedule.getStart_date() - TEN_MINUTE, ScheduleName.SCHEDULE_REMIND, id);
         return mongoDBConnection.update(id, schedule);
     }

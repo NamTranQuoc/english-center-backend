@@ -35,6 +35,8 @@ import java.util.stream.Collectors;
 public class ScheduleRemindJob implements Runnable {
     private String scheduleId;
     private TaskSchedulingService taskSchedulingService;
+    private MailService mailService;
+    private FirebaseFileService firebaseFileService;
 
     @Override
     public void run() {
@@ -44,9 +46,7 @@ public class ScheduleRemindJob implements Runnable {
         AbsentApplication absentApplication = new AbsentApplication();
         ThymeleafService thymeleafService = new ThymeleafService();
         ScheduleApplication scheduleApplication = new ScheduleApplication();
-        FirebaseFileService firebaseFileService = new FirebaseFileService();
         CourseApplication courseApplication = new CourseApplication();
-        MailService mailService = new MailService();
 
         taskSchedulingService.cleanJobWhenRun(ScheduleName.SCHEDULE_REMIND, scheduleId);
 

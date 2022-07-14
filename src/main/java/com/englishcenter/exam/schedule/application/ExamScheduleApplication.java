@@ -48,7 +48,7 @@ import java.util.stream.Collectors;
 public class ExamScheduleApplication {
     public final MongoDBConnection<ExamSchedule> mongoDBConnection;
 
-    private final long TEN_MINUTE = 600000;
+    private final long TEN_MINUTE = 3600000;
     @Autowired
     private ScheduleApplication scheduleApplication;
     @Autowired
@@ -120,6 +120,8 @@ public class ExamScheduleApplication {
             ExamScheduleRemindJob examScheduleRemindJob = new ExamScheduleRemindJob();
             examScheduleRemindJob.setExamScheduleId(result.get().get_id().toHexString());
             examScheduleRemindJob.setTaskSchedulingService(taskSchedulingService);
+            examScheduleRemindJob.setMailService(mailService);
+            examScheduleRemindJob.setFirebaseFileService(firebaseFileService);
             taskSchedulingService.scheduleATask(
                     examScheduleRemindJob,
                     result.get().getStart_time() - TEN_MINUTE,
@@ -177,6 +179,7 @@ public class ExamScheduleApplication {
                 ))
         ));
         queryValidate.put("student_ids", student.get_id().toHexString());
+        queryValidate.put("status", new Document("$ne", ExamSchedule.ExamStatus.cancel));
         long count = mongoDBConnection.count(queryValidate).orElse(0L);
         if (count != 0L) {
             throw new Exception(ExceptionEnum.exam_schedule_conflict);
@@ -391,6 +394,8 @@ public class ExamScheduleApplication {
         ExamScheduleRemindJob examScheduleRemindJob = new ExamScheduleRemindJob();
         examScheduleRemindJob.setExamScheduleId(command.getId());
         examScheduleRemindJob.setTaskSchedulingService(taskSchedulingService);
+        examScheduleRemindJob.setMailService(mailService);
+        examScheduleRemindJob.setFirebaseFileService(firebaseFileService);
         taskSchedulingService.scheduleATask(examScheduleRemindJob, examSchedule.getStart_time() - TEN_MINUTE, ScheduleName.EXAM_SCHEDULE_REMIND, command.getId());
         return mongoDBConnection.update(examSchedule.get_id().toHexString(), examSchedule);
     }
