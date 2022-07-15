@@ -137,7 +137,7 @@ public class AuthApplication implements IAuthApplication {
         }
         Map<String, Object> query = new HashMap<>();
         query.put("email", command.getEmail());
-        query.put("status", Member.MemberStatus.ACTIVE);
+//        query.put("status", Member.MemberStatus.ACTIVE);
         Optional<Member> optional = memberApplication.mongoDBConnection.findOne(query);
         Member member = null;
         if (!optional.isPresent()) {
@@ -174,6 +174,9 @@ public class AuthApplication implements IAuthApplication {
 
         } else {
             member = optional.get();
+        }
+        if (Member.MemberStatus.BLOCK.equals(member.getStatus())) {
+            throw new Exception(ExceptionEnum.member_not_exist);
         }
         Map<String, Object> queryAuth = new HashMap<>();
         queryAuth.put("username", member.getEmail());
