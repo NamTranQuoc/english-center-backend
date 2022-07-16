@@ -59,6 +59,7 @@ public class ScheduleRemindJob implements Runnable {
             if (room.isPresent() && classroom.isPresent()) {
                 Map<String, Object> data = new HashMap<>();
                 SimpleDateFormat formatter = new SimpleDateFormat("dd/MM/yyyy HH:mm");
+                formatter.setTimeZone(TimeZone.getTimeZone("GMT+07:00"));
 
                 data.put("classroom", classroom.get().getName());
                 data.put("room", room.get().getName());

@@ -351,6 +351,7 @@ public class ExamScheduleApplication {
         String textRoom = "";
         String textDate = "";
         SimpleDateFormat formatter = new SimpleDateFormat("dd/MM/yyyy HH:mm");
+        formatter.setTimeZone(TimeZone.getTimeZone("GMT+07:00"));
         Map<String, Object> query = new HashMap<>();
         query.put("$or", Arrays.asList(
                 new Document("$and", Arrays.asList(
@@ -496,6 +497,7 @@ public class ExamScheduleApplication {
                     Map<String, Object> data = new HashMap<>();
                     Calendar calendar = Calendar.getInstance();
                     calendar.setTimeInMillis(examSchedule.getStart_time());
+                    calendar.setTimeZone(TimeZone.getTimeZone("GMT+07:00"));
 
                     data.put("date", sNow);
                     data.put("room", room.get().getName());
@@ -523,6 +525,7 @@ public class ExamScheduleApplication {
     public void updateStatusExam() {
         try {
             SimpleDateFormat formatter = new SimpleDateFormat("dd/MM/yyyy");
+            formatter.setTimeZone(TimeZone.getTimeZone("GMT+07:00"));
             long now = System.currentTimeMillis() + 172800000L;
             Map<String, Object> query = new HashMap<>();
             query.put("start_time", new Document("$gte", now).append("$lte", now + 86400000L));

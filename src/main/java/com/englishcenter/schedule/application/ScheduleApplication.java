@@ -258,6 +258,7 @@ public class ScheduleApplication {
         String textRoom = "";
         String textDate = "";
         SimpleDateFormat formatter = new SimpleDateFormat("dd/MM/yyyy HH:mm");
+        formatter.setTimeZone(TimeZone.getTimeZone("GMT+07:00"));
         boolean lt = true;
         ClassRoom classRoom = classRoomApplication.getById(schedule.getClassroom_id()).get();
         Map<String, Log.ChangeDetail> changeDetailMap = new HashMap<>();
