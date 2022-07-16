@@ -49,7 +49,7 @@ public class GenerateAsync {
     private MailService mailService;
     @Autowired
     private FirebaseFileService firebaseFileService;
-    private final long TEN_MINUTE = 600000;
+    private final long TEN_MINUTE = 3600000;
 
     @Async
     public void generateEven(CommandAddSchedule command) throws Exception {

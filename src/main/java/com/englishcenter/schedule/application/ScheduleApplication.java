@@ -4,10 +4,13 @@ import com.englishcenter.absent.Absent;
 import com.englishcenter.absent.AbsentApplication;
 import com.englishcenter.classroom.ClassRoom;
 import com.englishcenter.classroom.application.ClassRoomApplication;
+import com.englishcenter.core.fcm.NotificationRequest;
 import com.englishcenter.core.firebase.FirebaseFileService;
+import com.englishcenter.core.mail.Mail;
 import com.englishcenter.core.mail.MailService;
 import com.englishcenter.core.schedule.ScheduleName;
 import com.englishcenter.core.schedule.TaskSchedulingService;
+import com.englishcenter.core.thymeleaf.ThymeleafService;
 import com.englishcenter.core.utils.MongoDBConnection;
 import com.englishcenter.core.utils.enums.ExceptionEnum;
 import com.englishcenter.core.utils.enums.MongodbEnum;
@@ -38,6 +41,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
 
+import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -69,6 +73,8 @@ public class ScheduleApplication {
     private MailService mailService;
     @Autowired
     private FirebaseFileService firebaseFileService;
+    @Autowired
+    private ThymeleafService thymeleafService;
 
     @Autowired
     public ScheduleApplication() {
@@ -245,9 +251,10 @@ public class ScheduleApplication {
             throw new Exception(ExceptionEnum.schedule_not_exist);
         }
         Schedule schedule = optional.get();
-//        if (System.currentTimeMillis() + 86400000L > schedule.getStart_date()) {
-//            throw new Exception(ExceptionEnum.can_not_update);
-//        }
+        if (System.currentTimeMillis() + TEN_MINUTE > schedule.getStart_date()) {
+            throw new Exception(ExceptionEnum.can_not_update);
+        }
+        long oldDate = schedule.getStart_date();
         boolean lt = true;
         ClassRoom classRoom = classRoomApplication.getById(schedule.getClassroom_id()).get();
         Map<String, Log.ChangeDetail> changeDetailMap = new HashMap<>();
@@ -279,9 +286,9 @@ public class ScheduleApplication {
         query.put("classroom_id", schedule.getClassroom_id());
         query.put("_id", new Document("$ne", schedule.get_id()));
         long countV = mongoDBConnection.count(query).orElse(0L);
-//        if (countV > 0) {
-//            throw new Exception(ExceptionEnum.schedule_exist);
-//        }
+        if (countV > 0) {
+            throw new Exception(ExceptionEnum.schedule_exist);
+        }
         query.remove("classroom_id");
         query.remove("_id");
         if (StringUtils.isNotBlank(command.getRoom_id()) && !command.getRoom_id().equals(schedule.getRoom_id())) {
@@ -357,6 +364,52 @@ public class ScheduleApplication {
         scheduleRemindJob.setMailService(mailService);
         scheduleRemindJob.setFirebaseFileService(firebaseFileService);
         taskSchedulingService.scheduleATask(scheduleRemindJob, schedule.getStart_date() - TEN_MINUTE, ScheduleName.SCHEDULE_REMIND, id);
+
+        //send mail notification update
+        List<ObjectId> ids = classRoom.getStudent_ids().stream()
+                .map(item -> new ObjectId(item.getStudent_id()))
+                .collect(Collectors.toList());
+        List<Member> members = memberApplication.mongoDBConnection.find(new Document("_id", new Document("$in", ids)))
+                .orElse(new ArrayList<>());
+        List<String> emails = members
+                .stream().map(Member::getEmail).collect(Collectors.toList());
+        SimpleDateFormat formatter = new SimpleDateFormat("dd/MM/yyyy HH:mm");
+        Map<String, Object> data1 = new HashMap<>();
+        data1.put("reason", "Lớp học của bạn bắt đầu vào ngày " + formatter.format(new Date(oldDate)) + " đã được cập nhật. Vui lòng kiểm tra lại lịch học của bạn.");
+        mailService.send(Mail.builder()
+                .mail_tos(emails)
+                .mail_subject("Thông báo!")
+                .mail_content(thymeleafService.getContent("mailWhenUpdate", data1))
+                .build());
+
+        Map<String, String> d = new HashMap<>();
+        d.put("id", schedule.get_id().toHexString());
+        d.put("type", "cancel");
+        d.put("title", classRoom.getName());
+        d.put("teacher", memberApplication.getById(schedule.getTeacher_id()).get().getName());
+        d.put("room", roomApplication.getById(schedule.getRoom_id()).get().getName());
+        d.put("start", schedule.getStart_date().toString());
+        d.put("end", schedule.getEnd_date().toString());
+        d.put("session", schedule.getSession().toString());
+        d.put("course_id", classRoom.getCourse_id());
+        d.put("max_student", classRoom.getMax_student().toString());
+        d.put("took_place", "false");
+        d.put("classroom_id", classRoom.get_id().toHexString());
+        d.put("is_absent", "true");
+        d.put("is_exam", "false");
+        members.forEach(item -> {
+            if (!CollectionUtils.isEmpty(item.getTokens())) {
+                item.getTokens().forEach(sub -> {
+                    firebaseFileService.sendPnsToDevice(NotificationRequest.builder()
+                            .target(sub)
+                            .title("Thông báo cập nhật lịch học")
+                            .body("Lớp học bắt đầu ngày " + new SimpleDateFormat("dd/MM/yyyy - HH:mm").format(new Date(oldDate)) + " đã được cập nhật")
+                            .data(d)
+                            .build());
+                });
+            }
+        });
+
         return mongoDBConnection.update(id, schedule);
     }
 
