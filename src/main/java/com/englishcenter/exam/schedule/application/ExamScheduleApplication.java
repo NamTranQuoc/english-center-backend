@@ -19,6 +19,7 @@ import com.englishcenter.exam.schedule.command.CommandSearchExamSchedule;
 import com.englishcenter.exam.schedule.job.ExamScheduleRemindJob;
 import com.englishcenter.member.Member;
 import com.englishcenter.member.application.MemberApplication;
+import com.englishcenter.member.command.CommandSearchMember;
 import com.englishcenter.room.Room;
 import com.englishcenter.room.application.RoomApplication;
 import com.englishcenter.schedule.application.ScheduleApplication;
@@ -429,11 +430,19 @@ public class ExamScheduleApplication {
                     .mail_content(thymeleafService.getContent("mailWhenUpdate", data1))
                     .build());
 
+            Map<String, String> teachers = new HashMap<>();
+            memberApplication.getAll(CommandSearchMember.builder()
+                    .types(Arrays.asList(Member.MemberType.RECEPTIONIST, Member.MemberType.TEACHER))
+                    .build()).orElse(new ArrayList<>()).forEach(item -> teachers.put(item.get_id(), item.getName()));
+            StringBuilder a = new StringBuilder();
+            for (String id : examSchedule.getMember_ids()) {
+                a.append(teachers.get(id)).append("\n");
+            }
             Map<String, String> d = new HashMap<>();
             d.put("id", examSchedule.get_id().toHexString());
             d.put("type", "exam-schedule");
             d.put("title", examSchedule.getCode());
-            d.put("teacher", "");
+            d.put("teacher", String.valueOf(a));
             d.put("room", roomApplication.getById(examSchedule.getRoom_id()).get().getName());
             d.put("start", examSchedule.getStart_time().toString());
             d.put("end", examSchedule.getEnd_time().toString());
