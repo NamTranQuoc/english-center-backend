@@ -239,6 +239,7 @@ public class ClassRoomApplication {
     public void updateStatusExam() {
         try {
             SimpleDateFormat formatter = new SimpleDateFormat("dd/MM/yyyy");
+            formatter.setTimeZone(TimeZone.getTimeZone("GMT+07:00"));
             long now = System.currentTimeMillis() + 172800000L;
             Map<String, Object> query = new HashMap<>();
             query.put("start_date", new Document("$gte", now).append("$lte", now + 86400000L));
