@@ -57,6 +57,7 @@ public class ExamScheduleRemindJob implements Runnable {
             Map<String, Object> data = new HashMap<>();
             Calendar calendar = Calendar.getInstance();
             calendar.setTimeInMillis(examSchedule.getStart_time());
+            calendar.setTimeZone(TimeZone.getTimeZone("GMT+07:00"));
             data.put("date", new SimpleDateFormat("dd/MM/yyyy").format(new Date(examSchedule.getStart_time())));
             data.put("room", room.get().getName());
             data.put("start_date", String.format("%02dh%02d", calendar.get(Calendar.HOUR_OF_DAY), calendar.get(Calendar.MINUTE)));
@@ -97,7 +98,9 @@ public class ExamScheduleRemindJob implements Runnable {
                 d.put("classroom_id", "0");
                 d.put("is_absent", "false");
                 d.put("is_exam", "true");
-                String title = "Bạn có thi " + examSchedule.getCode() + " vào " + new SimpleDateFormat("dd/MM/yyyy HH:mm").format(new Date(examSchedule.getStart_time()));
+                SimpleDateFormat formatter = new SimpleDateFormat("dd/MM/yyyy HH:mm");
+                formatter.setTimeZone(TimeZone.getTimeZone("GMT+07:00"));
+                String title = "Bạn có thi " + examSchedule.getCode() + " vào " + formatter.format(new Date(examSchedule.getStart_time()));
 
                 if (!CollectionUtils.isEmpty(students)) {
                     students.forEach(item -> {

@@ -348,6 +348,10 @@ public class ExamScheduleApplication {
             throw new Exception(ExceptionEnum.can_not_update);
         }
         long oldDate = examSchedule.getStart_time();
+        String textRoom = "";
+        String textDate = "";
+        SimpleDateFormat formatter = new SimpleDateFormat("dd/MM/yyyy HH:mm");
+        formatter.setTimeZone(TimeZone.getTimeZone("GMT+07:00"));
         Map<String, Object> query = new HashMap<>();
         query.put("$or", Arrays.asList(
                 new Document("$and", Arrays.asList(
@@ -366,9 +370,15 @@ public class ExamScheduleApplication {
             if (count != 0L) {
                 throw new Exception(ExceptionEnum.room_not_available);
             }
+            textRoom = String.format("- Phòng thi: %s -> %s",
+                    roomApplication.mongoDBConnection.getById(examSchedule.getRoom_id()).get().getName(),
+                    roomApplication.mongoDBConnection.getById(command.getRoom_id()).get().getName());
             examSchedule.setRoom_id(command.getRoom_id());
         }
-        if (command.getStart_time() != null) {
+        if (command.getStart_time() != null && !Objects.equals(command.getStart_time(), examSchedule.getStart_time())) {
+            textDate = String.format("- Thời gian bắt đầu: %s -> %s",
+                    formatter.format(new Date(examSchedule.getStart_time())),
+                    formatter.format(new Date(command.getStart_time())));
             examSchedule.setStart_time(command.getStart_time());
         }
         if (command.getEnd_time() != null) {
@@ -401,48 +411,51 @@ public class ExamScheduleApplication {
         taskSchedulingService.scheduleATask(examScheduleRemindJob, examSchedule.getStart_time() - TEN_MINUTE, ScheduleName.EXAM_SCHEDULE_REMIND, command.getId());
 
         //send mail notification update
-        List<ObjectId> ids = examSchedule.getStudent_ids().stream()
-                .map(ObjectId::new)
-                .collect(Collectors.toList());
-        List<Member> members = memberApplication.mongoDBConnection.find(new Document("_id", new Document("$in", ids)))
-                .orElse(new ArrayList<>());
-        List<String> emails = members
-                .stream().map(Member::getEmail).collect(Collectors.toList());
-        SimpleDateFormat formatter = new SimpleDateFormat("dd/MM/yyyy HH:mm");
-        Map<String, Object> data1 = new HashMap<>();
-        data1.put("reason", "Buổi thi của bạn bắt đầu vào ngày " + formatter.format(new Date(oldDate)) + " đã được cập nhật thành ngày " + formatter.format(new Date(examSchedule.getStart_time())) + ".");
-        mailService.send(Mail.builder()
-                .mail_tos(emails)
-                .mail_subject("Thông báo!")
-                .mail_content(thymeleafService.getContent("mailWhenUpdate", data1))
-                .build());
+        if (StringUtils.isNotBlank(textDate) || StringUtils.isNotBlank(textRoom)) {
+            List<ObjectId> ids = examSchedule.getStudent_ids().stream()
+                    .map(ObjectId::new)
+                    .collect(Collectors.toList());
+            List<Member> members = memberApplication.mongoDBConnection.find(new Document("_id", new Document("$in", ids)))
+                    .orElse(new ArrayList<>());
+            List<String> emails = members
+                    .stream().map(Member::getEmail).collect(Collectors.toList());
+            Map<String, Object> data1 = new HashMap<>();
+            data1.put("reason", "Buổi thi của bạn bắt đầu vào ngày " + formatter.format(new Date(oldDate)) + " đã được cập nhật");
+            data1.put("room", textRoom);
+            data1.put("startDate", textDate);
+            mailService.send(Mail.builder()
+                    .mail_tos(emails)
+                    .mail_subject("Thông báo!")
+                    .mail_content(thymeleafService.getContent("mailWhenUpdate", data1))
+                    .build());
 
-        Map<String, String> d = new HashMap<>();
-        d.put("id", examSchedule.get_id().toHexString());
-        d.put("type", "cancel");
-        d.put("title", examSchedule.getCode());
-        d.put("teacher", "");
-        d.put("room", roomApplication.getById(examSchedule.getRoom_id()).get().getName());
-        d.put("start", examSchedule.getStart_time().toString());
-        d.put("end", examSchedule.getEnd_time().toString());
-        d.put("session", "0");
-        d.put("max_student", "0");
-        d.put("took_place", "false");
-        d.put("classroom_id", "0");
-        d.put("is_absent", "false");
-        d.put("is_exam", "true");
-        members.forEach(item -> {
-            if (!CollectionUtils.isEmpty(item.getTokens())) {
-                item.getTokens().forEach(sub -> {
-                    firebaseFileService.sendPnsToDevice(NotificationRequest.builder()
-                            .target(sub)
-                            .title("Thông báo cập nhật lịch kiểm tra")
-                            .body("Buổi kiểm tra bắt đầu ngày " + new SimpleDateFormat("dd/MM/yyyy - HH:mm").format(new Date(oldDate)) + " đã được cập nhật")
-                            .data(d)
-                            .build());
-                });
-            }
-        });
+            Map<String, String> d = new HashMap<>();
+            d.put("id", examSchedule.get_id().toHexString());
+            d.put("type", "cancel");
+            d.put("title", examSchedule.getCode());
+            d.put("teacher", "");
+            d.put("room", roomApplication.getById(examSchedule.getRoom_id()).get().getName());
+            d.put("start", examSchedule.getStart_time().toString());
+            d.put("end", examSchedule.getEnd_time().toString());
+            d.put("session", "0");
+            d.put("max_student", "0");
+            d.put("took_place", "false");
+            d.put("classroom_id", "0");
+            d.put("is_absent", "false");
+            d.put("is_exam", "true");
+            members.forEach(item -> {
+                if (!CollectionUtils.isEmpty(item.getTokens())) {
+                    item.getTokens().forEach(sub -> {
+                        firebaseFileService.sendPnsToDevice(NotificationRequest.builder()
+                                .target(sub)
+                                .title("Thông báo cập nhật lịch kiểm tra")
+                                .body("Buổi kiểm tra bắt đầu ngày " + new SimpleDateFormat("dd/MM/yyyy - HH:mm").format(new Date(oldDate)) + " đã được cập nhật")
+                                .data(d)
+                                .build());
+                    });
+                }
+            });
+        }
 
         return mongoDBConnection.update(examSchedule.get_id().toHexString(), examSchedule);
     }
@@ -484,6 +497,7 @@ public class ExamScheduleApplication {
                     Map<String, Object> data = new HashMap<>();
                     Calendar calendar = Calendar.getInstance();
                     calendar.setTimeInMillis(examSchedule.getStart_time());
+                    calendar.setTimeZone(TimeZone.getTimeZone("GMT+07:00"));
 
                     data.put("date", sNow);
                     data.put("room", room.get().getName());
@@ -511,6 +525,7 @@ public class ExamScheduleApplication {
     public void updateStatusExam() {
         try {
             SimpleDateFormat formatter = new SimpleDateFormat("dd/MM/yyyy");
+            formatter.setTimeZone(TimeZone.getTimeZone("GMT+07:00"));
             long now = System.currentTimeMillis() + 172800000L;
             Map<String, Object> query = new HashMap<>();
             query.put("start_time", new Document("$gte", now).append("$lte", now + 86400000L));
