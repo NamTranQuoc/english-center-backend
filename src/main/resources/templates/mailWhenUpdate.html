@@ -24,6 +24,12 @@
                                 Chào bạn,</p>
                             <br/>
                             <p style="margin-bottom: 10px;margin-top: 0; text-align: left;"><span th:text="${reason}"></span>.</p>
+                            <div th:if="${room}">
+                                <p style="margin-bottom: 10px;margin-top: 0; margin-left: 10px; text-align: left;"><span th:text="${room}"></span></p>
+                            </div>
+                            <div th:if="${startDate}">
+                                <p style="margin-bottom: 10px;margin-top: 0; margin-left: 10px; text-align: left;"><span th:text="${startDate}"></span></p>
+                            </div>
                             <br/>
                             <br/>
                             <br/>
