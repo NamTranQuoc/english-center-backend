@@ -396,7 +396,7 @@ public class ScheduleApplication {
 
             Map<String, String> d = new HashMap<>();
             d.put("id", schedule.get_id().toHexString());
-            d.put("type", "cancel");
+            d.put("type", "schedule");
             d.put("title", classRoom.getName());
             d.put("teacher", memberApplication.getById(schedule.getTeacher_id()).get().getName());
             d.put("room", roomApplication.getById(schedule.getRoom_id()).get().getName());

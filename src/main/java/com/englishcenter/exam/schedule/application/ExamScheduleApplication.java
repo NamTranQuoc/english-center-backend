@@ -431,7 +431,7 @@ public class ExamScheduleApplication {
 
             Map<String, String> d = new HashMap<>();
             d.put("id", examSchedule.get_id().toHexString());
-            d.put("type", "cancel");
+            d.put("type", "exam-schedule");
             d.put("title", examSchedule.getCode());
             d.put("teacher", "");
             d.put("room", roomApplication.getById(examSchedule.getRoom_id()).get().getName());
